@@ -1,0 +1,27 @@
+# Maven
+target/
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Version Control
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+HELP.md
+CONTRIBUTING.md
+
+# Docker
+dockerfile
+docker-compose.yml
+.dockerignore
+
+# Tests
+src/test/
