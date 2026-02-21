@@ -1,0 +1,60 @@
+stages:
+  - test
+  - analyze
+  - build
+
+.default_maven: &default_maven
+  image: maven:3.9-eclipse-temurin-25
+  variables:
+    MAVEN_OPTS: "--add-opens java.base/java.lang=ALL-UNNAMED"
+  cache:
+    key: maven-$CI_COMMIT_REF_SLUG
+    paths:
+      - .m2/repository
+
+unit_tests:
+  <<: *default_maven
+  stage: test
+  services:
+    - postgres:16
+  variables:
+    POSTGRES_DB: corekt
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: admin
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/corekt
+    SPRING_DATASOURCE_USERNAME: postgres
+    SPRING_DATASOURCE_PASSWORD: admin
+  script:
+    - mvn -B -DskipTests=false --file pom.xml verify
+  artifacts:
+    when: always
+    paths:
+      - target/surefire-reports/
+      - target/site/jacoco/
+    reports:
+      junit: target/surefire-reports/TEST-*.xml
+  coverage: '/Total.*?([0-9]{1,3})%/'
+
+spotbugs:
+  <<: *default_maven
+  stage: analyze
+  script:
+    - mvn -B -DskipTests spotbugs:check --file pom.xml
+  artifacts:
+    when: always
+    paths:
+      - target/spotbugsXml.xml
+  allow_failure: true
+
+build:
+  stage: build
+  <<: *default_maven
+  script:
+    - mvn -B clean package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1 hour
+  only:
+    - master
+    - merge_requests
