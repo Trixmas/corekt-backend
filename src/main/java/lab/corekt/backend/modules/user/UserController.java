@@ -35,7 +35,7 @@ public class UserController {
         UserDetails userDetails = new UserDetails();
         userDetails.setUsername(user.getUsername());
         userDetails.setEmail(user.getEmail());
-        userDetails.setAvatarUrl(user.getAvatarUrl());
+
 
         return ResponseEntity.ok(userDetails);
     }

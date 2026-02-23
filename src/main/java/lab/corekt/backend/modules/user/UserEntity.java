@@ -3,13 +3,7 @@ package lab.corekt.backend.modules.user;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -19,32 +13,21 @@ import java.util.UUID;
 public class UserEntity {
 
     @Id
-    @GeneratedValue
-    @UuidGenerator
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
-
-    @Column(unique = true, length = 50)
-    private String username;
-
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(updatable = false, nullable = false)
     private String email;
 
-    @Column()
-    private String avatarUrl;
+    @Column(nullable = false, length = 50)
+    private String username;
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
-
-    @LastModifiedDate
-    @Column(nullable = false)
-    private Instant updatedAt;
-
-    protected UserEntity() {}
+    @Column
+    private String mistralToken;
 
     public UserEntity(String email, String candidateUsername) {
         this.email = email;
         this.username = candidateUsername;
+    }
+
+    public UserEntity() {
+        
     }
 }

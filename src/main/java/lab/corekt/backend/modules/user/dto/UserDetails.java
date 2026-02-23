@@ -16,5 +16,4 @@ public class UserDetails {
     @Email(message = "Email must be valid")
     private String email;
 
-    private String avatarUrl;
 }
