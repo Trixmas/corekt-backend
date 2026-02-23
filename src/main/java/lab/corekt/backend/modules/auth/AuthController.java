@@ -9,6 +9,7 @@ import lab.corekt.backend.modules.auth.service.JwtService;
 import lab.corekt.backend.modules.user.UserEntity;
 import lab.corekt.backend.modules.user.dto.UserDetails;
 import lab.corekt.backend.modules.user.service.UserService;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -38,6 +39,14 @@ public class AuthController {
         this.userService = userService;
     }
 
+    private static @NonNull LoginResponse createLoginResponse(String token, Long expiresAt, UserDetails userDetails) {
+        LoginResponse response = new LoginResponse();
+        response.setToken(token);
+        response.setExpiresAt(expiresAt);
+        response.setUser(userDetails);
+        return response;
+    }
+
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LdapUserProfile ldapProfile = jumpCloudService.authenticateAndGetProfile(request.getEmail(), request.getPassword());
@@ -59,10 +68,7 @@ public class AuthController {
         userDetails.setUsername(user.getUsername());
         userDetails.setEmail(user.getEmail());
 
-        LoginResponse response = new LoginResponse();
-        response.setToken(token);
-        response.setExpiresAt(expiresAt);
-        response.setUser(userDetails);
+        LoginResponse response = createLoginResponse(token, expiresAt, userDetails);
 
         return ResponseEntity.ok(response);
     }
