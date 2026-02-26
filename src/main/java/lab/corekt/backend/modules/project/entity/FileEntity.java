@@ -36,17 +36,9 @@ public class FileEntity {
     private byte[] file;
 
     @ManyToOne
-    @JoinColumns({
-            @JoinColumn(name = "version_id", referencedColumnName = "version_id", nullable = false, insertable = false, updatable = false),
-            @JoinColumn(name = "project_id", referencedColumnName = "project_id", nullable = false, insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "version_id", referencedColumnName = "version_id", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "project_id", referencedColumnName = "project_id", nullable = false, insertable = false, updatable = false)
     private VersionEntity version;
-
-    @Column(name = "version_id", nullable = false)
-    private Integer versionId;
-
-    @Column(name = "project_id", nullable = false)
-    private UUID projectId;
 
     @OneToOne(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
     private AIAnalysisEntity aiAnalysis;
@@ -58,11 +50,10 @@ public class FileEntity {
     public FileEntity() {
     }
 
-    public FileEntity(FileType fileType, String fileName, Integer versionId, UUID projectId) {
+    public FileEntity(FileType fileType, String fileName, VersionEntity version) {
         this.type = fileType;
         this.name = fileName;
-        this.versionId = versionId;
-        this.projectId = projectId;
+        this.version = version;
     }
 }
 

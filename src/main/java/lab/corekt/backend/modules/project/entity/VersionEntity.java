@@ -22,7 +22,7 @@ public class VersionEntity {
     @Column(name = "version_id")
     @Min(1)
     @Max(10)
-    private Integer versionId = 1;
+    private Integer id = 1;
 
     @Id
     @ManyToOne
@@ -30,7 +30,7 @@ public class VersionEntity {
     private ProjectEntity project;
 
     @Column(nullable = false, length = 50)
-    private String versionTitle;
+    private String title;
 
     @Column
     private Integer score;
@@ -50,16 +50,16 @@ public class VersionEntity {
         this.status = Status.DRAFT;
     }
 
-    public VersionEntity(ProjectEntity project, String versionTitle) {
+    public VersionEntity(ProjectEntity project, String title) {
         this.project = project;
-        this.versionTitle = versionTitle;
+        this.title = title;
         this.status = Status.DRAFT;
     }
 
     //    "Trigger" to give versionId
     @PrePersist
-    public void giveVersionId() {
+    public void setVersionId() {
         List<VersionEntity> versions = this.project.getVersions();
-        this.versionId = versions.size() + 1;
+        this.id = versions.size() + 1;
     }
 }
