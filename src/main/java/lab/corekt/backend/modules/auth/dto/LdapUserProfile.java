@@ -7,5 +7,5 @@ import lombok.Setter;
 @Setter
 public class LdapUserProfile {
     private String email;
-    private String jumpCloudUid;
+    private String username;
 }
