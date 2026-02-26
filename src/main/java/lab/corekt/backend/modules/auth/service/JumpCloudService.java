@@ -1,5 +1,6 @@
 package lab.corekt.backend.modules.auth.service;
 
+
 import lab.corekt.backend.modules.auth.dto.LdapUserProfile;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.filter.AndFilter;

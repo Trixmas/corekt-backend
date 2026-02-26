@@ -1,9 +1,13 @@
-package lab.corekt.backend.modules.user;
+package lab.corekt.backend.modules.user.entity;
 
 import jakarta.persistence.*;
+import lab.corekt.backend.modules.achievement.entity.HasAchievementsEntity;
+import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -22,12 +26,18 @@ public class UserEntity {
     @Column
     private String mistralToken;
 
+    @OneToMany(mappedBy = "owner")
+    private List<ProjectEntity> projects;
+
+    @OneToMany(mappedBy = "user")
+    private List<HasAchievementsEntity> achievements;
+
     public UserEntity(String email, String candidateUsername) {
         this.email = email;
         this.username = candidateUsername;
     }
 
     public UserEntity() {
-        
+
     }
 }

@@ -1,7 +1,7 @@
 package lab.corekt.backend.modules.user.service;
 
-import lab.corekt.backend.modules.user.UserEntity;
-import lab.corekt.backend.modules.user.UserRepository;
+import lab.corekt.backend.modules.user.entity.UserEntity;
+import lab.corekt.backend.modules.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

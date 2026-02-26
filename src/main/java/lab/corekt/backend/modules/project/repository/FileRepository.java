@@ -1,0 +1,15 @@
+package lab.corekt.backend.modules.project.repository;
+
+import lab.corekt.backend.modules.project.entity.FileEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface FileRepository extends JpaRepository<FileEntity, Integer> {
+    List<FileEntity> findByVersionIdAndProjectId(Integer versionId, Integer projectId);
+
+    List<FileEntity> findByFileNameContainingIgnoreCase(String fileName);
+}
+

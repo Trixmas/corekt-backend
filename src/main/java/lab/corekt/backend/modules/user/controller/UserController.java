@@ -1,6 +1,7 @@
-package lab.corekt.backend.modules.user;
+package lab.corekt.backend.modules.user.controller;
 
 import lab.corekt.backend.modules.user.dto.UserDetails;
+import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
