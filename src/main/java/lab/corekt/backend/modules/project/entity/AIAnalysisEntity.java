@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @Entity
@@ -14,7 +16,7 @@ public class AIAnalysisEntity {
 
     @Id
     @Column(name = "file_id")
-    private Integer fileId;
+    private UUID fileId;
 
     @OneToOne
     @MapsId
@@ -33,7 +35,6 @@ public class AIAnalysisEntity {
     @Column(length = 500)
     private String suggestions;
 
-    // Constructeurs
     public AIAnalysisEntity() {
     }
 

@@ -4,9 +4,11 @@ import jakarta.persistence.*;
 import lab.corekt.backend.modules.project.enums.DataType;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,9 +18,10 @@ import java.util.List;
 public class ParsedDataEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
+    @UuidGenerator
     @Column(name = "parsed_data_id")
-    private Integer parsedDataId;
+    private UUID id;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

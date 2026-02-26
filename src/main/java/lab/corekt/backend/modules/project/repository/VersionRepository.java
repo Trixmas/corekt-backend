@@ -5,11 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface VersionRepository extends JpaRepository<VersionEntity, Integer> {
-    List<VersionEntity> findByProject_ProjectId(Integer projectId);
+    List<VersionEntity> findByProject_Id(UUID projectId);
 
-    List<VersionEntity> findByProject_ProjectIdAndVersionTitleContainingIgnoreCase(Integer projectId, String versionTitle);
+    List<VersionEntity> findByProject_IdAndVersionTitleContainingIgnoreCase(UUID projectId, String versionTitle);
 }
 

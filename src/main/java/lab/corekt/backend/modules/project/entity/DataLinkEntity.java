@@ -5,7 +5,10 @@ import lab.corekt.backend.modules.project.enums.MatchType;
 import lab.corekt.backend.modules.project.enums.Severity;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -15,9 +18,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class DataLinkEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
+    @UuidGenerator
     @Column(name = "link_id")
-    private Integer linkId;
+    private UUID id;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

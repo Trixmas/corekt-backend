@@ -11,6 +11,6 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<ProjectEntity, Integer> {
     List<ProjectEntity> findByOwner(UserEntity owner);
 
-    List<ProjectEntity> findByProjectTitleContainingIgnoreCase(String projectTitle);
+    List<ProjectEntity> findByTitleContainingIgnoreCase(String projectTitle);
 }
 

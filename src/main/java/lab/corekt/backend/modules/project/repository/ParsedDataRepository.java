@@ -5,10 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface ParsedDataRepository extends JpaRepository<ParsedDataEntity, Integer> {
-    List<ParsedDataEntity> findByFile_FileId(Integer fileId);
+    List<ParsedDataEntity> findByFile_Id(UUID fileId);
 
     List<ParsedDataEntity> findByContentContainingIgnoreCase(String content);
 }

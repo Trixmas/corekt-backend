@@ -4,9 +4,11 @@ import jakarta.persistence.*;
 import lab.corekt.backend.modules.project.enums.FileType;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -18,33 +20,35 @@ import java.util.List;
 public class FileEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
+    @UuidGenerator
     @Column(name = "file_id")
-    private Integer fileId;
+    private UUID id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private FileType fileType;
+    @Column(name = "file_type", nullable = false)
+    private FileType type;
 
-    @Column(nullable = false, length = 50)
-    private String fileName;
+    @Column(name = "file_name", nullable = false, length = 50)
+    private String name;
 
     @Column(columnDefinition = "bytea")
     private byte[] file;
 
     @ManyToOne
-    @JoinColumn(name = "version_id", referencedColumnName = "version_id", nullable = false, insertable = false, updatable = false)
-    @JoinColumn(name = "project_id", referencedColumnName = "project_id", nullable = false, insertable = false, updatable = false)
+    @JoinColumns({
+            @JoinColumn(name = "version_id", referencedColumnName = "version_id", nullable = false, insertable = false, updatable = false),
+            @JoinColumn(name = "project_id", referencedColumnName = "project_id", nullable = false, insertable = false, updatable = false)
+    })
     private VersionEntity version;
 
     @Column(name = "version_id", nullable = false)
     private Integer versionId;
 
     @Column(name = "project_id", nullable = false)
-    private Integer projectId;
+    private UUID projectId;
 
     @OneToOne(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
-    @PrimaryKeyJoinColumn
     private AIAnalysisEntity aiAnalysis;
 
     @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -54,9 +58,9 @@ public class FileEntity {
     public FileEntity() {
     }
 
-    public FileEntity(FileType fileType, String fileName, Integer versionId, Integer projectId) {
-        this.fileType = fileType;
-        this.fileName = fileName;
+    public FileEntity(FileType fileType, String fileName, Integer versionId, UUID projectId) {
+        this.type = fileType;
+        this.name = fileName;
         this.versionId = versionId;
         this.projectId = projectId;
     }
