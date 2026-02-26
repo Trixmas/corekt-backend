@@ -27,7 +27,6 @@ public class AchievementEntity {
     @OneToMany(mappedBy = "achievement")
     private List<HasAchievementsEntity> achievements;
 
-    // Constructeurs
     public AchievementEntity() {
     }
 
