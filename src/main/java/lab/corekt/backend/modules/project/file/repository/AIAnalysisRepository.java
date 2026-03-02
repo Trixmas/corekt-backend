@@ -1,6 +1,6 @@
-package lab.corekt.backend.modules.project.repository;
+package lab.corekt.backend.modules.project.file.repository;
 
-import lab.corekt.backend.modules.project.entity.AIAnalysisEntity;
+import lab.corekt.backend.modules.project.file.entity.AIAnalysisEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

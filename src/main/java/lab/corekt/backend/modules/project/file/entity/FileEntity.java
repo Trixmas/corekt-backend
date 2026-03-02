@@ -1,11 +1,13 @@
-package lab.corekt.backend.modules.project.entity;
+package lab.corekt.backend.modules.project.file.entity;
 
 import jakarta.persistence.*;
-import lab.corekt.backend.modules.project.enums.FileType;
+import lab.corekt.backend.modules.enums.FileType;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lab.corekt.backend.modules.project.parsedData.entity.ParsedDataEntity;
+import lab.corekt.backend.modules.project.version.entity.VersionEntity;
 
 import java.util.List;
 import java.util.UUID;

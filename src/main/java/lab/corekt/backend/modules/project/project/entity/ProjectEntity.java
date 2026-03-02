@@ -1,4 +1,4 @@
-package lab.corekt.backend.modules.project.entity;
+package lab.corekt.backend.modules.project.project.entity;
 
 import jakarta.persistence.*;
 import lab.corekt.backend.modules.user.entity.UserEntity;
@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lab.corekt.backend.modules.project.version.entity.VersionEntity;
 
 import java.time.LocalDate;
 import java.util.List;

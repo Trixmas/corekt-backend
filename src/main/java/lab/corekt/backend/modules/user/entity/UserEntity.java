@@ -2,7 +2,7 @@ package lab.corekt.backend.modules.user.entity;
 
 import jakarta.persistence.*;
 import lab.corekt.backend.modules.achievement.entity.HasAchievementsEntity;
-import lab.corekt.backend.modules.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.project.entity.ProjectEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
