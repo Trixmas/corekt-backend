@@ -1,12 +1,14 @@
-package lab.corekt.backend.modules.project.entity;
+package lab.corekt.backend.modules.project.version.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lab.corekt.backend.modules.project.enums.Status;
+import lab.corekt.backend.modules.enums.Status;
+import lab.corekt.backend.modules.project.project.entity.ProjectEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lab.corekt.backend.modules.project.file.entity.FileEntity;
 
 import java.util.List;
 

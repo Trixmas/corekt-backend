@@ -1,4 +1,4 @@
-package lab.corekt.backend.modules.project.enums;
+package lab.corekt.backend.modules.enums;
 
 public enum FileType {
     BPMN,

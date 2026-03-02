@@ -1,9 +1,10 @@
-package lab.corekt.backend.modules.project.entity;
+package lab.corekt.backend.modules.project.file.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lab.corekt.backend.modules.project.file.entity.FileEntity;
 
 import java.util.UUID;
 

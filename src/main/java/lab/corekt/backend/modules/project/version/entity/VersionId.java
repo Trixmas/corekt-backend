@@ -1,4 +1,4 @@
-package lab.corekt.backend.modules.project.entity;
+package lab.corekt.backend.modules.project.version.entity;
 
 import java.io.Serializable;
 import java.util.Objects;
