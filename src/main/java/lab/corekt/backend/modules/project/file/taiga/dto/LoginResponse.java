@@ -6,10 +6,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LoginResponse {
-    private boolean ok = true;
+    private String token;
+    private String userId;
 
-    public LoginResponse(boolean ok) {
-        this.ok = ok;
+    public LoginResponse(String token, String userId) {
+        this.token = token;
+        this.userId = userId;
     }
 
     public LoginResponse() {

@@ -26,8 +26,6 @@ class TaigaController {
 
     private final String taigaUrl = "https://api.taiga.io/api/v1";
     private final HttpClient client = HttpClient.newHttpClient();
-    private String taigaToken;
-    private String taigaUserId;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> loginToTaiga(
@@ -43,32 +41,28 @@ class TaigaController {
 //        Make the request to taiga API
             HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             String body = response.body();
-            System.out.println(response.body());
 
             try {
                 String token = JsonUtils.readJson(body, "auth_token");
                 String userId = JsonUtils.readJson(body, "id");
                 if (token == null || userId == null) {
-                    return ResponseEntity.badRequest().body(new LoginResponse(false));
+                    return ResponseEntity.badRequest().body(new LoginResponse());
                 }
-                taigaToken = token;
-                taigaUserId = userId;
+                return ResponseEntity.ok(new LoginResponse(token, userId));
+
             } catch (Exception e) {
-                return ResponseEntity.badRequest().body(new LoginResponse(false));
+                return ResponseEntity.badRequest().body(new LoginResponse());
             }
 
-            return ResponseEntity.ok(new LoginResponse());
         } catch (IOException | InterruptedException e) {
-            return ResponseEntity.status(500).body(new LoginResponse(false));
+            return ResponseEntity.status(500).body(new LoginResponse());
         }
 
     }
 
     @GetMapping("/projects")
-    public ResponseEntity<ProjectResponse> getProjects() {
-        if (taigaToken == null) {
-            return ResponseEntity.badRequest().body(new ProjectResponse());
-        }
+    public ResponseEntity<ProjectResponse> getProjects(@Valid @RequestParam String taigaUserId, @Valid @RequestParam String taigaToken) {
+
 
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder()
@@ -97,10 +91,8 @@ class TaigaController {
     }
 
     @GetMapping("/us")
-    public ResponseEntity<String> getUs(@Valid @RequestParam String projectId) {
-        if (taigaToken == null) {
-            return ResponseEntity.badRequest().body("Unauthorized");
-        }
+    public ResponseEntity<String> getUs(@Valid @RequestParam String projectId, @Valid @RequestParam String taigaToken) {
+
 
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder()
@@ -119,7 +111,7 @@ class TaigaController {
             for (JsonNode n : nn) {
                 String storyId = n.get("id").asText();
                 String subject = n.get("subject").asText();
-                String description = getUserStoryDetails(storyId).asText();
+                String description = getUserStoryDetails(storyId, taigaToken).asText();
                 userStories.put(storyId, subject + ": " + description);
             }
             System.out.println(userStories);
@@ -129,7 +121,7 @@ class TaigaController {
         }
     }
 
-    public JsonNode getUserStoryDetails(String storyId) {
+    public JsonNode getUserStoryDetails(String storyId, String taigaToken) {
         HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(URI.create(taigaUrl + "/userstories/" + storyId))
                 .header("Authorization", "Bearer " + taigaToken)
