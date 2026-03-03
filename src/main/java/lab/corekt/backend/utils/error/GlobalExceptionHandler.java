@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.util.HtmlUtils;
 
 import java.time.Instant;
@@ -24,8 +25,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
-        MethodArgumentNotValidException exception,
-        WebRequest request) {
+            MethodArgumentNotValidException exception,
+            WebRequest request) {
 
         Map<String, String> errors = new HashMap<>();
         exception.getBindingResult().getAllErrors().forEach(error -> {
@@ -36,11 +37,11 @@ public class GlobalExceptionHandler {
         });
 
         ErrorResponse response = new ErrorResponse(
-            HttpStatus.BAD_REQUEST.value(),
-            "Validation failed",
-            errors,
-            sanitizePath(request.getDescription(false)),
-            Instant.now()
+                HttpStatus.BAD_REQUEST.value(),
+                "Validation failed",
+                errors,
+                sanitizePath(request.getDescription(false)),
+                Instant.now()
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
@@ -48,8 +49,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolationException(
-        ConstraintViolationException exception,
-        WebRequest request) {
+            ConstraintViolationException exception,
+            WebRequest request) {
 
         Map<String, String> errors = new HashMap<>();
         exception.getConstraintViolations().forEach(violation -> {
@@ -59,11 +60,11 @@ public class GlobalExceptionHandler {
         });
 
         ErrorResponse response = new ErrorResponse(
-            HttpStatus.BAD_REQUEST.value(),
-            "Constraint violation",
-            errors,
-            sanitizePath(request.getDescription(false)),
-            Instant.now()
+                HttpStatus.BAD_REQUEST.value(),
+                "Constraint violation",
+                errors,
+                sanitizePath(request.getDescription(false)),
+                Instant.now()
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
@@ -71,15 +72,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-        IllegalArgumentException exception,
-        WebRequest request) {
+            IllegalArgumentException exception,
+            WebRequest request) {
 
         ErrorResponse response = new ErrorResponse(
-            HttpStatus.BAD_REQUEST.value(),
-            HtmlUtils.htmlEscape(exception.getMessage()),
-            null,
-            sanitizePath(request.getDescription(false)),
-            Instant.now()
+                HttpStatus.BAD_REQUEST.value(),
+                HtmlUtils.htmlEscape(exception.getMessage()),
+                null,
+                sanitizePath(request.getDescription(false)),
+                Instant.now()
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
@@ -87,35 +88,50 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CommunicationException.class)
     public ResponseEntity<ErrorResponse> handleLdapCommunicationException(
-        CommunicationException exception,
-        WebRequest request) {
+            CommunicationException exception,
+            WebRequest request) {
 
         logger.error("LDAP communication failure: ", exception);
 
         ErrorResponse response = new ErrorResponse(
-            HttpStatus.SERVICE_UNAVAILABLE.value(),
-            "Authentication service is currently unavailable",
-            null,
-            sanitizePath(request.getDescription(false)),
-            Instant.now()
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "Authentication service is currently unavailable",
+                null,
+                sanitizePath(request.getDescription(false)),
+                Instant.now()
         );
 
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
     }
 
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+            NoHandlerFoundException exception,
+            WebRequest request
+    ) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Resource not found",
+                null,
+                sanitizePath(request.getDescription(false)),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
-        Exception exception,
-        WebRequest request) {
+            Exception exception,
+            WebRequest request) {
 
         logger.error("Unhandled exception occurred: ", exception);
 
         ErrorResponse response = new ErrorResponse(
-            HttpStatus.INTERNAL_SERVER_ERROR.value(),
-            "Internal server error",
-            null,
-            sanitizePath(request.getDescription(false)),
-            Instant.now()
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal server error",
+                null,
+                sanitizePath(request.getDescription(false)),
+                Instant.now()
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
