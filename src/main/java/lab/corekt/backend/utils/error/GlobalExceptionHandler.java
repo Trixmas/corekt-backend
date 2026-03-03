@@ -106,7 +106,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
-            NoHandlerFoundException exception,
             WebRequest request
     ) {
         ErrorResponse response = new ErrorResponse(
