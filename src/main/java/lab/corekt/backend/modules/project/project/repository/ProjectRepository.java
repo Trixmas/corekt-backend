@@ -1,11 +1,12 @@
 package lab.corekt.backend.modules.project.project.repository;
 
 import lab.corekt.backend.modules.project.project.entity.ProjectEntity;
+import org.hibernate.validator.constraints.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ProjectRepository extends JpaRepository<ProjectEntity, Integer> {
+public interface ProjectRepository extends JpaRepository<ProjectEntity, UUID> {
 
 }
 
