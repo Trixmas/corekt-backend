@@ -24,7 +24,7 @@ import java.util.Map;
 @RequestMapping("/project/taiga")
 class TaigaController {
 
-    private final String taigaUrl = "https://api.taiga.io/api/v1";
+    private static final String taigaUrl = "https://api.taiga.io/api/v1";
     private final HttpClient client = HttpClient.newHttpClient();
 
     @PostMapping("/login")
