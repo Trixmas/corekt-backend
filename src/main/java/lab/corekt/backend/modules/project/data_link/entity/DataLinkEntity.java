@@ -1,14 +1,13 @@
-package lab.corekt.backend.modules.project.dataLink.entity;
+package lab.corekt.backend.modules.project.data_link.entity;
 
 import jakarta.persistence.*;
 import lab.corekt.backend.modules.enums.MatchType;
 import lab.corekt.backend.modules.enums.Severity;
-import lab.corekt.backend.modules.project.parsedData.entity.ParsedDataEntity;
+import lab.corekt.backend.modules.project.parsed_data.entity.ParsedDataEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 
 import java.util.UUID;
 
@@ -46,11 +45,11 @@ public class DataLinkEntity {
     private String suggestion;
 
     @ManyToOne
-    @JoinColumn(name = "source_parsed_data", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "source_parsed_data_id", nullable = false, insertable = false, updatable = false)
     private ParsedDataEntity sourceParsedData;
 
     @ManyToOne
-    @JoinColumn(name = "target_parsed_data", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "target_parsed_data_id", nullable = false, insertable = false, updatable = false)
     private ParsedDataEntity targetParsedData;
 
     // Constructeurs

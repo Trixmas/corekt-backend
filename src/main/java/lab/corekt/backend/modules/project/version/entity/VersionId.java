@@ -1,17 +1,18 @@
 package lab.corekt.backend.modules.project.version.entity;
 
+import lab.corekt.backend.modules.project.project.entity.ProjectEntity;
+
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.UUID;
 
 public class VersionId implements Serializable {
     private Integer id;
-    private UUID project;
+    private ProjectEntity project;
 
     public VersionId() {
     }
 
-    public VersionId(Integer id, UUID project) {
+    public VersionId(Integer id, ProjectEntity project) {
         this.id = id;
         this.project = project;
     }
@@ -20,8 +21,8 @@ public class VersionId implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        VersionId that = (VersionId) o;
-        return Objects.equals(id, that.id) && Objects.equals(project, that.project);
+        VersionId versionId = (VersionId) o;
+        return Objects.equals(id, versionId.id) && Objects.equals(project.getId(), versionId.project.getId());
     }
 
     @Override

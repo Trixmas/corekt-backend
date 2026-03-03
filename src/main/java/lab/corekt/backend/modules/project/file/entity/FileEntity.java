@@ -2,12 +2,12 @@ package lab.corekt.backend.modules.project.file.entity;
 
 import jakarta.persistence.*;
 import lab.corekt.backend.modules.enums.FileType;
+import lab.corekt.backend.modules.project.parsed_data.entity.ParsedDataEntity;
+import lab.corekt.backend.modules.project.version.entity.VersionEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lab.corekt.backend.modules.project.parsedData.entity.ParsedDataEntity;
-import lab.corekt.backend.modules.project.version.entity.VersionEntity;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,7 +16,7 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "file", uniqueConstraints = {
-        @UniqueConstraint(name = "UniqueFileTypeForVersion", columnNames = {"version_id", "project_id", "fileType"})
+        @UniqueConstraint(name = "UniqueFileTypeForVersion", columnNames = {"version_id", "project_id", "file_type"})
 })
 @EntityListeners(AuditingEntityListener.class)
 public class FileEntity {
@@ -38,8 +38,10 @@ public class FileEntity {
     private byte[] file;
 
     @ManyToOne
-    @JoinColumn(name = "version_id", referencedColumnName = "version_id", nullable = false, insertable = false, updatable = false)
-    @JoinColumn(name = "project_id", referencedColumnName = "project_id", nullable = false, insertable = false, updatable = false)
+    @JoinColumns({
+            @JoinColumn(name = "version_id", referencedColumnName = "version_id", nullable = false, insertable = false, updatable = false),
+            @JoinColumn(name = "project_id", referencedColumnName = "project_id", nullable = false, insertable = false, updatable = false),
+    })
     private VersionEntity version;
 
     @OneToOne(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
