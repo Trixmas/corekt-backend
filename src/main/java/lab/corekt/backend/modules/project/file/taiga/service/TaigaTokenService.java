@@ -81,9 +81,9 @@ public class TaigaTokenService {
     }
 
     /**
-         * Classe interne pour stocker les données du token Taiga
-         */
-        private record TaigaTokenData(String token, String userId) {
+     * Classe interne pour stocker les données du token Taiga
+     */
+    private record TaigaTokenData(String token, String userId) {
     }
 }
 
