@@ -77,9 +77,7 @@ class TaigaController {
             String body = HTTPService.makeRequest(TAIGA_URL + "/projects?member=" + taigaUserId, "GET", "", taigaToken);
             Map<String, String> projects = new HashMap<>();
 
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonObject = mapper.readTree(body);
-            ArrayNode nn = (ArrayNode) jsonObject;
+            ArrayNode nn = JsonUtils.getJsonNodes(body);
             for (JsonNode n : nn) {
                 projects.put(n.get("name").asText(), n.get("id").asText());
             }
@@ -89,6 +87,7 @@ class TaigaController {
             return ResponseEntity.status(500).body(new ProjectResponse());
         }
     }
+
 
     @GetMapping("/us")
     public ResponseEntity<String> getUs(@Valid @RequestParam String projectId) {
@@ -103,9 +102,7 @@ class TaigaController {
 
             Map<String, String> userStories = new HashMap<>();
 
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonObject = mapper.readTree(body);
-            ArrayNode nn = (ArrayNode) jsonObject;
+            ArrayNode nn = JsonUtils.getJsonNodes(body);
             for (JsonNode n : nn) {
                 String storyId = n.get("id").asText();
                 String subject = n.get("subject").asText();
