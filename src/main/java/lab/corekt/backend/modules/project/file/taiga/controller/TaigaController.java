@@ -7,15 +7,12 @@ import jakarta.validation.Valid;
 import lab.corekt.backend.modules.project.file.taiga.dto.LoginRequest;
 import lab.corekt.backend.modules.project.file.taiga.dto.LoginResponse;
 import lab.corekt.backend.modules.project.file.taiga.dto.ProjectResponse;
+import lab.corekt.backend.modules.project.file.taiga.service.HTTPService;
 import lab.corekt.backend.utils.json.JsonUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,38 +21,34 @@ import java.util.Map;
 @RequestMapping("/project/taiga")
 class TaigaController {
 
-    private static final String taigaUrl = "https://api.taiga.io/api/v1";
-    private final HttpClient client = HttpClient.newHttpClient();
+    private static final String TAIGA_URL = "https://api.taiga.io/api/v1";
+
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> loginToTaiga(
             @Valid @RequestBody LoginRequest request
     ) {
+        String responseBody;
+
         try {
-//        Craft the request
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(taigaUrl + "/auth"))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(String.format("{\"password\": \"%s\", \"type\": \"normal\", \"username\": \"%s\"}", request.getPassword(), request.getUsername())))
-                    .build();
-//        Make the request to taiga API
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            String body = response.body();
+            responseBody = HTTPService.makeRequest(TAIGA_URL + "/auth", "POST", String.format("{\"password\": \"%s\", \"type\": \"normal\", \"username\": \"%s\"}", request.getPassword(), request.getUsername()));
+        } catch (IOException | InterruptedException _) {
+            return ResponseEntity.status(500).body(new LoginResponse());
+        }
 
-            try {
-                String token = JsonUtils.readJson(body, "auth_token");
-                String userId = JsonUtils.readJson(body, "id");
-                if (token == null || userId == null) {
-                    return ResponseEntity.badRequest().body(new LoginResponse());
-                }
-                return ResponseEntity.ok(new LoginResponse(token, userId));
-
-            } catch (Exception e) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return ResponseEntity.badRequest().body(new LoginResponse());
+        }
+        try {
+            String token = JsonUtils.readJson(responseBody, "auth_token");
+            String userId = JsonUtils.readJson(responseBody, "id");
+            if (token == null || userId == null) {
                 return ResponseEntity.badRequest().body(new LoginResponse());
             }
+            return ResponseEntity.ok(new LoginResponse(token, userId));
 
-        } catch (IOException | InterruptedException e) {
-            return ResponseEntity.status(500).body(new LoginResponse());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new LoginResponse());
         }
 
     }
@@ -65,15 +58,7 @@ class TaigaController {
 
 
         try {
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(taigaUrl + "/projects?member=" + taigaUserId))
-                    .header("Authorization", "Bearer " + taigaToken)
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            String body = response.body();
-            System.out.println(body);
+            String body = HTTPService.makeRequest(TAIGA_URL + "/projects?member=" + taigaUserId, "GET", "");
 
             Map<String, String> projects = new HashMap<>();
 
@@ -85,7 +70,7 @@ class TaigaController {
             }
 
             return ResponseEntity.ok(new ProjectResponse(projects));
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException _) {
             return ResponseEntity.status(500).body(new ProjectResponse());
         }
     }
@@ -95,13 +80,7 @@ class TaigaController {
 
 
         try {
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(taigaUrl + "/userstories?project=" + projectId))
-                    .header("Authorization", "Bearer " + taigaToken)
-                    .GET()
-                    .build();
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            String body = response.body();
+            String body = HTTPService.makeRequest(TAIGA_URL + "/userstories?project=" + projectId, "GET", "");
 
             Map<String, String> userStories = new HashMap<>();
 
@@ -114,23 +93,16 @@ class TaigaController {
                 String description = getUserStoryDetails(storyId, taigaToken).asText();
                 userStories.put(storyId, subject + ": " + description);
             }
-            System.out.println(userStories);
             return ResponseEntity.ok(userStories.toString());
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException _) {
             return ResponseEntity.status(500).body("Error fetching user stories");
         }
     }
 
     public JsonNode getUserStoryDetails(String storyId, String taigaToken) {
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(taigaUrl + "/userstories/" + storyId))
-                .header("Authorization", "Bearer " + taigaToken)
-                .GET()
-                .build();
 
         try {
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            String res = response.body();
+            String res = HTTPService.makeRequest(TAIGA_URL + "/userstories/" + storyId, "GET", "");
 
 
             ObjectMapper mapper = new ObjectMapper();
