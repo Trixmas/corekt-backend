@@ -1,20 +1,20 @@
-package lab.corekt.backend.modules.project.file.service;
+package lab.corekt.backend.modules.upload.service;
 
 import java.io.IOException;
 import java.util.UUID;
 
+import lab.corekt.backend.modules.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.parsing.enums.FileType;
+import lab.corekt.backend.modules.project.repository.ProjectRepository;
+import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
+import lab.corekt.backend.modules.project.versions.entity.VersionId;
+import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
+import lab.corekt.backend.modules.upload.entity.FileEntity;
+import lab.corekt.backend.modules.upload.repository.FileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.transaction.Transactional;
-import lab.corekt.backend.modules.enums.FileType;
-import lab.corekt.backend.modules.project.file.entity.FileEntity;
-import lab.corekt.backend.modules.project.file.repository.FileRepository;
-import lab.corekt.backend.modules.project.project.entity.ProjectEntity;
-import lab.corekt.backend.modules.project.project.repository.ProjectRepository;
-import lab.corekt.backend.modules.project.version.entity.VersionEntity;
-import lab.corekt.backend.modules.project.version.entity.VersionId;
-import lab.corekt.backend.modules.project.version.repository.VersionRepository;
 
 @Service
 public class FileService {
