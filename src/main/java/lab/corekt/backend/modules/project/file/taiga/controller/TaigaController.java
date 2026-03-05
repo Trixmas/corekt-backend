@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import jakarta.validation.Valid;
-import lab.corekt.backend.modules.project.file.taiga.dto.LoginRequest;
-import lab.corekt.backend.modules.project.file.taiga.dto.LoginResponse;
-import lab.corekt.backend.modules.project.file.taiga.dto.ProjectResponse;
-import lab.corekt.backend.modules.project.file.taiga.dto.UsResponse;
+import lab.corekt.backend.modules.project.file.taiga.dto.*;
 import lab.corekt.backend.modules.project.file.taiga.service.HTTPService;
 import lab.corekt.backend.modules.project.file.taiga.service.TaigaTokenService;
 import lab.corekt.backend.utils.json.JsonUtils;
@@ -100,7 +97,7 @@ class TaigaController {
         }
 
         try {
-            java.util.List<String> userStories = new java.util.ArrayList<>();
+            java.util.List<US> userStories = new java.util.ArrayList<>();
 
             System.out.printf("Fetching user stories from Taiga (project: %s)%n", projectId);
 
@@ -127,7 +124,7 @@ class TaigaController {
                         String description = getUserStoryDetails(storyId, taigaToken).asText();
                         //TODO: enregistrer en bd
 //                        TODO: faire un objet json de l'US
-                        userStories.add(subject + ": " + description);
+                        userStories.add(new US(subject, description));
                     } catch (Exception e) {
                         System.err.println("Error processing user story: " + e.getMessage());
                     }

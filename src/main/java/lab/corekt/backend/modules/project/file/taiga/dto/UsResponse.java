@@ -9,17 +9,17 @@ import java.util.List;
 @Getter
 @Setter
 public class UsResponse {
-    private List<String> usList;
+    private List<US> usList;
     private boolean success;
     private String message;
 
-    public UsResponse(List<String> usList) {
+    public UsResponse(List<US> usList) {
         this.usList = usList;
         this.success = usList != null;
         this.message = null;
     }
 
-    public UsResponse(List<String> usList, boolean success, String errorMessage) {
+    public UsResponse(List<US> usList, boolean success, String errorMessage) {
         this.usList = usList;
         this.success = success;
         this.message = errorMessage;
