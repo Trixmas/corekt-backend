@@ -7,15 +7,19 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 /**
  * Service class for making HTTP requests
  */
 @Service
 public class HTTPService {
-    private static final HttpClient client = HttpClient.newHttpClient();
+    private static final HttpClient client = HttpClient.newHttpClient(
+
+    );
 
     private HTTPService() {
+
     }
 
     /**
@@ -51,6 +55,24 @@ public class HTTPService {
         return sendRequest(request).body();
     }
 
+    /**
+     * Make an HTTP authenticated request with custom headers
+     *
+     * @param url       the URL to make the request to
+     * @param method    the HTTP method to use (e.g., "GET", "POST", etc.)
+     * @param body      the body of the request (for POST, PUT, etc.)
+     * @param authToken the authentication token for the request
+     * @param headers   additional headers as key-value pairs
+     * @return the response body as a string
+     * @throws IOException          if an I/O error occurs
+     * @throws InterruptedException if the request is interrupted
+     */
+    public static String makeRequest(String url, String method, String body, String authToken, java.util.Map<String, String> headers) throws IOException, InterruptedException {
+
+        HttpRequest request = createRequest(url, method, body, authToken, headers);
+        return sendRequest(request).body();
+    }
+
 
     /**
      * Create an HTTP request with the given URL, method, and body
@@ -65,6 +87,7 @@ public class HTTPService {
                 .uri(URI.create(url))
                 .method(method, HttpRequest.BodyPublishers.ofString(body))
                 .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(120))
                 .build();
     }
 
@@ -84,7 +107,36 @@ public class HTTPService {
                 .method(method, HttpRequest.BodyPublishers.ofString(body))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + authToken)
+                .timeout(Duration.ofSeconds(120))
                 .build();
+    }
+
+    /**
+     * Create an HTTP authenticated request with custom headers
+     *
+     * @param url       the url of the request
+     * @param method    the method of the request
+     * @param body      the body of the request
+     * @param authToken the authentication token for the request
+     * @param headers   additional headers as key-value pairs
+     * @return the created HttpRequest object
+     */
+    public static HttpRequest createRequest(String url, String method, String body, String authToken, java.util.Map<String, String> headers) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .method(method, HttpRequest.BodyPublishers.ofString(body))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + authToken)
+                .timeout(Duration.ofSeconds(120));
+
+        // Add custom headers
+        if (headers != null) {
+            for (java.util.Map.Entry<String, String> entry : headers.entrySet()) {
+                builder.header(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return builder.build();
     }
 
 

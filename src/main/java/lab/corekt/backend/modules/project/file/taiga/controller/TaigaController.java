@@ -111,23 +111,40 @@ class TaigaController {
         }
 
         try {
-            String body = HTTPService.makeRequest(TAIGA_URL + "/userstories?project=" + projectId, "GET", "", taigaToken);
-
-            ArrayNode nn = JsonUtils.getJsonNodes(body);
-            if (nn == null || nn.isEmpty()) {
-                return ResponseEntity.ok(new UsResponse(new java.util.ArrayList<>(), true, null));
-            }
-
             java.util.List<String> userStories = new java.util.ArrayList<>();
 
-            for (JsonNode n : nn) {
-                try {
-                    String storyId = n.get("id").asText();
-                    String subject = n.get("subject").asText();
-                    String description = getUserStoryDetails(storyId, taigaToken).asText();
-                    userStories.add(subject + ": " + description);
-                } catch (Exception e) {
-                    System.err.println("Error processing user story: " + e.getMessage());
+            System.out.printf("Fetching user stories from Taiga (project: %s)%n", projectId);
+            String url = String.format("%s/userstories?project=%s",
+                    TAIGA_URL, projectId);
+
+            // Create headers map with x-disable-pagination
+            Map<String, String> headers = new HashMap<>();
+            headers.put("x-disable-pagination", "True");
+
+            String body = HTTPService.makeRequest(url, "GET", "", taigaToken, headers);
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode responseNode = mapper.readTree(body);
+
+            // The API returns a direct array, not wrapped in 'results'
+            ArrayNode results;
+            if (responseNode.isArray()) {
+                results = (ArrayNode) responseNode;
+            } else {
+                // Fallback for paginated response format with 'results' property
+                results = (ArrayNode) responseNode.get("results");
+            }
+
+            if (results != null && !results.isEmpty()) {
+                for (JsonNode n : results) {
+                    try {
+                        String storyId = n.get("id").asText();
+                        String subject = n.get("subject").asText();
+                        String description = getUserStoryDetails(storyId, taigaToken).asText();
+                        userStories.add(subject + ": " + description);
+                    } catch (Exception e) {
+                        System.err.println("Error processing user story: " + e.getMessage());
+                    }
                 }
             }
 
