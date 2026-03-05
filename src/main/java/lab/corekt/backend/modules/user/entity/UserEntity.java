@@ -2,12 +2,14 @@ package lab.corekt.backend.modules.user.entity;
 
 import jakarta.persistence.*;
 import lab.corekt.backend.modules.achievement.entity.HasAchievementsEntity;
-import lab.corekt.backend.modules.project.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -17,7 +19,12 @@ import java.util.List;
 public class UserEntity {
 
     @Id
-    @Column(updatable = false, nullable = false)
+    @UuidGenerator
+    @GeneratedValue
+    @Column
+    private UUID id;
+
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = false, length = 50)
