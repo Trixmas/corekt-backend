@@ -1,6 +1,5 @@
 package lab.corekt.backend.modules.auth;
 
-import jakarta.inject.Inject;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.service.UserService;
 import org.junit.jupiter.api.AfterEach;
