@@ -1,154 +1,61 @@
 package lab.corekt.backend.modules.project.file.taiga.service;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.util.Map;
 
 /**
- * Service class for making HTTP requests
+ * Service class for making HTTP requests to the Taiga API using Spring's RestClient
  */
 @Service
 public class HTTPService {
-    private static final HttpClient client = HttpClient.newHttpClient(
 
-    );
+    private static final String TAIGA_URL = "https://api.taiga.io/api/v1";
 
-    private HTTPService() {
+    private final RestClient restClient;
 
-    }
-
-    /**
-     * Make an HTTP request to the given URL with the specified method and body
-     *
-     * @param url    the URL to make the request to
-     * @param method the HTTP method to use (e.g., "GET", "POST", etc.)
-     * @param body   the body of the request (for POST, PUT, etc.)
-     * @return the response body as a string
-     * @throws IOException          if an I/O error occurs
-     * @throws InterruptedException if the request is interrupted
-     */
-    public static String makeRequest(String url, String method, String body) throws IOException, InterruptedException {
-
-        HttpRequest request = createRequest(url, method, body);
-        return sendRequest(request).body();
-    }
-
-    /**
-     * Make an HTTP authenticated request to the given URL with the specified method and body
-     *
-     * @param url       the URL to make the request to
-     * @param method    the HTTP method to use (e.g., "GET", "POST", etc.)
-     * @param body      the body of the request (for POST, PUT, etc.)
-     * @param authToken the authentication token for the request
-     * @return the response body as a string
-     * @throws IOException          if an I/O error occurs
-     * @throws InterruptedException if the request is interrupted
-     */
-    public static String makeRequest(String url, String method, String body, String authToken) throws IOException, InterruptedException {
-
-        HttpRequest request = createRequest(url, method, body, authToken);
-        return sendRequest(request).body();
-    }
-
-    /**
-     * Make an HTTP authenticated request with custom headers
-     *
-     * @param url       the URL to make the request to
-     * @param method    the HTTP method to use (e.g., "GET", "POST", etc.)
-     * @param body      the body of the request (for POST, PUT, etc.)
-     * @param authToken the authentication token for the request
-     * @param headers   additional headers as key-value pairs
-     * @return the response body as a string
-     * @throws IOException          if an I/O error occurs
-     * @throws InterruptedException if the request is interrupted
-     */
-    public static String makeRequest(String url, String method, String body, String authToken, java.util.Map<String, String> headers) throws IOException, InterruptedException {
-
-        HttpRequest request = createRequest(url, method, body, authToken, headers);
-        return sendRequest(request).body();
-    }
-
-
-    /**
-     * Create an HTTP request with the given URL, method, and body
-     *
-     * @param url    the url of the request
-     * @param method the method of the request
-     * @param body   the body of the request
-     * @return the created HttpRequest object
-     */
-    public static HttpRequest createRequest(String url, String method, String body) {
-        return HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .method(method, HttpRequest.BodyPublishers.ofString(body))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(120))
-                .build();
-    }
-
-
-    /**
-     * Create an HTTP authenticated request with the given URL, method, and body
-     *
-     * @param url       the url of the request
-     * @param method    the method of the request
-     * @param body      the body of the request
-     * @param authToken the authentication token for the request
-     * @return the created HttpRequest object
-     */
-    public static HttpRequest createRequest(String url, String method, String body, String authToken) {
-        return HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .method(method, HttpRequest.BodyPublishers.ofString(body))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + authToken)
-                .timeout(Duration.ofSeconds(120))
+    public HTTPService(RestClient.Builder restClientBuilder) {
+        this.restClient = restClientBuilder
+                .baseUrl(TAIGA_URL)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
 
     /**
-     * Create an HTTP authenticated request with custom headers
+     * Make a GET request to the given path.
      *
-     * @param url       the url of the request
-     * @param method    the method of the request
-     * @param body      the body of the request
-     * @param authToken the authentication token for the request
-     * @param headers   additional headers as key-value pairs
-     * @return the created HttpRequest object
+     * @param path      the API path (e.g. "/projects")
+     * @param authToken Bearer authentication token
+     * @param headers   optional additional headers
+     * @return the response body as a string
      */
-    public static HttpRequest createRequest(String url, String method, String body, String authToken, java.util.Map<String, String> headers) {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .method(method, HttpRequest.BodyPublishers.ofString(body))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + authToken)
-                .timeout(Duration.ofSeconds(120));
+    public String get(String path, String authToken, @Nullable Map<String, String> headers) {
+        var spec = restClient.get().uri(path)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + authToken);
 
-        // Add custom headers
         if (headers != null) {
-            for (java.util.Map.Entry<String, String> entry : headers.entrySet()) {
-                builder.header(entry.getKey(), entry.getValue());
-            }
+            headers.forEach(spec::header);
         }
 
-        return builder.build();
+        return spec.retrieve().body(String.class);
     }
 
-
     /**
-     * Send an HTTP request and return the response body
+     * Make a POST request to the given path.
      *
-     * @param request the HTTP request to send
+     * @param path the API path (e.g. "/auth")
+     * @param body the JSON body as a string
      * @return the response body as a string
-     * @throws IOException          if an I/O error occurs
-     * @throws InterruptedException if the request is interrupted
      */
-    public static HttpResponse<String> sendRequest(HttpRequest request) throws IOException, InterruptedException {
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    public String post(String path, String body) {
+        return restClient.post().uri(path)
+                .body(body)
+                .retrieve()
+                .body(String.class);
     }
 }

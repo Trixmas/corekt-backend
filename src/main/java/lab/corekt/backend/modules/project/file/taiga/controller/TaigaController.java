@@ -14,7 +14,6 @@ import lab.corekt.backend.utils.json.JsonUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,12 +22,12 @@ import java.util.Map;
 @RequestMapping("/project/taiga")
 class TaigaController {
 
-    private static final String TAIGA_URL = "https://api.taiga.io/api/v1";
-
     private final TaigaTokenService taigaTokenService;
+    private final HTTPService httpService;
 
-    public TaigaController(TaigaTokenService taigaTokenService) {
+    public TaigaController(TaigaTokenService taigaTokenService, HTTPService httpService) {
         this.taigaTokenService = taigaTokenService;
+        this.httpService = httpService;
     }
 
 
@@ -36,28 +35,22 @@ class TaigaController {
     public ResponseEntity<LoginResponse> loginToTaiga(
             @Valid @RequestBody LoginRequest request
     ) {
-        String responseBody;
-
         try {
-            responseBody = HTTPService.makeRequest(TAIGA_URL + "/auth", "POST", String.format("{\"password\": \"%s\", \"type\": \"normal\", \"username\": \"%s\"}", request.getPassword(), request.getUsername()));
-        } catch (IOException e) {
-            return ResponseEntity.status(500).body(new LoginResponse(false, "Failed to connect to Taiga: " + e.getMessage()));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResponseEntity.status(500).body(new LoginResponse(false, "Request to Taiga was interrupted"));
-        }
+            String responseBody = httpService.post(
+                    "/auth",
+                    String.format("{\"password\": \"%s\", \"type\": \"normal\", \"username\": \"%s\"}", request.getPassword(), request.getUsername())
+            );
 
-        if (responseBody == null || responseBody.isBlank()) {
-            return ResponseEntity.badRequest().body(new LoginResponse(false, "Invalid response from Taiga"));
-        }
-        try {
+            if (responseBody == null || responseBody.isBlank()) {
+                return ResponseEntity.badRequest().body(new LoginResponse(false, "Invalid response from Taiga"));
+            }
+
             String token = JsonUtils.readJson(responseBody, "auth_token");
             String userId = JsonUtils.readJson(responseBody, "id");
             if (token == null || userId == null) {
                 return ResponseEntity.badRequest().body(new LoginResponse(false, "Invalid credentials or missing token"));
             }
 
-            // Store the token server-side
             taigaTokenService.storeTaigaToken(token, userId);
 
             return ResponseEntity.ok(new LoginResponse(true, "Successfully logged in to Taiga"));
@@ -65,7 +58,6 @@ class TaigaController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(new LoginResponse(false, "An error occurred: " + e.getMessage()));
         }
-
     }
 
     @GetMapping("/projects")
@@ -78,7 +70,7 @@ class TaigaController {
         }
 
         try {
-            String body = HTTPService.makeRequest(TAIGA_URL + "/projects?member=" + taigaUserId, "GET", "", taigaToken);
+            String body = httpService.get("/projects?member=" + taigaUserId, taigaToken, null);
             Map<String, String> projects = new HashMap<>();
 
             ArrayNode nn = JsonUtils.getJsonNodes(body);
@@ -93,11 +85,8 @@ class TaigaController {
             }
 
             return ResponseEntity.ok(new ProjectResponse(projects));
-        } catch (IOException e) {
+        } catch (Exception e) {
             return ResponseEntity.status(500).body(new ProjectResponse(false, "Failed to fetch projects from Taiga: " + e.getMessage()));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResponseEntity.status(500).body(new ProjectResponse(false, "Request to Taiga was interrupted"));
         }
     }
 
@@ -114,24 +103,19 @@ class TaigaController {
             java.util.List<String> userStories = new java.util.ArrayList<>();
 
             System.out.printf("Fetching user stories from Taiga (project: %s)%n", projectId);
-            String url = String.format("%s/userstories?project=%s",
-                    TAIGA_URL, projectId);
 
-            // Create headers map with x-disable-pagination
             Map<String, String> headers = new HashMap<>();
             headers.put("x-disable-pagination", "True");
 
-            String body = HTTPService.makeRequest(url, "GET", "", taigaToken, headers);
+            String body = httpService.get("/userstories?project=" + projectId, taigaToken, headers);
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode responseNode = mapper.readTree(body);
 
-            // The API returns a direct array, not wrapped in 'results'
             ArrayNode results;
             if (responseNode.isArray()) {
                 results = (ArrayNode) responseNode;
             } else {
-                // Fallback for paginated response format with 'results' property
                 results = (ArrayNode) responseNode.get("results");
             }
 
@@ -141,6 +125,8 @@ class TaigaController {
                         String storyId = n.get("id").asText();
                         String subject = n.get("subject").asText();
                         String description = getUserStoryDetails(storyId, taigaToken).asText();
+                        //TODO: enregistrer en bd
+//                        TODO: faire un objet json de l'US
                         userStories.add(subject + ": " + description);
                     } catch (Exception e) {
                         System.err.println("Error processing user story: " + e.getMessage());
@@ -149,25 +135,18 @@ class TaigaController {
             }
 
             return ResponseEntity.ok(new UsResponse(userStories));
-        } catch (IOException e) {
+        } catch (Exception e) {
             return ResponseEntity.status(500).body(new UsResponse(null, false, "Failed to fetch user stories from Taiga: " + e.getMessage()));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResponseEntity.status(500).body(new UsResponse(null, false, "Request to Taiga was interrupted"));
         } finally {
             taigaTokenService.removeTaigaToken();
         }
     }
 
     private JsonNode getUserStoryDetails(String storyId, String taigaToken) {
-
         try {
-            String res = HTTPService.makeRequest(TAIGA_URL + "/userstories/" + storyId, "GET", "", taigaToken);
-
-
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readTree(res).get("description");
-        } catch (IOException | InterruptedException _) {
+            String res = httpService.get("/userstories/" + storyId, taigaToken, null);
+            return new ObjectMapper().readTree(res).get("description");
+        } catch (Exception e) {
             return new ObjectMapper().createObjectNode();
         }
     }
