@@ -28,7 +28,7 @@ public class LdapConfig {
         contextSource.setBase(ldapBase);
         contextSource.setUserDn(ldapUserDn);
         contextSource.setPassword(ldapPassword);
-        contextSource.setPooled(true);
+        contextSource.setPooled(false);
         contextSource.afterPropertiesSet();
         return contextSource;
     }
