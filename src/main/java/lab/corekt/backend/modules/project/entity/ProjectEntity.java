@@ -42,19 +42,24 @@ public class ProjectEntity {
 
     protected ProjectEntity() {
         this.createdAt = LocalDate.now();
+        addFirstVersion();
     }
 
     public ProjectEntity(String title, UserEntity owner) {
         this.title = title;
         this.owner = owner;
         this.createdAt = LocalDate.now();
-        VersionEntity firstVersion = new VersionEntity("Première version");
-        addVersion(firstVersion);
+        addFirstVersion();
     }
 
     public void addVersion(VersionEntity version) {
         versions.add(version);
         version.setProject(this);
+    }
+
+    public void addFirstVersion() {
+        VersionEntity firstVersion = new VersionEntity("Première version");
+        addVersion(firstVersion);
     }
 }
 
