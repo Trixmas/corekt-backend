@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class VersionRequest {
+public class VersionCreateRequest {
     @NotBlank(message = "Title is required")
     private String title;
 
