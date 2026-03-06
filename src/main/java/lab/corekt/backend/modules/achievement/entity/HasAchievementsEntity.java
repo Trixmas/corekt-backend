@@ -63,12 +63,8 @@ public class HasAchievementsEntity {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
             HasAchievementsId that = (HasAchievementsId) o;
             return Objects.equals(user, that.user) && Objects.equals(achievement, that.achievement);
         }
