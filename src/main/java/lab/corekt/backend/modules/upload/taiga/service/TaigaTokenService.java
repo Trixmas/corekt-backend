@@ -1,4 +1,4 @@
-package lab.corekt.backend.modules.project.file.taiga.service;
+package lab.corekt.backend.modules.upload.taiga.service;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

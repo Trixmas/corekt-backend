@@ -1,4 +1,4 @@
-package lab.corekt.backend.modules.project.file.taiga.service;
+package lab.corekt.backend.modules.upload.taiga.service;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;

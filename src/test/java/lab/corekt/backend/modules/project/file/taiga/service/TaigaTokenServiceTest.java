@@ -1,5 +1,6 @@
 package lab.corekt.backend.modules.project.file.taiga.service;
 
+import lab.corekt.backend.modules.upload.taiga.service.TaigaTokenService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
