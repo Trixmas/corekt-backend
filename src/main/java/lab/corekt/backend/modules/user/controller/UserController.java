@@ -37,7 +37,6 @@ public class UserController {
         userDetails.setUsername(user.getUsername());
         userDetails.setEmail(user.getEmail());
 
-
         return ResponseEntity.ok(userDetails);
     }
 }
