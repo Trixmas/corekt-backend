@@ -1,38 +1,24 @@
 package lab.corekt.backend.modules.upload.taiga.controller;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
 import jakarta.validation.Valid;
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
-import lab.corekt.backend.modules.upload.taiga.dto.LoginRequest;
-import lab.corekt.backend.modules.upload.taiga.dto.LoginResponse;
-import lab.corekt.backend.modules.upload.taiga.dto.ProjectResponse;
-import lab.corekt.backend.modules.upload.taiga.dto.TaigaCredentials;
-import lab.corekt.backend.modules.upload.taiga.dto.US;
-import lab.corekt.backend.modules.upload.taiga.dto.UsResponse;
+import lab.corekt.backend.modules.upload.taiga.dto.*;
 import lab.corekt.backend.modules.upload.taiga.service.TaigaService;
 import lab.corekt.backend.modules.upload.taiga.service.TaigaTokenService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/project/{projectId}/{versionId}/taiga")
+@RequestMapping("/project/{projectId}/versions/{versionId}/taiga")
 class TaigaController {
 
     private final TaigaTokenService taigaTokenService;
@@ -42,7 +28,7 @@ class TaigaController {
     private final AuthContext authContext;
 
     TaigaController(TaigaTokenService taigaTokenService, TaigaService taigaService, ProjectRepository projectRepository,
-            VersionRepository versionRepository, AuthContext authContext) {
+                    VersionRepository versionRepository, AuthContext authContext) {
         this.taigaTokenService = taigaTokenService;
         this.taigaService = taigaService;
         this.projectRepository = projectRepository;
@@ -82,7 +68,7 @@ class TaigaController {
 
     @GetMapping("/us")
     public ResponseEntity<UsResponse> getUs(@Valid @PathVariable UUID projectId, @Valid @PathVariable Integer versionId,
-            @Valid @RequestParam String taigaProjectId) {
+                                            @Valid @RequestParam String taigaProjectId) {
 
         String taigaToken = taigaTokenService.getTaigaToken();
         if (taigaToken == null) {
@@ -114,13 +100,4 @@ class TaigaController {
             taigaTokenService.removeTaigaToken();
         }
     }
-
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<UsResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String msg = String.format("Invalid value '%s' for parameter '%s': expected %s",
-                ex.getValue(), ex.getName(),
-                ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown type");
-        return ResponseEntity.badRequest().body(new UsResponse(null, false, msg));
-    }
-
 }
