@@ -1,4 +1,4 @@
-package lab.corekt.backend.modules.project.file.taiga.dto;
+package lab.corekt.backend.modules.upload.taiga.dto;
 
 import lombok.Getter;
 
