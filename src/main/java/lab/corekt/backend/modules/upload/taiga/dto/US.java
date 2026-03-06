@@ -4,10 +4,13 @@ import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Objects;
+
 @Getter
 @Setter
 public class US {
-    private static final String TO_STRING_TEMPLATE = "US: {title = %s, description = %s}";
+    private static final String TO_STRING_TEMPLATE = "US: {title = %s}";
+    private static final String TO_STRING_COMPLETE_TEMPLATE = "US: {title = %s, description = %s}";
     private String title;
     private String description;
 
@@ -23,7 +26,7 @@ public class US {
     }
 
     private String formatContent() {
-        return TO_STRING_TEMPLATE.formatted(title, description);
+        return Objects.equals(description, "") ? String.format(TO_STRING_TEMPLATE, title) : String.format(TO_STRING_COMPLETE_TEMPLATE, title, description);
     }
 
 

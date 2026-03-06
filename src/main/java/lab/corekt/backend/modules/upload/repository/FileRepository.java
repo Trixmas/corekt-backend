@@ -12,4 +12,6 @@ import java.util.UUID;
 @Repository
 public interface FileRepository extends JpaRepository<FileEntity, UUID> {
     Optional<FileEntity> findByTypeAndVersion(FileType type, VersionEntity version);
+
+
 }
