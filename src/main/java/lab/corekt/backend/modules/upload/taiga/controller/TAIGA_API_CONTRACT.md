@@ -2,7 +2,7 @@
 
 Concerned Module: **Taiga Integration**  
 API Version: **V1** (protected with `Authorization: Bearer <token>`)  
-Base Path: `/project/taiga`
+Base Path: `/project/{projectId}/versions/{versionId}/taiga`
 
 ## Authentication
 
@@ -14,10 +14,15 @@ The Taiga authentication token is stored server-side after login.
 
 ---
 
-## Endpoint: POST - /project/taiga/login
+## Endpoint: POST - /project/{projectId}/versions/{versionId}/taiga/login
 
 **Description:** Authenticate with Taiga.io and establish a session. This endpoint stores the Taiga authentication token
 server-side for subsequent API calls.
+
+**Path Parameters:**
+
+* `projectId` (required): UUID of the project
+* `versionId` (required): Integer ID of the version
 
 **Headers:**
 
@@ -73,9 +78,14 @@ server-side for subsequent API calls.
 
 ---
 
-## Endpoint: GET - /project/taiga/projects
+## Endpoint: GET - /project/{projectId}/versions/{versionId}/taiga/projects
 
 **Description:** Retrieve the list of Taiga projects accessible by the authenticated user.
+
+**Path Parameters:**
+
+* `projectId` (required): UUID of the project
+* `versionId` (required): Integer ID of the version
 
 **Headers:**
 
@@ -90,7 +100,7 @@ server-side for subsequent API calls.
 **Prerequisites:**
 
 * Valid JWT token in Authorization header
-* User must be authenticated via `/project/taiga/login` endpoint
+* User must be authenticated via `/project/{projectId}/versions/{versionId}/taiga/login` endpoint
 
 **Response payload (`200`):**
 
@@ -128,11 +138,16 @@ server-side for subsequent API calls.
 
 ---
 
-## Endpoint: GET - /project/taiga/us
+## Endpoint: GET - /project/{projectId}/versions/{versionId}/taiga/us
 
 **Description:** Retrieve user stories for a specific Taiga project. This endpoint fetches all user stories associated
 with the given project ID, including their subjects and descriptions. The authentication token is removed from the
 server after this request completes.
+
+**Path Parameters:**
+
+* `projectId` (required): UUID of the project
+* `versionId` (required): Integer ID of the version
 
 **Headers:**
 
@@ -143,21 +158,24 @@ server after this request completes.
 * `200` OK
 * `400` Bad Request
 * `401` Unauthorized (invalid/missing JWT token OR not authenticated with Taiga)
+* `404` Not Found (project or version not found)
 * `500` Internal Server Error
 
 **Query Parameters:**
 
-* `projectId` (required): The Taiga project ID to fetch user stories from
+* `taigaProjectId` (required): The Taiga project ID to fetch user stories from
 
 **Prerequisites:**
 
 * Valid JWT token in Authorization header
-* User must be authenticated via `/project/taiga/login` endpoint
+* User must be authenticated via `/project/{projectId}/versions/{versionId}/taiga/login` endpoint
+* User must be the owner of the project
+* Version must belong to the specified project
 
 **Example Request:**
 
 ```
-GET /project/taiga/us?projectId=123456
+GET /project/123e4567-e89b-12d3-a456-426614174000/versions/1/taiga/us?taigaProjectId=123456
 ```
 
 **Response payload (`200`):**
@@ -165,9 +183,18 @@ GET /project/taiga/us?projectId=123456
 ```json
 {
   "usList": [
-    "User Registration: As a user, I want to register an account so that I can access the platform",
-    "Dashboard View: As a user, I want to view my dashboard with project statistics",
-    "Export Data: As an admin, I want to export user data to CSV format"
+    {
+      "title": "User Registration",
+      "description": "As a user, I want to register an account so that I can access the platform"
+    },
+    {
+      "title": "Dashboard View",
+      "description": "As a user, I want to view my dashboard with project statistics"
+    },
+    {
+      "title": "Export Data",
+      "description": "As an admin, I want to export user data to CSV format"
+    }
   ],
   "success": true,
   "message": null
@@ -180,7 +207,7 @@ GET /project/taiga/us?projectId=123456
 {
   "usList": null,
   "success": false,
-  "message": "projectId parameter is required"
+  "message": "taigaProjectId parameter is required"
 }
 ```
 
@@ -191,6 +218,26 @@ GET /project/taiga/us?projectId=123456
   "usList": null,
   "success": false,
   "message": "Not authenticated with Taiga. Please login first."
+}
+```
+
+**Response payload (`404`):**
+
+```json
+{
+  "usList": null,
+  "success": false,
+  "message": "Project not found"
+}
+```
+
+OR
+
+```json
+{
+  "usList": null,
+  "success": false,
+  "message": "Version not found"
 }
 ```
 
@@ -216,7 +263,10 @@ GET /project/taiga/us?projectId=123456
 
 ### Data Format
 
-* User stories are returned as a concatenated string: `"<subject>: <description>"`
+* User stories are returned as objects with `title` and `description` properties
+* Each US object has:
+    * `title`: The subject/title of the user story
+    * `description`: The full description of the user story
 * Project data is returned as a map with project names as keys and project IDs as values
 * All timestamps and IDs from Taiga are preserved in their original format
 
@@ -225,6 +275,7 @@ GET /project/taiga/us?projectId=123456
 * Connection errors to Taiga API return `500` status codes
 * Authentication issues return `401` status codes
 * Invalid request data returns `400` status codes
+* Resource not found (project/version) returns `404` status codes
 * Interrupted requests are handled gracefully with appropriate error messages
 
 
