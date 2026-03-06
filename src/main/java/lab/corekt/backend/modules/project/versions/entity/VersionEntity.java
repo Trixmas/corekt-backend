@@ -1,32 +1,37 @@
 package lab.corekt.backend.modules.project.versions.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import lab.corekt.backend.modules.project.parsing.enums.Status;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.parsing.enums.Status;
+import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lab.corekt.backend.modules.upload.entity.FileEntity;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "version")
+@Table(name = "version", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"project_id", "version_number"})
+})
 @EntityListeners(AuditingEntityListener.class)
-@IdClass(VersionId.class)
 public class VersionEntity {
 
     @Id
-    @Column(name = "version_id")
-    @Min(1)
-    @Max(10)
-    private Integer id = 1;
+    @GeneratedValue
+    @UuidGenerator
+    private UUID id;
 
-    @Id
+    @Column(nullable = false)
+    private Integer versionNumber;
+
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
     private ProjectEntity project;
@@ -47,8 +52,15 @@ public class VersionEntity {
     @OneToMany(mappedBy = "version", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileEntity> files;
 
-    // Constructeurs
-    public VersionEntity() {
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
+
+    protected VersionEntity() {
         this.status = Status.DRAFT;
     }
 
@@ -56,12 +68,5 @@ public class VersionEntity {
         this.project = project;
         this.title = title;
         this.status = Status.DRAFT;
-    }
-
-    //    "Trigger" to give versionId
-    @PrePersist
-    public void setVersionId() {
-        List<VersionEntity> versions = this.project.getVersions();
-        this.id = versions.size() + 1;
     }
 }
