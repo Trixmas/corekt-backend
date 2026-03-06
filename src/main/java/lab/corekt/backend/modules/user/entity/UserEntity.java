@@ -24,7 +24,7 @@ public class UserEntity {
     @Id
     @UuidGenerator
     @GeneratedValue
-    @Column
+    @Column(name = "user_id")
     private UUID id;
 
     @Column(unique = true, nullable = false)
