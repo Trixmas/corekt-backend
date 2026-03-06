@@ -4,10 +4,12 @@ import jakarta.persistence.*;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -29,8 +31,13 @@ public class HasAchievementsEntity {
     @JoinColumn(name = "achievement_name", nullable = false)
     private AchievementEntity achievement;
 
-    @Column
-    private LocalDate acquiredDate;
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
 
     public HasAchievementsEntity() {
     }
@@ -38,16 +45,13 @@ public class HasAchievementsEntity {
     public HasAchievementsEntity(UserEntity user, AchievementEntity achievement) {
         this.user = user;
         this.achievement = achievement;
-        this.acquiredDate = LocalDate.now();
     }
-
 
     @Getter
     @Setter
     public static class HasAchievementsId implements Serializable {
-        private UUID user; // ID type of UserEntity
-
-        private String achievement; // ID type of AchievementEntity
+        private UUID user;
+        private String achievement;
 
         public HasAchievementsId() {
         }

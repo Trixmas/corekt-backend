@@ -65,8 +65,10 @@ public class AuthController {
         Long expiresAt = jwtService.computeExpirationTime(issuedAt);
 
         UserDetails userDetails = new UserDetails();
+        userDetails.setId(user.getId());
         userDetails.setUsername(user.getUsername());
         userDetails.setEmail(user.getEmail());
+        userDetails.setMistralToken(user.getMistralToken());
 
         LoginResponse response = createLoginResponse(token, expiresAt, userDetails);
 
