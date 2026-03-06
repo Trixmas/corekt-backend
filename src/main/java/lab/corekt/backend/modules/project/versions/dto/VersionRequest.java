@@ -1,4 +1,4 @@
-package lab.corekt.backend.modules.project.version.dto;
+package lab.corekt.backend.modules.project.versions.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
