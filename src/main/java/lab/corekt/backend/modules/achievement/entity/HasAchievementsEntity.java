@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -44,26 +45,22 @@ public class HasAchievementsEntity {
     @Getter
     @Setter
     public static class HasAchievementsId implements Serializable {
-        private String user; // Must match property name in HasAchievementsEntity, but type is the ID type of UserEntity (email is String)
+        private UUID user; // ID type of UserEntity
 
-        private String achievement; // Must match property name in HasAchievementsEntity, but type is the ID type of AchievementEntity
+        private String achievement; // ID type of AchievementEntity
 
         public HasAchievementsId() {
         }
 
-        public HasAchievementsId(String user, String achievement) {
+        public HasAchievementsId(UUID user, String achievement) {
             this.user = user;
             this.achievement = achievement;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
             HasAchievementsId that = (HasAchievementsId) o;
             return Objects.equals(user, that.user) && Objects.equals(achievement, that.achievement);
         }
