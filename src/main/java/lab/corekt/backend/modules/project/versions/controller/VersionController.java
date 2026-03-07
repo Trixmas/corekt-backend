@@ -94,4 +94,15 @@ class VersionController {
         versionService.updateVersion(version, request.getTitle());
         return ResponseEntity.ok(new VersionResponse(version));
     }
+
+    @DeleteMapping("/{versionId}")
+    public ResponseEntity<Void> deleteVersion(
+            @PathVariable UUID projectId,
+            @PathVariable Integer versionId) {
+        ProjectEntity project = resolveProject(projectId);
+        if (project == null)
+            return ResponseEntity.notFound().build();
+        versionRepository.deleteByIdAndProject(versionId, project);
+        return ResponseEntity.noContent().build();
+    }
 }

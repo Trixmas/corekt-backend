@@ -14,4 +14,6 @@ public interface VersionRepository extends JpaRepository<VersionEntity, VersionI
     Optional<VersionEntity> findByIdAndProject(Integer id, ProjectEntity project);
 
     List<VersionEntity> findAllByProject(ProjectEntity project);
+
+    void deleteByIdAndProject(Integer versionId, ProjectEntity project);
 }
