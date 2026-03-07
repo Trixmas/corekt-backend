@@ -35,16 +35,7 @@ class ProjectController {
         UserEntity user = authContext.getCurrentUser();
         List<ProjectEntity> projects = projectService.findAllOwnersProjects(user);
 
-        List<ProjectDetails> projectDetailsList = projects.stream().map(project -> {
-            ProjectDetails projectDetails = new ProjectDetails();
-            projectDetails.setId(project.getId());
-            projectDetails.setTitle(project.getTitle());
-            projectDetails.setDescription(project.getDescription());
-            projectDetails.setTotalVersion(1);
-            projectDetails.setCreatedAt(project.getCreatedAt());
-            projectDetails.setUpdatedAt(project.getUpdatedAt());
-            return projectDetails;
-        }).toList();
+        List<ProjectDetails> projectDetailsList = projects.stream().map(ProjectDetails::new).toList();
 
         return ResponseEntity.ok(projectDetailsList);
     }
@@ -57,15 +48,7 @@ class ProjectController {
 
         ProjectEntity project = projectService.createProject(title, description, user);
 
-        ProjectDetails projectDetails = new ProjectDetails();
-        projectDetails.setId(project.getId());
-        projectDetails.setTitle(project.getTitle());
-        projectDetails.setDescription(project.getDescription());
-        projectDetails.setTotalVersion(1);
-        projectDetails.setCreatedAt(project.getCreatedAt());
-        projectDetails.setUpdatedAt(project.getUpdatedAt());
-
-        return ResponseEntity.ok(projectDetails);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ProjectDetails(project));
     }
 
     @GetMapping("/{projectId}")
@@ -82,14 +65,6 @@ class ProjectController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        ProjectDetails projectDetails = new ProjectDetails();
-        projectDetails.setId(project.getId());
-        projectDetails.setTitle(project.getTitle());
-        projectDetails.setDescription(project.getDescription());
-        projectDetails.setTotalVersion(1);
-        projectDetails.setCreatedAt(project.getCreatedAt());
-        projectDetails.setUpdatedAt(project.getUpdatedAt());
-
-        return ResponseEntity.ok(projectDetails);
+        return ResponseEntity.ok(new ProjectDetails(project));
     }
 }
