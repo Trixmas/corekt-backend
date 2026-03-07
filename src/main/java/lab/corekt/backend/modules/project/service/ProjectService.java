@@ -56,4 +56,16 @@ public class ProjectService {
 
         return projectRepository.save(project);
     }
+
+    @Transactional
+    public void deleteProject(UUID projectId, UserEntity currentUser) throws ResponseStatusException {
+        ProjectEntity project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (!project.getOwner().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        projectRepository.delete(project);
+    }
 }
