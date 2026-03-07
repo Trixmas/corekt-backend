@@ -10,9 +10,9 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class ProjectDetails {
+public class ProjectResponse {
 
-    public ProjectDetails(ProjectEntity entity) {
+    public ProjectResponse(ProjectEntity entity) {
         this.id = entity.getId();
         this.title = entity.getTitle();
         this.description = entity.getDescription();

@@ -46,7 +46,7 @@ public class ProjectEntity {
     @JoinColumn(name = "owner_id", nullable = false)
     private UserEntity owner;
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<VersionEntity> versions = new ArrayList<>();
 
     protected ProjectEntity() {

@@ -43,10 +43,6 @@ public class ProjectService {
         ProjectEntity project = projectRepository.findByIdAndOwner(projectId, currentUser)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (!project.getOwner().getId().equals(currentUser.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
         if (request.getTitle() != null) {
             project.setTitle(request.getTitle());
         }
@@ -59,12 +55,8 @@ public class ProjectService {
 
     @Transactional
     public void deleteProject(UUID projectId, UserEntity currentUser) throws ResponseStatusException {
-        ProjectEntity project = projectRepository.findById(projectId)
+        ProjectEntity project = projectRepository.findByIdAndOwner(projectId, currentUser)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        if (!project.getOwner().getId().equals(currentUser.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
 
         projectRepository.delete(project);
     }
