@@ -7,15 +7,14 @@ import lab.corekt.backend.modules.project.dto.ProjectDetails;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.service.ProjectService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
-import lab.corekt.backend.modules.user.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/projects")
@@ -57,6 +56,31 @@ class ProjectController {
         String description = request.getDescription();
 
         ProjectEntity project = projectService.createProject(title, description, user);
+
+        ProjectDetails projectDetails = new ProjectDetails();
+        projectDetails.setId(project.getId());
+        projectDetails.setTitle(project.getTitle());
+        projectDetails.setDescription(project.getDescription());
+        projectDetails.setTotalVersion(1);
+        projectDetails.setCreatedAt(project.getCreatedAt());
+        projectDetails.setUpdatedAt(project.getUpdatedAt());
+
+        return ResponseEntity.ok(projectDetails);
+    }
+
+    @GetMapping("/{projectId}")
+    public ResponseEntity<ProjectDetails> getProjectById(@Valid @PathVariable UUID projectId) {
+        UserEntity currentUser = authContext.getCurrentUser();
+
+        ProjectEntity project = projectService.findProjectById(projectId);
+
+        if (project == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        if (!project.getOwner().getId().equals(currentUser.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         ProjectDetails projectDetails = new ProjectDetails();
         projectDetails.setId(project.getId());
