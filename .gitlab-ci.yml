@@ -12,6 +12,10 @@ stages:
     paths:
       - .m2/repository
 
+.encryption_vars: &encryption_vars
+  MASTER_ENCRYPTION_KEY: $MASTER_ENCRYPTION_KEY
+  RSA_PRIVATE_KEY: $RSA_PRIVATE_KEY
+
 unit_tests:
   <<: *default_maven
   stage: test
@@ -24,6 +28,7 @@ unit_tests:
     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/corekt
     SPRING_DATASOURCE_USERNAME: postgres
     SPRING_DATASOURCE_PASSWORD: admin
+    <<: *encryption_vars
   script:
     - mvn -B -DskipTests=false --file pom.xml verify
   artifacts:
@@ -47,8 +52,10 @@ spotbugs:
   allow_failure: true
 
 build:
-  stage: build
   <<: *default_maven
+  stage: build
+  variables:
+    <<: *encryption_vars
   script:
     - mvn -B clean package -DskipTests
   artifacts:
