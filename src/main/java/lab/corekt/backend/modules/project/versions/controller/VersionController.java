@@ -78,4 +78,20 @@ class VersionController {
         return projectRepository.findByIdAndOwner(projectId, user).orElse(null);
     }
 
+    @PatchMapping
+    public ResponseEntity<VersionResponse> updateVersion(
+            @PathVariable UUID projectId,
+            @PathVariable Integer versionId,
+            @Valid @RequestBody CreateVersionRequest request) {
+        ProjectEntity project = resolveProject(projectId);
+        if (project == null)
+            return ResponseEntity.notFound().build();
+
+        VersionEntity version = versionRepository.findByIdAndProject(versionId, project).orElse(null);
+        if (version == null)
+            return ResponseEntity.notFound().build();
+
+        versionService.updateVersion(version, request.getTitle());
+        return ResponseEntity.ok(new VersionResponse(version));
+    }
 }
