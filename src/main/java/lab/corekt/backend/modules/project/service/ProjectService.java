@@ -27,7 +27,6 @@ public class ProjectService {
 
     @Transactional
     public List<ProjectEntity> findAllOwnersProjects(UserEntity owner) {
-
         return projectRepository.findByOwner(owner);
     }
 
