@@ -4,11 +4,14 @@ import jakarta.persistence.*;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -28,8 +31,13 @@ public class HasAchievementsEntity {
     @JoinColumn(name = "achievement_name", nullable = false)
     private AchievementEntity achievement;
 
-    @Column
-    private LocalDate acquiredDate;
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
 
     public HasAchievementsEntity() {
     }
@@ -37,33 +45,26 @@ public class HasAchievementsEntity {
     public HasAchievementsEntity(UserEntity user, AchievementEntity achievement) {
         this.user = user;
         this.achievement = achievement;
-        this.acquiredDate = LocalDate.now();
     }
-
 
     @Getter
     @Setter
     public static class HasAchievementsId implements Serializable {
-        private String user; // Must match property name in HasAchievementsEntity, but type is the ID type of UserEntity (email is String)
-
-        private String achievement; // Must match property name in HasAchievementsEntity, but type is the ID type of AchievementEntity
+        private UUID user;
+        private String achievement;
 
         public HasAchievementsId() {
         }
 
-        public HasAchievementsId(String user, String achievement) {
+        public HasAchievementsId(UUID user, String achievement) {
             this.user = user;
             this.achievement = achievement;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
             HasAchievementsId that = (HasAchievementsId) o;
             return Objects.equals(user, that.user) && Objects.equals(achievement, that.achievement);
         }

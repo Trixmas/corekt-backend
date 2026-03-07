@@ -6,8 +6,11 @@ import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,7 +24,7 @@ public class UserEntity {
     @Id
     @UuidGenerator
     @GeneratedValue
-    @Column
+    @Column(name = "user_id")
     private UUID id;
 
     @Column(unique = true, nullable = false)
@@ -39,12 +42,18 @@ public class UserEntity {
     @OneToMany(mappedBy = "user")
     private List<HasAchievementsEntity> achievements;
 
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
+
+    protected UserEntity() {}
+
     public UserEntity(String email, String candidateUsername) {
         this.email = email;
         this.username = candidateUsername;
-    }
-
-    public UserEntity() {
-
     }
 }
