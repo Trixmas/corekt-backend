@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.project.dto.CreateProjectRequest;
 import lab.corekt.backend.modules.project.dto.ProjectDetails;
+import lab.corekt.backend.modules.project.dto.UpdateProjectRequest;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.service.ProjectService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
@@ -11,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +33,7 @@ class ProjectController {
     @GetMapping
     public ResponseEntity<List<ProjectDetails>> getAllOwnersProjects() {
         UserEntity user = authContext.getCurrentUser();
-        List<ProjectEntity> projects = projectService.findAllOwnersProjects(user);
+        List<ProjectEntity> projects = projectService.getAllOwnersProjects(user);
 
         List<ProjectDetails> projectDetailsList = projects.stream().map(ProjectDetails::new).toList();
 
@@ -43,10 +43,8 @@ class ProjectController {
     @PostMapping
     public ResponseEntity<ProjectDetails> createProject(@Valid @RequestBody CreateProjectRequest request) {
         UserEntity user = authContext.getCurrentUser();
-        String title = request.getTitle();
-        String description = request.getDescription();
 
-        ProjectEntity project = projectService.createProject(title, description, user);
+        ProjectEntity project = projectService.createProject(request, user);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new ProjectDetails(project));
     }
@@ -55,7 +53,7 @@ class ProjectController {
     public ResponseEntity<ProjectDetails> getProjectById(@Valid @PathVariable UUID projectId) {
         UserEntity currentUser = authContext.getCurrentUser();
 
-        ProjectEntity project = projectService.findProjectById(projectId);
+        ProjectEntity project = projectService.getOwnersProjectById(projectId, currentUser);
 
         if (project == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -66,5 +64,13 @@ class ProjectController {
         }
 
         return ResponseEntity.ok(new ProjectDetails(project));
+    }
+
+    @PatchMapping("/{projectId}")
+    public ResponseEntity<ProjectDetails> updateProject(@PathVariable UUID projectId, @Valid @RequestBody UpdateProjectRequest request) {
+        UserEntity currentUser = authContext.getCurrentUser();
+        ProjectEntity updatedProject = projectService.updateProject(projectId, request, currentUser);
+
+        return ResponseEntity.ok(new ProjectDetails(updatedProject));
     }
 }
