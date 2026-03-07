@@ -1,23 +1,21 @@
 package lab.corekt.backend.modules.project.controller;
 
+import jakarta.validation.Valid;
 import lab.corekt.backend.modules.auth.AuthContext;
+import lab.corekt.backend.modules.project.dto.CreateProjectRequest;
 import lab.corekt.backend.modules.project.dto.ProjectDetails;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.service.ProjectService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.service.UserService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Controller
 @RequestMapping("/projects")
@@ -25,12 +23,10 @@ class ProjectController {
 
     private final ProjectService projectService;
 
-    private final UserService userService;
     private final AuthContext authContext;
 
-    public ProjectController(ProjectService projectService, UserService userService, AuthContext authContext) {
+    public ProjectController(ProjectService projectService, AuthContext authContext) {
         this.projectService = projectService;
-        this.userService = userService;
         this.authContext = authContext;
     }
 
@@ -55,17 +51,12 @@ class ProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<ProjectDetails> createProject(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<ProjectDetails> createProject(@Valid @RequestBody CreateProjectRequest request) {
         UserEntity user = authContext.getCurrentUser();
-        String title = payload.get("title");
-        String description = payload.get("description");
+        String title = request.getTitle();
+        String description = request.getDescription();
 
-        if (title == null || title.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-
-        ProjectEntity project = projectService.createProject(title, user);
-        project.setDescription(description);
+        ProjectEntity project = projectService.createProject(title, description, user);
 
         ProjectDetails projectDetails = new ProjectDetails();
         projectDetails.setId(project.getId());

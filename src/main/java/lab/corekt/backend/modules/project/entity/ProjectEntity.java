@@ -52,8 +52,9 @@ public class ProjectEntity {
 
     }
 
-    public ProjectEntity(String title, UserEntity user) {
+    public ProjectEntity(String title, String description, UserEntity user) {
         this.title = title;
+        this.description = description;
         this.owner = user;
     }
 }

@@ -14,17 +14,14 @@ import java.util.UUID;
 public class ProjectService {
     private final ProjectRepository projectRepository;
 
-    private final UserRepository userRepository;
-
-    public ProjectService(ProjectRepository projectRepository, UserRepository userRepository) {
+    public ProjectService(ProjectRepository projectRepository) {
         this.projectRepository = projectRepository;
-        this.userRepository = userRepository;
     }
 
     @Transactional
-    public ProjectEntity createProject(String projectTitle, UserEntity owner) {
+    public ProjectEntity createProject(String projectTitle, String description, UserEntity owner) {
 
-        ProjectEntity newProject = new ProjectEntity(projectTitle, owner);
+        ProjectEntity newProject = new ProjectEntity(projectTitle, description, owner);
         return projectRepository.save(newProject);
     }
 
