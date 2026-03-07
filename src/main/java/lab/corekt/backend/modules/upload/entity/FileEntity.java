@@ -1,32 +1,18 @@
 package lab.corekt.backend.modules.upload.entity;
 
-import java.util.List;
-import java.util.UUID;
-
-import org.hibernate.annotations.UuidGenerator;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinColumns;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.report.entity.AIAnalysisEntity;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -36,6 +22,7 @@ import lombok.Setter;
 })
 @EntityListeners(AuditingEntityListener.class)
 public class FileEntity {
+
 
     @Id
     @GeneratedValue
@@ -55,8 +42,8 @@ public class FileEntity {
 
     @ManyToOne
     @JoinColumns({
-            @JoinColumn(name = "version_id", referencedColumnName = "version_id", nullable = false),
-            @JoinColumn(name = "project_id", referencedColumnName = "project_id", nullable = false),
+            @JoinColumn(name = "version_id", referencedColumnName = "version_id"),
+            @JoinColumn(name = "project_id", referencedColumnName = "project_id"),
     })
     private VersionEntity version;
 
@@ -64,15 +51,15 @@ public class FileEntity {
     private AIAnalysisEntity aiAnalysis;
 
     @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ParsedDataEntity> parsedData;
+    private List<ParsedDataEntity> parsedData = new ArrayList<>();
 
+    // Constructeurs
     public FileEntity() {
     }
 
-    public FileEntity(FileType fileType, String fileName, VersionEntity version) {
+    public FileEntity(FileType fileType, String fileName) {
         this.type = fileType;
         this.name = fileName;
-        this.version = version;
     }
 }
 
