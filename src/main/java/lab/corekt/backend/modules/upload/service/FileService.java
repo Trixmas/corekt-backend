@@ -10,8 +10,10 @@ import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
+import lombok.NonNull;
 
 @Service
+@NonNull
 public class FileService {
     private final FileRepository fileRepository;
 
@@ -20,7 +22,8 @@ public class FileService {
     }
 
     @Transactional
-    public FileEntity uploadFile(VersionEntity version, MultipartFile file, FileType fileType) throws IOException {
+    public FileEntity uploadFile(VersionEntity version, MultipartFile file, @NonNull FileType fileType) throws IOException {
+
         if (fileRepository.existsByVersionAndType(version, fileType)) {
             throw new IllegalArgumentException("A file of type " + fileType + " already exists for this version");
         }
