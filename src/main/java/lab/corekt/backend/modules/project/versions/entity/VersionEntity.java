@@ -9,8 +9,11 @@ import lab.corekt.backend.modules.project.parsing.enums.Status;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -47,6 +50,14 @@ public class VersionEntity {
 
     @OneToMany(mappedBy = "version", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileEntity> files;
+
+    @CreatedDate
+    @Column(nullable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
 
     // Constructeurs
     public VersionEntity() {
