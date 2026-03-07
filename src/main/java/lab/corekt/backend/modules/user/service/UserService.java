@@ -1,18 +1,22 @@
 package lab.corekt.backend.modules.user.service;
 
+import lab.corekt.backend.modules.user.dto.ApiKeyRequest;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService {
     private final UserRepository repository;
+    private final EncryptionService encryptionService;
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, EncryptionService encryptionService) {
         this.repository = repository;
+        this.encryptionService = encryptionService;
     }
 
     @Transactional
@@ -20,20 +24,7 @@ public class UserService {
         Optional<UserEntity> existingUser = repository.findByEmail(email);
 
         if (existingUser.isPresent()) {
-            UserEntity user = existingUser.get();
-            boolean dirty = false;
-
-            if (!user.getEmail().equals(email)) {
-                user.setEmail(email);
-                user.setUsername(username);
-                dirty = true;
-            }
-
-            return dirty ? repository.save(user) : user;
-        }
-
-        if (repository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email already exists");
+            return existingUser.get();
         }
 
         UserEntity newUser = new UserEntity(email, username);
@@ -43,5 +34,24 @@ public class UserService {
     @Transactional(readOnly = true)
     public Optional<UserEntity> findByEmail(String email) {
         return repository.findByEmail(email);
+    }
+
+    @Transactional
+    public void saveApiKey(UserEntity user, ApiKeyRequest request) throws Exception {
+        String encryptedToken = encryptionService.decryptAndReEncryptApiKey(
+            request.getEncryptedApiKey(),
+            request.getEncryptedDataKey(),
+            request.getInitializationVector()
+        );
+        user.setMistralToken(encryptedToken);
+        repository.save(user);
+    }
+
+    @Transactional
+    public void deleteById(UUID userId, UserEntity requestingUser) {
+        if(!requestingUser.getId().equals(userId)) {
+            throw new IllegalArgumentException("Cannot delete another user's account");
+        }
+        repository.deleteById(userId);
     }
 }

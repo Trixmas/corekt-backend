@@ -18,6 +18,8 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class ParsedDataEntity {
 
+    public static final int MAX_CONTENT_LENGTH = 500;
+
     @Id
     @GeneratedValue
     @UuidGenerator
@@ -28,7 +30,7 @@ public class ParsedDataEntity {
     @Column(nullable = false)
     private DataType dataType;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = MAX_CONTENT_LENGTH)
     private String content;
 
 
@@ -46,10 +48,10 @@ public class ParsedDataEntity {
     public ParsedDataEntity() {
     }
 
-    public ParsedDataEntity(DataType dataType, String content, FileEntity file) {
+    public ParsedDataEntity(DataType dataType, String content) {
         this.dataType = dataType;
         this.content = content;
-        this.file = file;
+
     }
 }
 
