@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
-import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.enums.Status;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lombok.Getter;
@@ -74,23 +73,5 @@ public class VersionEntity {
     public void setVersionId() {
         List<VersionEntity> versions = this.project.getVersions();
         this.id = versions.size();
-    }
-
-    public FileEntity findFileByType(FileType fileType) {
-        return this.files.stream().filter(file -> file.getType().equals(fileType)).findFirst().orElse(null);
-    }
-
-    public FileEntity findOrCreateFile(FileType fileType) {
-        FileEntity file = this.findFileByType(fileType);
-        if (file == null) {
-            file = new FileEntity();
-            file.setType(fileType);
-            this.addFile(file);
-        }
-        return file;
-    }
-
-    public void addFile(FileEntity file) {
-        this.files.add(file);
     }
 }

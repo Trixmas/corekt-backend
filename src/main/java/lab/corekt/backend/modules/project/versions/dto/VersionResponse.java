@@ -30,7 +30,4 @@ public class VersionResponse {
         this.createdAt = version.getCreatedAt();
         this.updatedAt = version.getUpdatedAt();
     }
-
-    public VersionResponse() {
-    }
 }
