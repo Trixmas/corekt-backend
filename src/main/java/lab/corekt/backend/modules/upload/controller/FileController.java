@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-
-import jakarta.transaction.Transactional;
 import lab.corekt.backend.modules.upload.dto.FileUploadResponse;
 import lab.corekt.backend.modules.upload.service.FileService;
 
@@ -39,7 +37,6 @@ public class FileController {
     }
 
     @PostMapping
-    @Transactional
     public ResponseEntity<FileUploadResponse> uploadFile(
         @PathVariable UUID projectId,
         @PathVariable Integer versionId,
