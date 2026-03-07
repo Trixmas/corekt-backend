@@ -78,7 +78,7 @@ class VersionController {
         return projectRepository.findByIdAndOwner(projectId, user).orElse(null);
     }
 
-    @PatchMapping
+    @PatchMapping("/{versionId}")
     public ResponseEntity<VersionResponse> updateVersion(
             @PathVariable UUID projectId,
             @PathVariable Integer versionId,
