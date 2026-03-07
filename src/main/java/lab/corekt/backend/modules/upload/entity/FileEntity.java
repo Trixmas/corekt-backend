@@ -1,15 +1,16 @@
 package lab.corekt.backend.modules.upload.entity;
 
 import jakarta.persistence.*;
-import lab.corekt.backend.modules.project.report.entity.AIAnalysisEntity;
-import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
+import lab.corekt.backend.modules.project.parsing.enums.FileType;
+import lab.corekt.backend.modules.project.report.entity.AIAnalysisEntity;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,6 +22,7 @@ import java.util.UUID;
 })
 @EntityListeners(AuditingEntityListener.class)
 public class FileEntity {
+
 
     @Id
     @GeneratedValue
@@ -40,8 +42,8 @@ public class FileEntity {
 
     @ManyToOne
     @JoinColumns({
-            @JoinColumn(name = "version_id", referencedColumnName = "version_id", nullable = false, insertable = false, updatable = false),
-            @JoinColumn(name = "project_id", referencedColumnName = "project_id", nullable = false, insertable = false, updatable = false),
+            @JoinColumn(name = "version_id", referencedColumnName = "version_id"),
+            @JoinColumn(name = "project_id", referencedColumnName = "project_id"),
     })
     private VersionEntity version;
 
@@ -49,16 +51,15 @@ public class FileEntity {
     private AIAnalysisEntity aiAnalysis;
 
     @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ParsedDataEntity> parsedData;
+    private List<ParsedDataEntity> parsedData = new ArrayList<>();
 
     // Constructeurs
     public FileEntity() {
     }
 
-    public FileEntity(FileType fileType, String fileName, VersionEntity version) {
+    public FileEntity(FileType fileType, String fileName) {
         this.type = fileType;
         this.name = fileName;
-        this.version = version;
     }
 }
 

@@ -27,6 +27,6 @@ public class VersionId implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, project);
+        return Objects.hash(id, project.getId());
     }
 }

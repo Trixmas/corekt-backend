@@ -1,16 +1,15 @@
 package lab.corekt.backend.modules.project.entity;
 
 import jakarta.persistence.*;
+import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 
-import java.time.Instant;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,30 +30,36 @@ public class ProjectEntity {
     private String title;
 
     @Column(nullable = false)
-    private String description;
-
-    @CreatedDate
-    @Column(nullable = false)
-    private Instant createdAt;
-
-    @LastModifiedDate
-    @Column(nullable = false)
-    private Instant updatedAt;
+    private LocalDate createdAt;
 
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
     private UserEntity owner;
 
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
-    private List<VersionEntity> versions;
+    private List<VersionEntity> versions = new ArrayList<>();
 
     protected ProjectEntity() {
-
+        this.createdAt = LocalDate.now();
+        addFirstVersion();
     }
 
-    public ProjectEntity(String title, String description, UserEntity user) {
+    public ProjectEntity(String title, UserEntity owner) {
         this.title = title;
-        this.description = description;
-        this.owner = user;
+        this.owner = owner;
+        this.createdAt = LocalDate.now();
+        addFirstVersion();
+    }
+
+    public void addVersion(VersionEntity version) {
+        versions.add(version);
+        version.setProject(this);
+    }
+
+    public void addFirstVersion() {
+        VersionEntity firstVersion = new VersionEntity("Première version");
+        addVersion(firstVersion);
     }
 }
+

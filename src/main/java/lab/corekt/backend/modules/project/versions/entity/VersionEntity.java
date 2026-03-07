@@ -3,12 +3,13 @@ package lab.corekt.backend.modules.project.versions.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lab.corekt.backend.modules.project.parsing.enums.Status;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.parsing.enums.FileType;
+import lab.corekt.backend.modules.project.parsing.enums.Status;
+import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import lab.corekt.backend.modules.upload.entity.FileEntity;
 
 import java.util.List;
 
@@ -52,8 +53,7 @@ public class VersionEntity {
         this.status = Status.DRAFT;
     }
 
-    public VersionEntity(ProjectEntity project, String title) {
-        this.project = project;
+    public VersionEntity(String title) {
         this.title = title;
         this.status = Status.DRAFT;
     }
@@ -62,6 +62,24 @@ public class VersionEntity {
     @PrePersist
     public void setVersionId() {
         List<VersionEntity> versions = this.project.getVersions();
-        this.id = versions.size() + 1;
+        this.id = versions.size();
+    }
+
+    public FileEntity findFileByType(FileType fileType) {
+        return this.files.stream().filter(file -> file.getType().equals(fileType)).findFirst().orElse(null);
+    }
+
+    public FileEntity findOrCreateFile(FileType fileType) {
+        FileEntity file = this.findFileByType(fileType);
+        if (file == null) {
+            file = new FileEntity();
+            file.setType(fileType);
+            this.addFile(file);
+        }
+        return file;
+    }
+
+    public void addFile(FileEntity file) {
+        this.files.add(file);
     }
 }
