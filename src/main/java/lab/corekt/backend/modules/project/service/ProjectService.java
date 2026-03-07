@@ -29,7 +29,7 @@ public class ProjectService {
     }
 
     @Transactional
-    public List<ProjectEntity> getAllOwnersProjects(UserEntity owner) {
+    public List<ProjectEntity> getAllOwnerProjects(UserEntity owner) {
         return projectRepository.findByOwner(owner);
     }
 

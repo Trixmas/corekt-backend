@@ -32,7 +32,7 @@ class ProjectController {
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getAllOwnersProjects() {
         UserEntity user = authContext.getCurrentUser();
-        List<ProjectEntity> projects = projectService.getAllOwnersProjects(user);
+        List<ProjectEntity> projects = projectService.getAllOwnerProjects(user);
 
         List<ProjectResponse> projectDetailsList = projects.stream().map(ProjectResponse::new).toList();
 
@@ -56,10 +56,6 @@ class ProjectController {
 
         if (project == null) {
             return ResponseEntity.notFound().build();
-        }
-
-        if (!project.getOwner().getId().equals(currentUser.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         return ResponseEntity.ok(new ProjectResponse(project));
