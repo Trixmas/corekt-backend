@@ -9,7 +9,9 @@ import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionUpdateRequest;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.MissingResourceException;
@@ -44,7 +46,7 @@ public class VersionService {
     @Transactional
     public VersionResponse createVersion(UUID projectId, VersionCreateRequest request) {
         ProjectEntity project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new MissingResourceException("Project not found", null, projectId.toString()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
 
         int nextVersionNumber = versionRepository.findLatestVersionByProjectId(projectId)
                 .map(version -> version.getVersionNumber() + 1)
@@ -86,13 +88,13 @@ public class VersionService {
 
     private void ensureProjectExists(UUID projectId) {
         if (!projectRepository.existsById(projectId)) {
-            throw new MissingResourceException("Project not found", null, projectId.toString());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found");
         }
     }
 
     private VersionEntity getVersionEntity(UUID projectId, UUID versionId) {
         return versionRepository.findVersionByProjectIdAndVersionId(projectId, versionId)
-                .orElseThrow(() -> new MissingResourceException("Version not found", null, versionId.toString()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
     }
 
     private VersionResponse toResponse(VersionEntity entity) {
