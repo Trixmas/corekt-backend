@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -52,16 +54,17 @@ class FileServiceTest {
         });
     }
 
-    @Test
-    void testUploadFileTypeIsInstanceOfFileType() throws Exception {
+    @ParameterizedTest
+    @EnumSource(FileType.class)
+    void testUploadFileTypeIsInstanceOfFileType(FileType fileType) throws Exception {
         VersionEntity version = new VersionEntity();
         when(fileRepository.existsByVersionAndType(any(), any())).thenReturn(false);
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(i -> i.getArgument(0));
 
-        MockMultipartFile file = new MockMultipartFile("file", "interview.pdf", "text/plain", "hello".getBytes());
-        FileEntity resultInterview = fileService.uploadFile(version, file, FileType.INTERVIEW);
-        assertInstanceOf(FileType.class, resultInterview.getType());
-        assertEquals(FileType.INTERVIEW, resultInterview.getType());
+        MockMultipartFile file = new MockMultipartFile("file", "test.pdf", "text/plain", "hello".getBytes());
+        FileEntity result = fileService.uploadFile(version, file, fileType);
+        assertInstanceOf(FileType.class, result.getType());
+        assertEquals(fileType, result.getType());
     }
 
     @Test
