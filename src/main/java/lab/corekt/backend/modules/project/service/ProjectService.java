@@ -1,0 +1,39 @@
+package lab.corekt.backend.modules.project.service;
+
+import lab.corekt.backend.modules.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.repository.ProjectRepository;
+import lab.corekt.backend.modules.user.entity.UserEntity;
+import lab.corekt.backend.modules.user.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class ProjectService {
+    private final ProjectRepository projectRepository;
+
+    public ProjectService(ProjectRepository projectRepository) {
+        this.projectRepository = projectRepository;
+    }
+
+    @Transactional
+    public ProjectEntity createProject(String projectTitle, String description, UserEntity owner) {
+
+        ProjectEntity newProject = new ProjectEntity(projectTitle, description, owner);
+        return projectRepository.save(newProject);
+    }
+
+    @Transactional
+    public List<ProjectEntity> findAllOwnersProjects(UserEntity owner) {
+
+        return projectRepository.findByOwner(owner);
+    }
+
+    @Transactional
+    public ProjectEntity findProjectById(UUID projectId) {
+
+        return projectRepository.findById(projectId).orElse(null);
+    }
+}
