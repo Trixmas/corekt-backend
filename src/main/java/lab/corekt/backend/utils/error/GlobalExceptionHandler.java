@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.util.HtmlUtils;
 
@@ -163,6 +164,22 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(
+        ResponseStatusException exception,
+        WebRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+            exception.getStatusCode().value(),
+            exception.getReason() != null ? exception.getReason() : exception.getMessage(),
+            null,
+            sanitizePath(request.getDescription(false)),
+            Instant.now()
+        );
+
+        return ResponseEntity.status(exception.getStatusCode()).body(response);
     }
 
     private String sanitizePath(String description) {

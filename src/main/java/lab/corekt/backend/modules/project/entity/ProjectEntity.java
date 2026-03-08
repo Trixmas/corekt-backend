@@ -6,9 +6,11 @@ import lab.corekt.backend.modules.user.entity.UserEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -30,25 +32,31 @@ public class ProjectEntity {
     private String title;
 
     @Column(nullable = false)
-    private LocalDate createdAt;
+    private String description;
+
+    @CreatedDate
+    @Column(nullable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
     private UserEntity owner;
 
-
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<VersionEntity> versions = new ArrayList<>();
 
     protected ProjectEntity() {
-        this.createdAt = LocalDate.now();
         addFirstVersion();
     }
 
-    public ProjectEntity(String title, UserEntity owner) {
+    public ProjectEntity(String title, String description, UserEntity user) {
         this.title = title;
-        this.owner = owner;
-        this.createdAt = LocalDate.now();
+        this.description = description;
+        this.owner = user;
         addFirstVersion();
     }
 
@@ -62,4 +70,3 @@ public class ProjectEntity {
         addVersion(firstVersion);
     }
 }
-
