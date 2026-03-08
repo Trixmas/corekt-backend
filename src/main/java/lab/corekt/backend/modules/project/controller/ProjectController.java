@@ -20,7 +20,6 @@ import java.util.UUID;
 class ProjectController {
 
     private final ProjectService projectService;
-
     private final AuthContext authContext;
 
     public ProjectController(ProjectService projectService, AuthContext authContext) {
@@ -28,30 +27,24 @@ class ProjectController {
         this.authContext = authContext;
     }
 
-
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getAllOwnersProjects() {
         UserEntity user = authContext.getCurrentUser();
         List<ProjectEntity> projects = projectService.getAllOwnerProjects(user);
-
         List<ProjectResponse> projectDetailsList = projects.stream().map(ProjectResponse::new).toList();
-
         return ResponseEntity.ok(projectDetailsList);
     }
 
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody CreateProjectRequest request) {
         UserEntity user = authContext.getCurrentUser();
-
         ProjectEntity project = projectService.createProject(request, user);
-
         return ResponseEntity.status(HttpStatus.CREATED).body(new ProjectResponse(project));
     }
 
     @GetMapping("/{projectId}")
     public ResponseEntity<ProjectResponse> getProjectById(@Valid @PathVariable UUID projectId) {
         UserEntity currentUser = authContext.getCurrentUser();
-
         ProjectEntity project = projectService.getOwnersProjectById(projectId, currentUser);
 
         if (project == null) {
@@ -65,14 +58,12 @@ class ProjectController {
     public ResponseEntity<ProjectResponse> updateProject(@PathVariable UUID projectId, @Valid @RequestBody UpdateProjectRequest request) {
         UserEntity currentUser = authContext.getCurrentUser();
         ProjectEntity updatedProject = projectService.updateProject(projectId, request, currentUser);
-
         return ResponseEntity.status(HttpStatus.CREATED).body(new ProjectResponse(updatedProject));
     }
 
     @DeleteMapping("/{projectId}")
     public ResponseEntity<Void> deleteProject(@PathVariable UUID projectId) {
         projectService.deleteProject(projectId, authContext.getCurrentUser());
-
         return ResponseEntity.noContent().build();
     }
 }
