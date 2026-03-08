@@ -1,6 +1,6 @@
 # Corekt Backend
 
-- Swagger: http://localhost:8080/swagger-ui.html (API Documentation)
+- Swagger: http://localhost:8080/api/v1/swagger-ui/index.html (API Documentation)
 - Allowed origins (CORS): http://localhost:3000
 - Contributing guidelines: [Guidelines](CONTRIBUTING.md)
 
