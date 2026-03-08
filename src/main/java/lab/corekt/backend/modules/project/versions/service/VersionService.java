@@ -19,4 +19,9 @@ public class VersionService {
         version.setProject(project);
         return versionRepository.save(version);
     }
+
+    public void updateVersion(VersionEntity version, String title) {
+        version.setTitle(title);
+        versionRepository.save(version);
+    }
 }
