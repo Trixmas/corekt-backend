@@ -9,6 +9,6 @@ import lombok.Setter;
 @Setter
 public class VersionRequest {
     @NotBlank(message = "Title is required")
-    @Size(max = 50)
+    @Size(max = 50, message = "Title must not exceed 50 characters")
     private String title;
 }

@@ -50,7 +50,6 @@ public class ProjectEntity {
     private List<VersionEntity> versions = new ArrayList<>();
 
     protected ProjectEntity() {
-        addFirstVersion();
     }
 
     public ProjectEntity(String title, String description, UserEntity user) {
@@ -66,7 +65,7 @@ public class ProjectEntity {
     }
 
     public void addFirstVersion() {
-        VersionEntity firstVersion = new VersionEntity("Première version");
+        VersionEntity firstVersion = new VersionEntity(this, "Première version");
         addVersion(firstVersion);
     }
 }

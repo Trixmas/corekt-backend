@@ -37,20 +37,20 @@ public class FileController {
 
     @PostMapping
     public ResponseEntity<FileUploadResponse> uploadFile(
-        @PathVariable UUID projectId,
-        @PathVariable UUID versionId,
-        @RequestParam MultipartFile file,
-        @RequestParam FileType fileType) throws IOException {
+            @PathVariable UUID projectId,
+            @PathVariable UUID versionId,
+            @RequestParam MultipartFile file,
+            @RequestParam FileType fileType) throws IOException {
 
         ProjectEntity project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
 
-        VersionEntity version = versionRepository.findVersionByProjectIdAndVersionId(projectId, versionId)
+        VersionEntity version = versionRepository.findByProjectAndId(project, versionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
 
         FileEntity saved = fileService.uploadFile(version, file, fileType);
-        FileUploadResponse response = new FileUploadResponse();
 
+        FileUploadResponse response = new FileUploadResponse();
         response.setFileId(saved.getId());
         response.setFileName(saved.getName());
         response.setFileType(saved.getType());

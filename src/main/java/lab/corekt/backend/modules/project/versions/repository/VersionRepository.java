@@ -11,11 +11,7 @@ import java.util.UUID;
 
 @Repository
 public interface VersionRepository extends JpaRepository<VersionEntity, UUID> {
-    List<VersionEntity> findFirstVersionByProject(ProjectEntity project);
-
-    Optional<VersionEntity> findLatestVersionByProject(ProjectEntity project);
-
-    Optional<VersionEntity> findVersionByProjectAndVersionId(ProjectEntity project, UUID versionId);
-
-    int countByProjectId(ProjectEntity project);
+    List<VersionEntity> findByProject(ProjectEntity project);
+    Optional<VersionEntity> findTopByProjectOrderByVersionNumberDesc(ProjectEntity project);
+    Optional<VersionEntity> findByProjectAndId(ProjectEntity project, UUID id);
 }

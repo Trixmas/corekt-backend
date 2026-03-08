@@ -1,6 +1,6 @@
 package lab.corekt.backend.modules.project.versions.dto;
 
-import lab.corekt.backend.modules.project.parsing.enums.Status;
+import lab.corekt.backend.modules.project.parsing.enums.VersionStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +13,7 @@ public class VersionResponse {
     private UUID id;
     private String title;
     private Integer version;
-    private Status status;
+    private VersionStatus status;
     private Instant createdAt;
     private Instant updatedAt;
     private VersionIssuesResponse issues;

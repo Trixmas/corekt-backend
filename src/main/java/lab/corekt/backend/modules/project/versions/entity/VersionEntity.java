@@ -2,7 +2,7 @@ package lab.corekt.backend.modules.project.versions.entity;
 
 import jakarta.persistence.*;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
-import lab.corekt.backend.modules.project.parsing.enums.Status;
+import lab.corekt.backend.modules.project.parsing.enums.VersionStatus;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,6 +27,7 @@ public class VersionEntity {
     @Id
     @GeneratedValue
     @UuidGenerator
+    @Column(name = "version_id", nullable = false, updatable = false)
     private UUID id;
 
     @Column(nullable = false)
@@ -36,7 +37,7 @@ public class VersionEntity {
     @JoinColumn(name = "project_id", nullable = false)
     private ProjectEntity project;
 
-    @Column(nullable = false, length = 50, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String summary;
 
     private String title;
@@ -44,10 +45,9 @@ public class VersionEntity {
     @Column
     private Integer score;
 
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status;
+    private VersionStatus status;
 
     @OneToMany(mappedBy = "version", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileEntity> files;
@@ -60,13 +60,19 @@ public class VersionEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    protected VersionEntity() {
-        this.status = Status.DRAFT;
+    public VersionEntity() {
+        this.status = VersionStatus.DRAFT;
+        this.versionNumber = 1;
+        this.summary = "";
+    }
+
+    public VersionEntity(String title) {
+        this();
+        this.title = title;
     }
 
     public VersionEntity(ProjectEntity project, String title) {
+        this(title);
         this.project = project;
-        this.title = title;
-        this.status = Status.DRAFT;
     }
 }
