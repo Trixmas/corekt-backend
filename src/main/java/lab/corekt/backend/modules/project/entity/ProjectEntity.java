@@ -56,16 +56,6 @@ public class ProjectEntity {
         this.title = title;
         this.description = description;
         this.owner = user;
-        addFirstVersion();
-    }
-
-    public void addVersion(VersionEntity version) {
-        versions.add(version);
-        version.setProject(this);
-    }
-
-    public void addFirstVersion() {
-        VersionEntity firstVersion = new VersionEntity(this, "Première version");
-        addVersion(firstVersion);
+        versions.add(new VersionEntity(this, "Première version"));
     }
 }
