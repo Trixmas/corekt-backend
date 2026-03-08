@@ -18,7 +18,7 @@ public class ProjectResponse {
         this.description = entity.getDescription();
         this.createdAt = entity.getCreatedAt();
         this.updatedAt = entity.getUpdatedAt();
-        this.totalVersion = (entity.getVersions() != null) ? entity.getVersions().size() : 1;
+        this.totalVersions = (entity.getVersions() != null) ? entity.getVersions().size() : 1;
     }
 
     @NotBlank(message = "Id is required")
@@ -30,7 +30,7 @@ public class ProjectResponse {
     @NotBlank(message = "Description is required")
     private String description;
 
-    private int totalVersion;
+    private int totalVersions;
 
     private Instant createdAt;
 
