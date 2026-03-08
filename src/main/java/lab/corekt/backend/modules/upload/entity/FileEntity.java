@@ -18,7 +18,7 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "file", uniqueConstraints = {
-        @UniqueConstraint(name = "UniqueFileTypeForVersion", columnNames = {"version_id", "project_id", "file_type"})
+        @UniqueConstraint(name = "UniqueFileTypeForVersion", columnNames = {"version_id", "file_type"})
 })
 @EntityListeners(AuditingEntityListener.class)
 public class FileEntity {
@@ -41,10 +41,7 @@ public class FileEntity {
     private byte[] file;
 
     @ManyToOne
-    @JoinColumns({
-            @JoinColumn(name = "version_id", referencedColumnName = "version_id"),
-            @JoinColumn(name = "project_id", referencedColumnName = "project_id"),
-    })
+    @JoinColumn(name = "version_id", referencedColumnName = "version_id")
     private VersionEntity version;
 
     @OneToOne(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)

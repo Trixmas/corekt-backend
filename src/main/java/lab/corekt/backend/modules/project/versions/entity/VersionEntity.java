@@ -27,19 +27,20 @@ public class VersionEntity {
     @Id
     @GeneratedValue
     @UuidGenerator
-    @Column(name = "version_id", nullable = false, updatable = false)
+    @Column(name = "version_id")
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private Integer versionNumber;
 
     @ManyToOne
-    @JoinColumn(name = "project_id", nullable = false)
+    @JoinColumn(name = "project_id", nullable = false, updatable = false)
     private ProjectEntity project;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Column(nullable = false, length = 50)
     private String title;
 
     @Column
