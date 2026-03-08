@@ -29,7 +29,6 @@ import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.auth.service.JwtService;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
-import lab.corekt.backend.modules.project.versions.dto.CreateVersionRequest;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
 import lab.corekt.backend.modules.project.versions.service.VersionService;

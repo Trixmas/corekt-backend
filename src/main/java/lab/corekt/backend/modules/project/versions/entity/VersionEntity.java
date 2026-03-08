@@ -36,14 +36,14 @@ public class VersionEntity {
     @JoinColumn(name = "project_id", nullable = false)
     private ProjectEntity project;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 50, columnDefinition = "TEXT")
+    private String summary;
+
     private String title;
 
     @Column
     private Integer score;
 
-    @Column(columnDefinition = "TEXT")
-    private String summary;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
