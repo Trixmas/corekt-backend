@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/project/{projectId}/versions/{versionId}/taiga")
+@RequestMapping("/projects/{projectId}/versions/{versionId}/taiga")
 class TaigaController {
 
     private final TaigaTokenService taigaTokenService;
@@ -67,7 +67,7 @@ class TaigaController {
     }
 
     @GetMapping("/us")
-    public ResponseEntity<UsResponse> getUs(@Valid @PathVariable UUID projectId, @Valid @PathVariable Integer versionId,
+    public ResponseEntity<UsResponse> getUs(@Valid @PathVariable UUID projectId, @Valid @PathVariable UUID versionId,
                                             @Valid @RequestParam String taigaProjectId) {
 
         String taigaToken = taigaTokenService.getTaigaToken();
@@ -78,14 +78,12 @@ class TaigaController {
 
         UserEntity user = authContext.getCurrentUser();
 
-        ProjectEntity project = projectRepository.findByIdAndOwner(projectId, user)
-                .orElse(null);
+        ProjectEntity project = projectRepository.findByIdAndOwner(projectId, user).orElse(null);
         if (project == null) {
             return ResponseEntity.status(404).body(new UsResponse(null, false, "Project not found"));
         }
 
-        VersionEntity version = versionRepository.findByIdAndProject(versionId, project)
-                .orElse(null);
+        VersionEntity version = versionRepository.findByProjectAndId(project, versionId).orElse(null);
         if (version == null) {
             return ResponseEntity.status(404).body(new UsResponse(null, false, "Version not found"));
         }

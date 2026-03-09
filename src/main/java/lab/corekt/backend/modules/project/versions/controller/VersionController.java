@@ -4,10 +4,8 @@ import jakarta.validation.Valid;
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
-import lab.corekt.backend.modules.project.versions.dto.CreateVersionRequest;
+import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
-import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
-import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
 import lab.corekt.backend.modules.project.versions.service.VersionService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import org.springframework.http.ResponseEntity;
@@ -17,92 +15,68 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/project/{projectId}/versions")
-class VersionController {
-
-    private final VersionRepository versionRepository;
-    private final ProjectRepository projectRepository;
-    private final AuthContext authContext;
+@RequestMapping("/projects/{projectId}/versions")
+public class VersionController {
     private final VersionService versionService;
+    private final AuthContext authContext;
+    private final ProjectRepository projectRepository;
 
-    VersionController(VersionRepository versionRepository, ProjectRepository projectRepository,
-                      AuthContext authContext, VersionService versionService) {
-        this.versionRepository = versionRepository;
-        this.projectRepository = projectRepository;
-        this.authContext = authContext;
+    public VersionController(VersionService versionService, AuthContext authContext, ProjectRepository projectRepository) {
         this.versionService = versionService;
+        this.authContext = authContext;
+        this.projectRepository = projectRepository;
     }
 
     @GetMapping
-    public ResponseEntity<List<VersionResponse>> getProjectVersions(@PathVariable UUID projectId) {
+    public ResponseEntity<List<VersionResponse>> getAllVersions(@PathVariable UUID projectId) {
         ProjectEntity project = resolveProject(projectId);
-        if (project == null)
-            return ResponseEntity.notFound().build();
+        if (project == null) return ResponseEntity.notFound().build();
 
-        List<VersionResponse> versionResponses = versionRepository.findAllByProject(project)
-                .stream()
-                .map(VersionResponse::new)
-                .toList();
-
-        return ResponseEntity.ok(versionResponses);
+        return ResponseEntity.ok(versionService.getAllByProject(project));
     }
 
     @GetMapping("/{versionId}")
-    public ResponseEntity<VersionResponse> getProjectVersion(
-            @PathVariable UUID projectId,
-            @PathVariable Integer versionId) {
+    public ResponseEntity<VersionResponse> getVersion(@PathVariable UUID projectId, @PathVariable UUID versionId) {
         ProjectEntity project = resolveProject(projectId);
-        if (project == null)
-            return ResponseEntity.notFound().build();
+        if (project == null) return ResponseEntity.notFound().build();
 
-        return versionRepository.findByIdAndProject(versionId, project)
-                .map(VersionResponse::new)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(versionService.getOneVersion(project, versionId));
     }
 
     @PostMapping
     public ResponseEntity<VersionResponse> createVersion(
             @PathVariable UUID projectId,
-            @Valid @RequestBody CreateVersionRequest request) {
+            @Valid @RequestBody VersionRequest request
+    ) {
         ProjectEntity project = resolveProject(projectId);
-        if (project == null)
-            return ResponseEntity.notFound().build();
+        if (project == null) return ResponseEntity.notFound().build();
 
-        VersionEntity version = versionService.createVersion(project, request.getTitle());
-        return ResponseEntity.status(201).body(new VersionResponse(version));
-    }
-
-    private ProjectEntity resolveProject(UUID projectId) {
-        UserEntity user = authContext.getCurrentUser();
-        return projectRepository.findByIdAndOwner(projectId, user).orElse(null);
+        return ResponseEntity.ok(versionService.createVersion(project, request));
     }
 
     @PatchMapping("/{versionId}")
     public ResponseEntity<VersionResponse> updateVersion(
             @PathVariable UUID projectId,
-            @PathVariable Integer versionId,
-            @Valid @RequestBody CreateVersionRequest request) {
+            @PathVariable UUID versionId,
+            @RequestBody VersionRequest request
+    ) {
         ProjectEntity project = resolveProject(projectId);
-        if (project == null)
-            return ResponseEntity.notFound().build();
+        if (project == null) return ResponseEntity.notFound().build();
 
-        VersionEntity version = versionRepository.findByIdAndProject(versionId, project).orElse(null);
-        if (version == null)
-            return ResponseEntity.notFound().build();
-
-        versionService.updateVersion(version, request.getTitle());
-        return ResponseEntity.ok(new VersionResponse(version));
+        return ResponseEntity.ok(versionService.updateVersion(project, versionId, request));
     }
 
     @DeleteMapping("/{versionId}")
-    public ResponseEntity<Void> deleteVersion(
-            @PathVariable UUID projectId,
-            @PathVariable Integer versionId) {
+    public ResponseEntity<Void> deleteVersion(@PathVariable UUID projectId, @PathVariable UUID versionId) {
         ProjectEntity project = resolveProject(projectId);
-        if (project == null)
-            return ResponseEntity.notFound().build();
-        versionRepository.deleteByIdAndProject(versionId, project);
+        if (project == null) return ResponseEntity.notFound().build();
+
+        versionService.deleteVersion(project, versionId);
         return ResponseEntity.noContent().build();
+    }
+
+    private ProjectEntity resolveProject(UUID projectId) {
+        UserEntity user = authContext.getCurrentUser();
+        return projectRepository.findByIdAndOwner(projectId, user).orElse(null);
     }
 }

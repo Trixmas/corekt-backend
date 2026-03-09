@@ -7,7 +7,6 @@ import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
-import lab.corekt.backend.modules.project.versions.entity.VersionId;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import org.springframework.http.HttpStatus;
@@ -38,20 +37,20 @@ public class FileController {
 
     @PostMapping
     public ResponseEntity<FileUploadResponse> uploadFile(
-        @PathVariable UUID projectId,
-        @PathVariable Integer versionId,
-        @RequestParam MultipartFile file,
-        @RequestParam FileType fileType) throws IOException {
+            @PathVariable UUID projectId,
+            @PathVariable UUID versionId,
+            @RequestParam MultipartFile file,
+            @RequestParam FileType fileType) throws IOException {
 
         ProjectEntity project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
 
-        VersionEntity version = versionRepository.findById(new VersionId(versionId, project))
+        VersionEntity version = versionRepository.findByProjectAndId(project, versionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
 
         FileEntity saved = fileService.uploadFile(version, file, fileType);
-        FileUploadResponse response = new FileUploadResponse();
 
+        FileUploadResponse response = new FileUploadResponse();
         response.setFileId(saved.getId());
         response.setFileName(saved.getName());
         response.setFileType(saved.getType());

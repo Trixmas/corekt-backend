@@ -7,9 +7,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CreateVersionRequest {
-
-    @NotBlank
-    @Size(max = 50)
+public class VersionRequest {
+    @NotBlank(message = "Title is required")
+    @Size(max = 50, message = "Title must not exceed 50 characters")
     private String title;
 }
