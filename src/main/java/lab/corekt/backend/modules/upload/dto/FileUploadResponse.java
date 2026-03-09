@@ -1,10 +1,10 @@
 package lab.corekt.backend.modules.upload.dto;
 
-import java.util.UUID;
-
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.UUID;
 
 @Getter
 @Setter

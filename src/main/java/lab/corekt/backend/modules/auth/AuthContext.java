@@ -42,7 +42,7 @@ public final class AuthContext {
     public UserEntity getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if(authentication == null || authentication.getName() == null) {
+        if (authentication == null || authentication.getName() == null) {
             throw new IllegalStateException("No authenticated user in current request context");
         }
 

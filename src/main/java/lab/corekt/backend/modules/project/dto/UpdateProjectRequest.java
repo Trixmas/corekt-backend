@@ -10,7 +10,7 @@ import lombok.Setter;
 public class UpdateProjectRequest {
 
     @NotBlank(message = "Title is required")
-    @Size(max = 50 , message = "Title must not exceed 50 characters")
+    @Size(max = 50, message = "Title must not exceed 50 characters")
     private String title;
 
     @NotBlank(message = "Description is required")

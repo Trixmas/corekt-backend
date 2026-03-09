@@ -36,6 +36,7 @@ class TaigaController {
         this.authContext = authContext;
     }
 
+    //    TODO: refactor taiga login and projects route to not use /project/version endpoint to avoid useless project and version resolution
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> loginToTaiga(@Valid @RequestBody LoginRequest request) {
         try {
@@ -77,7 +78,7 @@ class TaigaController {
         }
 
         UserEntity user = authContext.getCurrentUser();
-
+//TODO :refactor resolveProject
         ProjectEntity project = projectRepository.findByIdAndOwner(projectId, user).orElse(null);
         if (project == null) {
             return ResponseEntity.status(404).body(new UsResponse(null, false, "Project not found"));

@@ -39,9 +39,9 @@ public class UserService {
     @Transactional
     public void saveApiKey(UserEntity user, ApiKeyRequest request) throws Exception {
         String encryptedToken = encryptionService.decryptAndReEncryptApiKey(
-            request.getEncryptedApiKey(),
-            request.getEncryptedDataKey(),
-            request.getInitializationVector()
+                request.getEncryptedApiKey(),
+                request.getEncryptedDataKey(),
+                request.getInitializationVector()
         );
         user.setMistralToken(encryptedToken);
         repository.save(user);
@@ -49,7 +49,7 @@ public class UserService {
 
     @Transactional
     public void deleteById(UUID userId, UserEntity requestingUser) {
-        if(!requestingUser.getId().equals(userId)) {
+        if (!requestingUser.getId().equals(userId)) {
             throw new IllegalArgumentException("Cannot delete another user's account");
         }
         repository.deleteById(userId);

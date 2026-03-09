@@ -27,12 +27,12 @@ public class JwtService {
 
     public String generateToken(String username, Map<String, Object> claims, long issuedAt) {
         return Jwts.builder()
-            .setClaims(new HashMap<>(claims))
-            .setSubject(username)
-            .setIssuedAt(new Date(issuedAt))
-            .setExpiration(new Date(issuedAt + expiration))
-            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-            .compact();
+                .setClaims(new HashMap<>(claims))
+                .setSubject(username)
+                .setIssuedAt(new Date(issuedAt))
+                .setExpiration(new Date(issuedAt + expiration))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
     public Long computeExpirationTime(long issuedAt) {
@@ -41,10 +41,10 @@ public class JwtService {
 
     public Claims validateToken(String token) {
         return Jwts.parserBuilder()
-            .setSigningKey(getSigningKey())
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public Claims validateTokenSafe(String token) {
