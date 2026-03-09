@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.bpmn.instance.Gateway;
 import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.Task;
@@ -67,5 +68,23 @@ public class BpmnParserService {
         }
 
         return flows;
+    }
+
+    public List<String> extractGateways(byte[] bpmnFile) {
+        BpmnModelInstance model = Bpmn.readModelFromStream(new ByteArrayInputStream(bpmnFile));
+        List<String> gateways = new ArrayList<>();
+
+        for (Gateway gateway : model.getModelElementsByType(Gateway.class)) {
+            String name = gateway.getName();
+            String type = gateway.getElementType().getTypeName();
+
+            String label = (name != null && !name.isBlank())
+                    ? type + ": " + name
+                    : type;
+
+            gateways.add(label);
+        }
+
+        return gateways;
     }
 }
