@@ -268,4 +268,14 @@ class BpmnParserServiceTest {
 
     assertTrue(participants.isEmpty());
   }
+
+  @Test
+  void shouldExtractSequenceFlows() {
+    List<String> flows = parser.extractSequenceFlows(SIMPLE_BPMN.getBytes());
+
+    assertEquals(3, flows.size());
+    assertTrue(flows.contains("startEvent -> A06: Créer un projet"));
+    assertTrue(flows.contains("A06: Créer un projet -> A07: Terminer le projet"));
+    assertTrue(flows.contains("A07: Terminer le projet -> endEvent"));
+  }
 }

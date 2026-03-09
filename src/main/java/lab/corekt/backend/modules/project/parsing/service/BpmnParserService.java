@@ -7,6 +7,7 @@ import java.util.List;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Participant;
+import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.Task;
 import org.springframework.stereotype.Service;
 
@@ -39,5 +40,32 @@ public class BpmnParserService {
         }
 
         return names;
+    }
+
+    public List<String> extractSequenceFlows(byte[] bpmnFile) {
+        BpmnModelInstance model = Bpmn.readModelFromStream(new ByteArrayInputStream(bpmnFile));
+        List<String> flows = new ArrayList<>();
+
+        for (SequenceFlow flow : model.getModelElementsByType(SequenceFlow.class)) {
+            String sourceName = flow.getSource().getName();
+            String targetName = flow.getTarget().getName();
+
+            // if there is a custom name, and not empty, we use it
+            // else, we use the type of the element
+            String sourceLabel = (sourceName != null && !sourceName.isBlank())
+                    ? sourceName
+                    : flow.getSource().getElementType().getTypeName();
+
+            // same here
+            String targetLabel = (targetName != null && !targetName.isBlank())
+                    ? targetName
+                    : flow.getTarget().getElementType().getTypeName();
+
+            String content = sourceLabel + " -> " + targetLabel;
+
+            flows.add(content);
+        }
+
+        return flows;
     }
 }
