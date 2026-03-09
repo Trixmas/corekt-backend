@@ -1,7 +1,7 @@
 package lab.corekt.backend.modules.project.parsing.service;
 
 import java.io.ByteArrayInputStream;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
@@ -14,11 +14,15 @@ public class BpmnParserService {
 
     public List<String> extractTaskNames(byte[] bpmnFile) {
         BpmnModelInstance model = Bpmn.readModelFromStream(new ByteArrayInputStream(bpmnFile));
-        Collection<Task> tasks = model.getModelElementsByType(Task.class);
+        List<String> names = new ArrayList<>();
 
-        return tasks.stream()
-                .map(Task::getName)
-                .filter(name -> name != null && !name.isBlank())
-                .toList();
+        for (Task task : model.getModelElementsByType(Task.class)) {
+            String name = task.getName();
+            if (name != null && !name.isBlank()) {
+                names.add(name);
+            }
+        }
+
+        return names;
     }
 }
