@@ -68,7 +68,7 @@ class BpmnParserServiceTest {
 
   @Test
   void shouldExtractTaskNames() {
-    byte[] bpmn = SIMPLE_BPMN.getBytes(StandardCharsets.UTF_8);
+    byte[] bpmn = SIMPLE_BPMN.getBytes();
 
     List<String> taskNames = parser.extractTaskNames(bpmn);
 
@@ -89,7 +89,7 @@ class BpmnParserServiceTest {
         </bpmn:definitions>
                 """;
 
-    List<String> taskNames = parser.extractTaskNames(noTaskBpmn.getBytes(StandardCharsets.UTF_8));
+    List<String> taskNames = parser.extractTaskNames(noTaskBpmn.getBytes());
 
     assertTrue(taskNames.isEmpty());
   }
@@ -153,5 +153,119 @@ class BpmnParserServiceTest {
     assertTrue(taskNames.contains("A04 : c'est à dire ?"));
     assertTrue(taskNames.contains("A05 : Encore une activité"));
     assertTrue(taskNames.contains("A06 : Et alors ?"));
+  }
+
+  // https://gibson-pages.telecomnancy.univ-lorraine.fr/francois.charoy/coursbpm/td/corrections/TD2_Correction/
+  @Test
+  void shouldExtractParticipantNames() {
+    String bpmn = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                          id="Definitions_4"
+                          targetNamespace="http://bpmn.io/schema/bpmn">
+
+          <bpmn:collaboration id="Collaboration_DemandeConges">
+
+            <bpmn:participant id="Participant_Employe" name="Employé" processRef="Process_Employe" />
+
+            <bpmn:participant id="Participant_Manager" name="Manager" processRef="Process_Manager" />
+
+            <bpmn:participant id="Participant_RH" name="Service RH" processRef="Process_RH" />
+
+            <!-- Messages entre participants -->
+            <bpmn:messageFlow id="MessageFlow_Demande" sourceRef="Task_SoumettreDemande" targetRef="StartEvent_DemandeRecue" />
+
+            <bpmn:messageFlow id="MessageFlow_Validation" sourceRef="Task_Valider" targetRef="Event_ValidationRecue" />
+
+            <bpmn:messageFlow id="MessageFlow_Enregistrement" sourceRef="Task_Enregistrer" targetRef="Event_Confirmation" />
+
+          </bpmn:collaboration>
+
+          <!-- Processus Employé -->
+          <bpmn:process id="Process_Employe" isExecutable="true">
+
+            <bpmn:startEvent id="StartEvent_BesoinConge" name="Besoin de&#10;congés" />
+
+            <bpmn:task id="Task_SoumettreDemande" name="Soumettre demande via formulaire" />
+
+            <bpmn:intermediateCatchEvent id="Event_Confirmation" name="Réception&#10;confirmation" />
+
+            <bpmn:endEvent id="EndEvent_CongesPlanifies" name="Congés&#10;planifiés" />
+
+            <bpmn:sequenceFlow sourceRef="StartEvent_BesoinConge" targetRef="Task_SoumettreDemande" />
+            <bpmn:sequenceFlow sourceRef="Task_SoumettreDemande" targetRef="Event_Confirmation" />
+            <bpmn:sequenceFlow sourceRef="Event_Confirmation" targetRef="EndEvent_CongesPlanifies" />
+
+          </bpmn:process>
+
+          <!-- Processus Manager -->
+          <bpmn:process id="Process_Manager" isExecutable="true">
+
+            <bpmn:startEvent id="StartEvent_DemandeRecue" name="Demande&#10;reçue" />
+
+            <bpmn:task id="Task_Analyser" name="Analyser disponibilité équipe" />
+
+            <bpmn:exclusiveGateway id="Gateway_Decision" name="Accepter ?" />
+
+            <bpmn:task id="Task_Valider" name="Valider la demande" />
+
+            <bpmn:task id="Task_Rejeter" name="Rejeter avec motif" />
+
+            <bpmn:endEvent id="EndEvent_Approuve" name="Demande&#10;approuvée" />
+
+            <bpmn:endEvent id="EndEvent_Rejete" name="Demande&#10;rejetée" />
+
+            <bpmn:sequenceFlow sourceRef="StartEvent_DemandeRecue" targetRef="Task_Analyser" />
+            <bpmn:sequenceFlow sourceRef="Task_Analyser" targetRef="Gateway_Decision" />
+
+            <bpmn:sequenceFlow name="Oui" sourceRef="Gateway_Decision" targetRef="Task_Valider">
+              <bpmn:conditionExpression>#{approuve == true}</bpmn:conditionExpression>
+            </bpmn:sequenceFlow>
+
+            <bpmn:sequenceFlow name="Non" sourceRef="Gateway_Decision" targetRef="Task_Rejeter">
+              <bpmn:conditionExpression>#{approuve == false}</bpmn:conditionExpression>
+            </bpmn:sequenceFlow>
+
+            <bpmn:sequenceFlow sourceRef="Task_Valider" targetRef="EndEvent_Approuve" />
+            <bpmn:sequenceFlow sourceRef="Task_Rejeter" targetRef="EndEvent_Rejete" />
+
+          </bpmn:process>
+
+          <!-- Processus RH -->
+          <bpmn:process id="Process_RH" isExecutable="true">
+
+            <bpmn:startEvent id="StartEvent_ValidationRecue" name="Validation&#10;reçue" />
+
+            <bpmn:task id="Task_Verifier" name="Vérifier solde congés" />
+
+            <bpmn:task id="Task_Enregistrer" name="Enregistrer dans SIRH" />
+
+            <bpmn:task id="Task_Notifier" name="Notifier l'employé" />
+
+            <bpmn:endEvent id="EndEvent_Archive" name="Dossier&#10;archivé" />
+
+            <bpmn:sequenceFlow sourceRef="StartEvent_ValidationRecue" targetRef="Task_Verifier" />
+            <bpmn:sequenceFlow sourceRef="Task_Verifier" targetRef="Task_Enregistrer" />
+            <bpmn:sequenceFlow sourceRef="Task_Enregistrer" targetRef="Task_Notifier" />
+            <bpmn:sequenceFlow sourceRef="Task_Notifier" targetRef="EndEvent_Archive" />
+
+          </bpmn:process>
+
+        </bpmn:definitions>
+                """;
+
+    List<String> participants = parser.extractParticipantNames(bpmn.getBytes());
+
+    assertEquals(3, participants.size());
+    assertTrue(participants.contains("Employé"));
+    assertTrue(participants.contains("Manager"));
+    assertTrue(participants.contains("Service RH"));
+  }
+
+  @Test
+  void shouldReturnEmptyListForNoParticipants() {
+    List<String> participants = parser.extractParticipantNames(SIMPLE_BPMN.getBytes());
+
+    assertTrue(participants.isEmpty());
   }
 }

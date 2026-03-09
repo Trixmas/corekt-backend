@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.Task;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,20 @@ public class BpmnParserService {
 
         for (Task task : model.getModelElementsByType(Task.class)) {
             String name = task.getName();
+            if (name != null && !name.isBlank()) {
+                names.add(name);
+            }
+        }
+
+        return names;
+    }
+
+    public List<String> extractParticipantNames(byte[] bpmnFile) {
+        BpmnModelInstance model = Bpmn.readModelFromStream(new ByteArrayInputStream(bpmnFile));
+        List<String> names = new ArrayList<>();
+
+        for (Participant participant : model.getModelElementsByType(Participant.class)) {
+            String name = participant.getName();
             if (name != null && !name.isBlank()) {
                 names.add(name);
             }
