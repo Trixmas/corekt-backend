@@ -44,22 +44,22 @@ public class DataLinkEntity {
     private String suggestion;
 
     @ManyToOne
-    @JoinColumn(name = "source_parsed_data_id", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "source_parsed_data_id", nullable = false)
     private ParsedDataEntity sourceParsedData;
 
     @ManyToOne
-    @JoinColumn(name = "target_parsed_data_id", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "target_parsed_data_id", nullable = false)
     private ParsedDataEntity targetParsedData;
 
     // Constructeurs
     public DataLinkEntity() {
     }
 
-    public DataLinkEntity(MatchType match, Severity severity, ParsedDataEntity sourceParsedData, ParsedDataEntity targetParsedData) {
+    public DataLinkEntity(MatchType match, Severity severity, ParsedDataEntity sourceParsedData,
+            ParsedDataEntity targetParsedData) {
         this.match = match;
         this.severity = severity;
         this.sourceParsedData = sourceParsedData;
         this.targetParsedData = targetParsedData;
     }
 }
-
