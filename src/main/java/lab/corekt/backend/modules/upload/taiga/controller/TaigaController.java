@@ -67,7 +67,7 @@ class TaigaController {
     }
 
     @GetMapping("/us")
-    public ResponseEntity<UsResponse> getUs(@PathVariable UUID projectId, @PathVariable UUID versionId,
+    public ResponseEntity<UsResponse> getUs(@Valid @PathVariable UUID projectId, @Valid @PathVariable UUID versionId,
                                             @Valid @RequestParam String taigaProjectId) {
 
         String taigaToken = taigaTokenService.getTaigaToken();

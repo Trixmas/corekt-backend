@@ -2,8 +2,8 @@ package lab.corekt.backend.modules.project.versions.service;
 
 import jakarta.transaction.Transactional;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
-import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionIssuesResponse;
+import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
@@ -60,7 +60,8 @@ public class VersionService {
 
     @Transactional
     public void deleteVersion(ProjectEntity project, UUID versionId) {
-        versionRepository.delete(getVersionEntity(project, versionId));
+        versionRepository.deleteByProjectAndId(project, versionId);
+        versionRepository.flush();
     }
 
     private VersionEntity getVersionEntity(ProjectEntity project, UUID versionId) {
