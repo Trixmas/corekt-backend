@@ -9,17 +9,17 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public class ProjectService {
+public class ProjectUtils {
     private static ProjectRepository projectRepository;
     private static AuthContext authContext;
 
-    ProjectService(ProjectRepository projectRepository, AuthContext authContext) {
-        ProjectService.projectRepository = projectRepository;
-        ProjectService.authContext = authContext;
+    ProjectUtils(ProjectRepository projectRepository, AuthContext authContext) {
+        ProjectUtils.projectRepository = projectRepository;
+        ProjectUtils.authContext = authContext;
     }
 
     public static ProjectEntity resolveProject(UUID projectId) {
-        UserEntity user = ProjectService.authContext.getCurrentUser();
-        return ProjectService.projectRepository.findByIdAndOwner(projectId, user).orElse(null);
+        UserEntity user = ProjectUtils.authContext.getCurrentUser();
+        return ProjectUtils.projectRepository.findByIdAndOwner(projectId, user).orElse(null);
     }
 }

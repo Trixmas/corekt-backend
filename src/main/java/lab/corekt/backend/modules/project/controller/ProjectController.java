@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-import static lab.corekt.backend.modules.project.utils.ProjectService.resolveProject;
+import static lab.corekt.backend.modules.project.utils.ProjectUtils.resolveProject;
 
 @RestController
 @RequestMapping("/projects")
