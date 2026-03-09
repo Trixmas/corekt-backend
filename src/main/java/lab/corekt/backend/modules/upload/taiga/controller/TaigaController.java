@@ -17,13 +17,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+import static lab.corekt.backend.modules.project.utils.ProjectService.resolveProject;
+
 @RestController
 @RequestMapping("/projects/{projectId}/versions/{versionId}/taiga")
 class TaigaController {
 
     private final TaigaTokenService taigaTokenService;
     private final TaigaService taigaService;
-    private final ProjectRepository projectRepository;
     private final VersionRepository versionRepository;
     private final AuthContext authContext;
 
@@ -31,7 +32,6 @@ class TaigaController {
                     VersionRepository versionRepository, AuthContext authContext) {
         this.taigaTokenService = taigaTokenService;
         this.taigaService = taigaService;
-        this.projectRepository = projectRepository;
         this.versionRepository = versionRepository;
         this.authContext = authContext;
     }
@@ -47,11 +47,8 @@ class TaigaController {
         }
 
         UserEntity user = authContext.getCurrentUser();
-//TODO :refactor resolveProject
-        ProjectEntity project = projectRepository.findByIdAndOwner(projectId, user).orElse(null);
-        if (project == null) {
-            return ResponseEntity.status(404).body(new UsResponse(null, false, "Project not found"));
-        }
+
+        ProjectEntity project = resolveProject(projectId);
 
         VersionEntity version = versionRepository.findByProjectAndId(project, versionId).orElse(null);
         if (version == null) {

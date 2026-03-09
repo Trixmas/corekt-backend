@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+import static lab.corekt.backend.modules.project.utils.ProjectService.resolveProject;
+
 @RestController
 @RequestMapping("/projects")
 class ProjectController {
@@ -44,8 +46,7 @@ class ProjectController {
 
     @GetMapping("/{projectId}")
     public ResponseEntity<ProjectResponse> getProjectById(@Valid @PathVariable UUID projectId) {
-        UserEntity currentUser = authContext.getCurrentUser();
-        ProjectEntity project = projectService.getOwnersProjectById(projectId, currentUser);
+        ProjectEntity project = resolveProject(projectId);
 
         if (project == null) {
             return ResponseEntity.notFound().build();
