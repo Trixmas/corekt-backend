@@ -93,4 +93,65 @@ class BpmnParserServiceTest {
 
     assertTrue(taskNames.isEmpty());
   }
+
+  @Test
+  void shouldExtractSixTaskNames() {
+    String bpmn = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_12nhh4u" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.13.1">
+          <bpmn:process id="Process_1xgm600" isExecutable="false">
+            <bpmn:startEvent id="StartEvent_1xcfacd">
+              <bpmn:outgoing>Flow_1y7hot8</bpmn:outgoing>
+            </bpmn:startEvent>
+            <bpmn:task id="Activity_0y7kxrz" name="A01: Bonjour">
+              <bpmn:incoming>Flow_1y7hot8</bpmn:incoming>
+              <bpmn:outgoing>Flow_1jz7rpi</bpmn:outgoing>
+            </bpmn:task>
+            <bpmn:sequenceFlow id="Flow_1y7hot8" sourceRef="StartEvent_1xcfacd" targetRef="Activity_0y7kxrz" />
+            <bpmn:task id="Activity_0onw0eq" name="A02 : Oui">
+              <bpmn:incoming>Flow_1jz7rpi</bpmn:incoming>
+              <bpmn:outgoing>Flow_0nvaefl</bpmn:outgoing>
+            </bpmn:task>
+            <bpmn:sequenceFlow id="Flow_1jz7rpi" sourceRef="Activity_0y7kxrz" targetRef="Activity_0onw0eq" />
+            <bpmn:task id="Activity_1tvp0mo" name="A03: Texte à faire voir par le dessus de le bord">
+              <bpmn:incoming>Flow_0nvaefl</bpmn:incoming>
+              <bpmn:outgoing>Flow_1u019b4</bpmn:outgoing>
+            </bpmn:task>
+            <bpmn:sequenceFlow id="Flow_0nvaefl" sourceRef="Activity_0onw0eq" targetRef="Activity_1tvp0mo" />
+            <bpmn:sequenceFlow id="Flow_1u019b4" sourceRef="Activity_1tvp0mo" targetRef="Activity_1xejkfq" />
+            <bpmn:task id="Activity_1xejkfq" name="A04 : c&#39;est à dire ?">
+              <bpmn:incoming>Flow_1u019b4</bpmn:incoming>
+              <bpmn:outgoing>Flow_1pmhvgt</bpmn:outgoing>
+            </bpmn:task>
+            <bpmn:task id="Activity_13x8kci" name="A05 : Encore une activité">
+              <bpmn:incoming>Flow_1pmhvgt</bpmn:incoming>
+              <bpmn:outgoing>Flow_0089vbp</bpmn:outgoing>
+            </bpmn:task>
+            <bpmn:sequenceFlow id="Flow_1pmhvgt" sourceRef="Activity_1xejkfq" targetRef="Activity_13x8kci" />
+            <bpmn:task id="Activity_1i4qled" name="A06 : Et alors ?">
+              <bpmn:incoming>Flow_0089vbp</bpmn:incoming>
+              <bpmn:outgoing>Flow_1d6s6kp</bpmn:outgoing>
+            </bpmn:task>
+            <bpmn:sequenceFlow id="Flow_0089vbp" sourceRef="Activity_13x8kci" targetRef="Activity_1i4qled" />
+            <bpmn:endEvent id="Event_1m7y5zy">
+              <bpmn:incoming>Flow_1d6s6kp</bpmn:incoming>
+            </bpmn:endEvent>
+            <bpmn:sequenceFlow id="Flow_1d6s6kp" sourceRef="Activity_1i4qled" targetRef="Event_1m7y5zy" />
+          </bpmn:process>
+          <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+            <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1xgm600" />
+          </bpmndi:BPMNDiagram>
+        </bpmn:definitions>
+        """;
+
+    List<String> taskNames = parser.extractTaskNames(bpmn.getBytes(StandardCharsets.UTF_8));
+
+    assertEquals(6, taskNames.size());
+    assertTrue(taskNames.contains("A01: Bonjour"));
+    assertTrue(taskNames.contains("A02 : Oui"));
+    assertTrue(taskNames.contains("A03: Texte à faire voir par le dessus de le bord"));
+    assertTrue(taskNames.contains("A04 : c'est à dire ?"));
+    assertTrue(taskNames.contains("A05 : Encore une activité"));
+    assertTrue(taskNames.contains("A06 : Et alors ?"));
+  }
 }
