@@ -21,6 +21,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -199,7 +200,28 @@ class VersionServiceTest {
                 .hasMessageContaining("Version not found");
         verify(versionRepository, never()).save(any());
     }
-    
+
+    //    ─── deleteVersion ────────────────────────────────────────────────────────
+    @Test
+    @DisplayName("Should delete version when it exists")
+    void testDeleteVersionDeletesWhenFound() {
+        UUID versionId = UUID.randomUUID();
+        VersionEntity entity = buildVersion("To Be Deleted", 1);
+
+        when(versionRepository.findByProjectAndId(project, versionId)).thenReturn(Optional.of(entity));
+        versionService.deleteVersion(project, versionId);
+        verify(versionRepository).delete(entity);
+    }
+
+    @Test
+    @DisplayName("Should not delete version when it does not exist")
+    void testDeleteVersionDoesNotDeleteAndThrowsWhenNotFound() {
+        UUID versionId = UUID.randomUUID();
+        when(versionRepository.findByProjectAndId(project, versionId)).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> versionService.deleteVersion(project, versionId));
+        verify(versionRepository, never()).delete(any());
+    }
+
     // ─── toResponse (via public methods) ──────────────────────────────────────
 
     @Test
