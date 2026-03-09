@@ -50,7 +50,8 @@ public class UserEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    protected UserEntity() {}
+    protected UserEntity() {
+    }
 
     public UserEntity(String email, String candidateUsername) {
         this.email = email;

@@ -1,25 +1,21 @@
 package lab.corekt.backend.modules.upload.controller;
 
-import java.io.IOException;
-import java.util.UUID;
-
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
+import lab.corekt.backend.modules.upload.dto.FileUploadResponse;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
+import lab.corekt.backend.modules.upload.service.FileService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import lab.corekt.backend.modules.upload.dto.FileUploadResponse;
-import lab.corekt.backend.modules.upload.service.FileService;
+
+import java.io.IOException;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/projects/{projectId}/versions/{versionId}/files")

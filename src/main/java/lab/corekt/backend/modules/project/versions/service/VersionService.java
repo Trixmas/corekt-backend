@@ -60,8 +60,8 @@ public class VersionService {
 
     @Transactional
     public void deleteVersion(ProjectEntity project, UUID versionId) {
-        versionRepository.deleteByProjectAndId(project, versionId);
-        versionRepository.flush();
+        VersionEntity entity = getVersionEntity(project, versionId);
+        versionRepository.delete(entity);
     }
 
     private VersionEntity getVersionEntity(ProjectEntity project, UUID versionId) {

@@ -168,15 +168,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleResponseStatusException(
-        ResponseStatusException exception,
-        WebRequest request) {
+            ResponseStatusException exception,
+            WebRequest request) {
 
         ErrorResponse response = new ErrorResponse(
-            exception.getStatusCode().value(),
-            exception.getReason() != null ? exception.getReason() : exception.getMessage(),
-            null,
-            sanitizePath(request.getDescription(false)),
-            Instant.now()
+                exception.getStatusCode().value(),
+                exception.getReason() != null ? exception.getReason() : exception.getMessage(),
+                null,
+                sanitizePath(request.getDescription(false)),
+                Instant.now()
         );
 
         return ResponseEntity.status(exception.getStatusCode()).body(response);

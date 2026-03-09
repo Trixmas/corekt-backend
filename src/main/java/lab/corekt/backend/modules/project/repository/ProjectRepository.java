@@ -13,5 +13,6 @@ import java.util.UUID;
 public interface ProjectRepository extends JpaRepository<ProjectEntity, UUID> {
 
     List<ProjectEntity> findByOwner(UserEntity owner);
+
     Optional<ProjectEntity> findByIdAndOwner(UUID id, UserEntity owner);
 }

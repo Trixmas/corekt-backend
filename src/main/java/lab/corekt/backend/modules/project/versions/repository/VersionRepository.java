@@ -16,6 +16,4 @@ public interface VersionRepository extends JpaRepository<VersionEntity, UUID> {
     Optional<VersionEntity> findTopByProjectOrderByVersionNumberDesc(ProjectEntity project);
 
     Optional<VersionEntity> findByProjectAndId(ProjectEntity project, UUID id);
-
-    void deleteByProjectAndId(ProjectEntity project, UUID id);
 }

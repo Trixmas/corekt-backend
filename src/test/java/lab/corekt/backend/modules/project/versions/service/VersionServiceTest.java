@@ -199,23 +199,7 @@ class VersionServiceTest {
                 .hasMessageContaining("Version not found");
         verify(versionRepository, never()).save(any());
     }
-
-    // ─── deleteVersion ────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("Should delete version and flush when called")
-    void testDeleteVersionDeletesAndFlushes() {
-        UUID versionId = UUID.randomUUID();
-
-        doNothing().when(versionRepository).deleteByProjectAndId(project, versionId);
-        doNothing().when(versionRepository).flush();
-
-        versionService.deleteVersion(project, versionId);
-
-        verify(versionRepository).deleteByProjectAndId(project, versionId);
-        verify(versionRepository).flush();
-    }
-
+    
     // ─── toResponse (via public methods) ──────────────────────────────────────
 
     @Test

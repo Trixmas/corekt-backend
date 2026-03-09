@@ -12,6 +12,16 @@ import java.util.UUID;
 @Setter
 public class ProjectResponse {
 
+    @NotBlank(message = "Id is required")
+    private UUID id;
+    @NotBlank(message = "Title is required")
+    private String title;
+    @NotBlank(message = "Description is required")
+    private String description;
+    private int totalVersions;
+    private Instant createdAt;
+    private Instant updatedAt;
+
     public ProjectResponse(ProjectEntity entity) {
         this.id = entity.getId();
         this.title = entity.getTitle();
@@ -20,20 +30,5 @@ public class ProjectResponse {
         this.updatedAt = entity.getUpdatedAt();
         this.totalVersions = (entity.getVersions() != null) ? entity.getVersions().size() : 1;
     }
-
-    @NotBlank(message = "Id is required")
-    private UUID id;
-
-    @NotBlank(message = "Title is required")
-    private String title;
-
-    @NotBlank(message = "Description is required")
-    private String description;
-
-    private int totalVersions;
-
-    private Instant createdAt;
-
-    private Instant updatedAt;
 
 }

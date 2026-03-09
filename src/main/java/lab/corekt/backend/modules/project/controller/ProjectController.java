@@ -7,6 +7,7 @@ import lab.corekt.backend.modules.project.dto.ProjectResponse;
 import lab.corekt.backend.modules.project.dto.UpdateProjectRequest;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.service.ProjectService;
+import lab.corekt.backend.modules.project.utils.ProjectUtils;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,16 +16,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+
 @RestController
 @RequestMapping("/projects")
 class ProjectController {
 
     private final ProjectService projectService;
     private final AuthContext authContext;
+    private final ProjectUtils projectUtils;
 
-    public ProjectController(ProjectService projectService, AuthContext authContext) {
+    public ProjectController(ProjectService projectService, AuthContext authContext, ProjectUtils projectUtils) {
         this.projectService = projectService;
         this.authContext = authContext;
+        this.projectUtils = projectUtils;
     }
 
     @GetMapping
@@ -44,8 +48,7 @@ class ProjectController {
 
     @GetMapping("/{projectId}")
     public ResponseEntity<ProjectResponse> getProjectById(@Valid @PathVariable UUID projectId) {
-        UserEntity currentUser = authContext.getCurrentUser();
-        ProjectEntity project = projectService.getOwnersProjectById(projectId, currentUser);
+        ProjectEntity project = projectUtils.resolveProject(projectId);
 
         if (project == null) {
             return ResponseEntity.notFound().build();
