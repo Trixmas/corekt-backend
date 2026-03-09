@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 @Service
-@NonNull
 public class FileService {
 
     private final FileRepository fileRepository;

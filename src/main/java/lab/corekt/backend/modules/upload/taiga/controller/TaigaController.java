@@ -6,7 +6,8 @@ import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
-import lab.corekt.backend.modules.upload.taiga.dto.*;
+import lab.corekt.backend.modules.upload.taiga.dto.US;
+import lab.corekt.backend.modules.upload.taiga.dto.UsResponse;
 import lab.corekt.backend.modules.upload.taiga.service.TaigaService;
 import lab.corekt.backend.modules.upload.taiga.service.TaigaTokenService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
@@ -14,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -34,37 +34,6 @@ class TaigaController {
         this.projectRepository = projectRepository;
         this.versionRepository = versionRepository;
         this.authContext = authContext;
-    }
-
-    //    TODO: refactor taiga login and projects route to not use /project/version endpoint to avoid useless project and version resolution
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> loginToTaiga(@Valid @RequestBody LoginRequest request) {
-        try {
-            TaigaCredentials credentials = taigaService.authenticate(request.getUsername(), request.getPassword());
-            taigaTokenService.storeTaigaToken(credentials.token(), credentials.userId());
-            return ResponseEntity.ok(new LoginResponse(true, "Successfully logged in to Taiga"));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(new LoginResponse(false, "An error occurred: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/projects")
-    public ResponseEntity<ProjectResponse> getProjects() {
-        String taigaToken = taigaTokenService.getTaigaToken();
-        String taigaUserId = taigaTokenService.getTaigaUserId();
-
-        if (taigaToken == null || taigaUserId == null) {
-            return ResponseEntity.status(401)
-                    .body(new ProjectResponse(false, "Not authenticated with Taiga. Please login first."));
-        }
-
-        try {
-            Map<String, String> projects = taigaService.fetchProjects(taigaToken, taigaUserId);
-            return ResponseEntity.ok(new ProjectResponse(projects));
-        } catch (Exception e) {
-            return ResponseEntity.status(500)
-                    .body(new ProjectResponse(false, "Failed to fetch projects from Taiga: " + e.getMessage()));
-        }
     }
 
     @GetMapping("/us")
