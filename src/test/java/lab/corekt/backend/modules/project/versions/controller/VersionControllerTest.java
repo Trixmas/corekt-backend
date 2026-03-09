@@ -271,4 +271,72 @@ class VersionControllerTest {
         mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}", projectId, versionId))
                 .andExpect(status().isNotFound());
     }
+
+    // --- resolveProject tests ---
+
+    @Test
+    @DisplayName("resolveProject uses the authenticated user to look up the project")
+    void testResolveProjectUsesAuthenticatedUser() throws Exception {
+        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
+                .thenReturn(Optional.of(project));
+        when(versionService.getAllByProject(eq(project))).thenReturn(List.of());
+
+        mockMvc.perform(get("/projects/{projectId}/versions", projectId))
+                .andExpect(status().isOk());
+
+        verify(authContext, times(1)).getCurrentUser();
+        verify(projectRepository, times(1)).findByIdAndOwner(eq(projectId), eq(currentUser));
+    }
+
+    @Test
+    @DisplayName("resolveProject passes the correct projectId to the repository")
+    void testResolveProjectPassesCorrectProjectId() throws Exception {
+        UUID otherId = UUID.randomUUID();
+        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
+                .thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndOwner(eq(otherId), eq(currentUser)))
+                .thenReturn(Optional.empty());
+        when(versionService.getAllByProject(eq(project))).thenReturn(List.of());
+
+        mockMvc.perform(get("/projects/{projectId}/versions", projectId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/projects/{projectId}/versions", otherId))
+                .andExpect(status().isNotFound());
+
+        verify(projectRepository, times(1)).findByIdAndOwner(eq(projectId), eq(currentUser));
+        verify(projectRepository, times(1)).findByIdAndOwner(eq(otherId), eq(currentUser));
+    }
+
+    @Test
+    @DisplayName("resolveProject returns 404 when the project belongs to a different user")
+    void testResolveProjectReturns404WhenProjectBelongsToDifferentUser() throws Exception {
+        // The repository enforces ownership: querying with currentUser finds nothing
+        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/projects/{projectId}/versions", projectId))
+                .andExpect(status().isNotFound());
+
+        verify(projectRepository, times(1)).findByIdAndOwner(eq(projectId), eq(currentUser));
+        verify(versionService, never()).getAllByProject(any());
+    }
+
+    @Test
+    @DisplayName("resolveProject returns 404 and does not call service when project not found on PATCH")
+    void testResolveProjectReturns404OnUpdateWhenProjectNotFound() throws Exception {
+        UUID versionId = UUID.randomUUID();
+        when(projectRepository.findByIdAndOwner(any(), eq(currentUser)))
+                .thenReturn(Optional.empty());
+
+        VersionRequest request = new VersionRequest();
+        request.setTitle("Updated title");
+
+        mockMvc.perform(patch("/projects/{projectId}/versions/{versionId}", projectId, versionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+
+        verify(versionService, never()).updateVersion(any(), any(), any());
+    }
 }
