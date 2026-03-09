@@ -1,15 +1,9 @@
 package lab.corekt.backend.modules.project.utils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Optional;
-import java.util.UUID;
-
+import lab.corekt.backend.modules.auth.AuthContext;
+import lab.corekt.backend.modules.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.repository.ProjectRepository;
+import lab.corekt.backend.modules.user.entity.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,10 +11,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import lab.corekt.backend.modules.auth.AuthContext;
-import lab.corekt.backend.modules.project.entity.ProjectEntity;
-import lab.corekt.backend.modules.project.repository.ProjectRepository;
-import lab.corekt.backend.modules.user.entity.UserEntity;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectUtilsTest {
@@ -31,14 +28,14 @@ class ProjectUtilsTest {
     @Mock
     private AuthContext authContext;
 
+    private ProjectUtils projectUtils;
     private UserEntity currentUser;
     private UUID projectId;
     private ProjectEntity project;
 
     @BeforeEach
     void setUp() {
-        // Constructing ProjectUtils injects the mocks into the static fields
-        new ProjectUtils(projectRepository, authContext);
+        projectUtils = new ProjectUtils(projectRepository, authContext);
 
         currentUser = new UserEntity("user@example.com", "testUser");
         currentUser.setId(UUID.randomUUID());
@@ -55,7 +52,7 @@ class ProjectUtilsTest {
         when(projectRepository.findByIdAndOwner(projectId, currentUser))
                 .thenReturn(Optional.of(project));
 
-        ProjectEntity result = ProjectUtils.resolveProject(projectId);
+        ProjectEntity result = projectUtils.resolveProject(projectId);
 
         assertThat(result).isEqualTo(project);
         verify(authContext, times(1)).getCurrentUser();
@@ -71,8 +68,8 @@ class ProjectUtilsTest {
         when(projectRepository.findByIdAndOwner(otherId, currentUser))
                 .thenReturn(Optional.empty());
 
-        assertThat(ProjectUtils.resolveProject(projectId)).isEqualTo(project);
-        assertThat(ProjectUtils.resolveProject(otherId)).isNull();
+        assertThat(projectUtils.resolveProject(projectId)).isEqualTo(project);
+        assertThat(projectUtils.resolveProject(otherId)).isNull();
 
         verify(projectRepository, times(1)).findByIdAndOwner(projectId, currentUser);
         verify(projectRepository, times(1)).findByIdAndOwner(otherId, currentUser);
@@ -81,11 +78,10 @@ class ProjectUtilsTest {
     @Test
     @DisplayName("resolveProject returns null when the project belongs to a different user")
     void testResolveProjectReturnsNullWhenProjectBelongsToDifferentUser() {
-        // The repository enforces ownership: querying with currentUser finds nothing
         when(projectRepository.findByIdAndOwner(projectId, currentUser))
                 .thenReturn(Optional.empty());
 
-        ProjectEntity result = ProjectUtils.resolveProject(projectId);
+        ProjectEntity result = projectUtils.resolveProject(projectId);
 
         assertThat(result).isNull();
         verify(projectRepository, times(1)).findByIdAndOwner(projectId, currentUser);
@@ -97,7 +93,7 @@ class ProjectUtilsTest {
         when(projectRepository.findByIdAndOwner(any(), eq(currentUser)))
                 .thenReturn(Optional.empty());
 
-        ProjectEntity result = ProjectUtils.resolveProject(projectId);
+        ProjectEntity result = projectUtils.resolveProject(projectId);
 
         assertThat(result).isNull();
     }

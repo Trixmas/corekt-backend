@@ -1,10 +1,8 @@
 package lab.corekt.backend.modules.project.versions.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.auth.service.JwtService;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
-import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.utils.ProjectUtils;
 import lab.corekt.backend.modules.project.versions.dto.VersionIssuesResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
@@ -17,14 +15,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -35,7 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(value = VersionController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
-@Import(ProjectUtils.class)
 class VersionControllerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -44,9 +39,7 @@ class VersionControllerTest {
     @MockitoBean
     private JwtService jwtService;
     @MockitoBean
-    private ProjectRepository projectRepository;
-    @MockitoBean
-    private AuthContext authContext;
+    private ProjectUtils projectUtils;
     @MockitoBean
     private VersionService versionService;
     private UserEntity currentUser;
@@ -57,11 +50,12 @@ class VersionControllerTest {
     void setUp() {
         currentUser = new UserEntity("user@example.com", "testUser");
         currentUser.setId(UUID.randomUUID());
-        when(authContext.getCurrentUser()).thenReturn(currentUser);
 
         projectId = UUID.randomUUID();
         project = new ProjectEntity("Test Project", "A description", currentUser);
         project.setId(projectId);
+
+        when(projectUtils.resolveProject(projectId)).thenReturn(project);
     }
 
     private VersionResponse buildVersionResponse(UUID id, int versionNumber, String title) {
@@ -76,15 +70,13 @@ class VersionControllerTest {
     }
 
     @Test
-    @DisplayName("GET /projects/{projectId}/versions returns 200 with version list")
+    @DisplayName("GET /projects/{projectId}/versions returns 200 with list of versions")
     void testGetProjectVersionsReturns200() throws Exception {
         UUID v1Id = UUID.randomUUID();
         UUID v2Id = UUID.randomUUID();
         VersionResponse v1 = buildVersionResponse(v1Id, 1, "v1");
         VersionResponse v2 = buildVersionResponse(v2Id, 2, "v2");
 
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
         when(versionService.getAllByProject(eq(project)))
                 .thenReturn(List.of(v1, v2));
 
@@ -100,8 +92,6 @@ class VersionControllerTest {
     @Test
     @DisplayName("GET /projects/{projectId}/versions returns 200 with empty list when project has no versions")
     void testGetProjectVersionsReturnsEmptyList() throws Exception {
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
         when(versionService.getAllByProject(eq(project)))
                 .thenReturn(List.of());
 
@@ -113,8 +103,7 @@ class VersionControllerTest {
     @Test
     @DisplayName("GET /projects/{projectId}/versions returns 404 when project not found")
     void testGetProjectVersionsReturns404WhenProjectNotFound() throws Exception {
-        when(projectRepository.findByIdAndOwner(any(), eq(currentUser)))
-                .thenReturn(Optional.empty());
+        when(projectUtils.resolveProject(any())).thenReturn(null);
 
         mockMvc.perform(get("/projects/{projectId}/versions", projectId))
                 .andExpect(status().isNotFound());
@@ -126,15 +115,15 @@ class VersionControllerTest {
         UUID versionId = UUID.randomUUID();
         VersionResponse v1 = buildVersionResponse(versionId, 1, "Initial version");
 
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
         when(versionService.getOneVersion(eq(project), eq(versionId)))
                 .thenReturn(v1);
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}", projectId, versionId))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(versionId.toString()))
                 .andExpect(jsonPath("$.version").value(1))
-                .andExpect(jsonPath("$.title").value("Initial version"));
+                .andExpect(jsonPath("$.title").value("Initial version"))
+                .andExpect(jsonPath("$.issues").exists());
     }
 
     @Test
@@ -142,8 +131,6 @@ class VersionControllerTest {
     void testGetProjectVersionReturns404WhenVersionNotFound() throws Exception {
         UUID versionId = UUID.randomUUID();
 
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
         when(versionService.getOneVersion(eq(project), eq(versionId)))
                 .thenThrow(new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"));
@@ -155,8 +142,7 @@ class VersionControllerTest {
     @Test
     @DisplayName("GET /projects/{projectId}/versions/{versionId} returns 404 when project not found")
     void testGetProjectVersionReturns404WhenProjectNotFound() throws Exception {
-        when(projectRepository.findByIdAndOwner(any(), eq(currentUser)))
-                .thenReturn(Optional.empty());
+        when(projectUtils.resolveProject(any())).thenReturn(null);
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}", projectId, UUID.randomUUID()))
                 .andExpect(status().isNotFound());
@@ -168,8 +154,6 @@ class VersionControllerTest {
         UUID versionId = UUID.randomUUID();
         VersionResponse created = buildVersionResponse(versionId, 2, "Sprint 2");
 
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
         when(versionService.createVersion(eq(project), any(VersionRequest.class)))
                 .thenReturn(created);
 
@@ -180,15 +164,16 @@ class VersionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(versionId.toString()))
                 .andExpect(jsonPath("$.version").value(2))
-                .andExpect(jsonPath("$.title").value("Sprint 2"));
+                .andExpect(jsonPath("$.title").value("Sprint 2"))
+                .andExpect(jsonPath("$.issues").exists());
     }
 
     @Test
     @DisplayName("POST /projects/{projectId}/versions returns 404 when project not found")
     void testCreateVersionReturns404WhenProjectNotFound() throws Exception {
-        when(projectRepository.findByIdAndOwner(any(), eq(currentUser)))
-                .thenReturn(Optional.empty());
+        when(projectUtils.resolveProject(any())).thenReturn(null);
 
         VersionRequest request = new VersionRequest();
         request.setTitle("Sprint 2");
@@ -202,9 +187,6 @@ class VersionControllerTest {
     @Test
     @DisplayName("POST /projects/{projectId}/versions returns 400 when title is blank")
     void testCreateVersionReturns400WhenTitleIsBlank() throws Exception {
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
-
         mockMvc.perform(post("/projects/{projectId}/versions", projectId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\": \"\"}"))
@@ -214,9 +196,6 @@ class VersionControllerTest {
     @Test
     @DisplayName("POST /projects/{projectId}/versions returns 400 when title exceeds 50 characters")
     void testCreateVersionReturns400WhenTitleTooLong() throws Exception {
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
-
         String longTitle = "A".repeat(51);
 
         mockMvc.perform(post("/projects/{projectId}/versions", projectId)
@@ -228,9 +207,6 @@ class VersionControllerTest {
     @Test
     @DisplayName("POST /projects/{projectId}/versions returns 400 when body is missing")
     void testCreateVersionReturns400WhenBodyMissing() throws Exception {
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
-
         mockMvc.perform(post("/projects/{projectId}/versions", projectId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -238,25 +214,91 @@ class VersionControllerTest {
     }
 
     @Test
+    @DisplayName("PATCH /projects/{projectId}/versions/{versionId} returns 200 with updated version")
+    void testUpdateVersionReturns200() throws Exception {
+        UUID versionId = UUID.randomUUID();
+        VersionResponse updated = buildVersionResponse(versionId, 1, "Updated title");
+
+        when(versionService.updateVersion(eq(project), eq(versionId), any(VersionRequest.class)))
+                .thenReturn(updated);
+
+        VersionRequest request = new VersionRequest();
+        request.setTitle("Updated title");
+
+        mockMvc.perform(patch("/projects/{projectId}/versions/{versionId}", projectId, versionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(versionId.toString()))
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.title").value("Updated title"));
+    }
+
+    @Test
+    @DisplayName("PATCH /projects/{projectId}/versions/{versionId} returns 404 when project not found")
+    void testUpdateVersionReturns404WhenProjectNotFound() throws Exception {
+        when(projectUtils.resolveProject(any())).thenReturn(null);
+
+        VersionRequest request = new VersionRequest();
+        request.setTitle("Updated title");
+
+        mockMvc.perform(patch("/projects/{projectId}/versions/{versionId}", projectId, UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("PATCH /projects/{projectId}/versions/{versionId} returns 404 when version not found")
+    void testUpdateVersionReturns404WhenVersionNotFound() throws Exception {
+        UUID versionId = UUID.randomUUID();
+
+        when(versionService.updateVersion(eq(project), eq(versionId), any(VersionRequest.class)))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"));
+
+        VersionRequest request = new VersionRequest();
+        request.setTitle("Updated title");
+
+        mockMvc.perform(patch("/projects/{projectId}/versions/{versionId}", projectId, versionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("PATCH /projects/{projectId}/versions/{versionId} ignores null title and returns 200")
+    void testUpdateVersionIgnoresNullTitle() throws Exception {
+        UUID versionId = UUID.randomUUID();
+        VersionResponse unchanged = buildVersionResponse(versionId, 1, "Original title");
+
+        when(versionService.updateVersion(eq(project), eq(versionId), any(VersionRequest.class)))
+                .thenReturn(unchanged);
+
+        mockMvc.perform(patch("/projects/{projectId}/versions/{versionId}", projectId, versionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\": null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Original title"));
+    }
+
+    @Test
     @DisplayName("DELETE /projects/{projectId}/versions/{versionId} returns 204 when version is deleted")
     void testDeleteVersionReturns204() throws Exception {
         UUID versionId = UUID.randomUUID();
 
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
         doNothing().when(versionService).deleteVersion(eq(project), eq(versionId));
 
         mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}", projectId, versionId))
                 .andExpect(status().isNoContent());
-        mockMvc.perform(get("/projects/{projectId}/versions/{versionId}", projectId, versionId))
-                .andExpect(status().isNotFound());
+
+        verify(versionService).deleteVersion(eq(project), eq(versionId));
     }
 
     @Test
     @DisplayName("DELETE /projects/{projectId}/versions/{versionId} returns 404 when project not found")
     void testDeleteVersionReturns404WhenProjectNotFound() throws Exception {
-        when(projectRepository.findByIdAndOwner(any(), eq(currentUser)))
-                .thenReturn(Optional.empty());
+        when(projectUtils.resolveProject(any())).thenReturn(null);
 
         mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}", projectId, UUID.randomUUID()))
                 .andExpect(status().isNotFound());
@@ -267,8 +309,6 @@ class VersionControllerTest {
     void testDeleteVersionReturns404WhenVersionNotFound() throws Exception {
         UUID versionId = UUID.randomUUID();
 
-        when(projectRepository.findByIdAndOwner(eq(projectId), eq(currentUser)))
-                .thenReturn(Optional.of(project));
         doThrow(new org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"))
                 .when(versionService).deleteVersion(eq(project), eq(versionId));
@@ -277,3 +317,4 @@ class VersionControllerTest {
                 .andExpect(status().isNotFound());
     }
 }
+

@@ -10,16 +10,16 @@ import java.util.UUID;
 
 @Service
 public class ProjectUtils {
-    private static ProjectRepository projectRepository;
-    private static AuthContext authContext;
+    private final ProjectRepository projectRepository;
+    private final AuthContext authContext;
 
-    ProjectUtils(ProjectRepository projectRepository, AuthContext authContext) {
-        ProjectUtils.projectRepository = projectRepository;
-        ProjectUtils.authContext = authContext;
+    public ProjectUtils(ProjectRepository projectRepository, AuthContext authContext) {
+        this.projectRepository = projectRepository;
+        this.authContext = authContext;
     }
 
-    public static ProjectEntity resolveProject(UUID projectId) {
-        UserEntity user = ProjectUtils.authContext.getCurrentUser();
-        return ProjectUtils.projectRepository.findByIdAndOwner(projectId, user).orElse(null);
+    public ProjectEntity resolveProject(UUID projectId) {
+        UserEntity user = authContext.getCurrentUser();
+        return projectRepository.findByIdAndOwner(projectId, user).orElse(null);
     }
 }
