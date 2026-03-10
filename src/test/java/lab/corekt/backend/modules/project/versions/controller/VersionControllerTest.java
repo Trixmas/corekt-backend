@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import lab.corekt.backend.utils.BaseControllerTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ import lab.corekt.backend.modules.project.versions.service.VersionService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 
 @WebMvcTest(value = VersionController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
-class VersionControllerTest {
+class VersionControllerTest extends BaseControllerTest {
 
         private final ObjectMapper objectMapper = new ObjectMapper();
         @Autowired

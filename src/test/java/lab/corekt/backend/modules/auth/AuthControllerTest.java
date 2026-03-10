@@ -5,6 +5,7 @@ import lab.corekt.backend.modules.auth.service.JumpCloudService;
 import lab.corekt.backend.modules.auth.service.JwtService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.service.UserService;
+import lab.corekt.backend.utils.BaseControllerTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-class AuthControllerTest {
+class AuthControllerTest extends BaseControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
