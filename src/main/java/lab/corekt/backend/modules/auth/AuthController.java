@@ -1,6 +1,7 @@
 package lab.corekt.backend.modules.auth;
 
 import jakarta.validation.Valid;
+import lab.corekt.backend.config.limiter.RateLimit;
 import lab.corekt.backend.modules.auth.dto.LdapUserProfile;
 import lab.corekt.backend.modules.auth.dto.LoginRequest;
 import lab.corekt.backend.modules.auth.dto.LoginResponse;
@@ -47,6 +48,7 @@ public class AuthController {
         return response;
     }
 
+    @RateLimit(requests = 5)
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LdapUserProfile ldapProfile = jumpCloudService.authenticateAndGetProfile(request.getEmail(), request.getPassword());
