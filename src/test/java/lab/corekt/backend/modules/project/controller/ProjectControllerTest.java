@@ -6,6 +6,7 @@ import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.service.ProjectService;
 import lab.corekt.backend.modules.project.utils.ProjectUtils;
 import lab.corekt.backend.modules.user.entity.UserEntity;
+import lab.corekt.backend.utils.BaseControllerTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ProjectController.class)
-class ProjectControllerTest {
+class ProjectControllerTest extends BaseControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
