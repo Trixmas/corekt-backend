@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
@@ -174,6 +175,7 @@ class BpmnParserServiceTest {
 
     assertTrue(participants.isEmpty());
   }
+
   // https://gibson-pages.telecomnancy.univ-lorraine.fr/francois.charoy/coursbpm/td/corrections/TD2_Correction/
   private static final String COLLABORATION_BPMN = """
       <?xml version="1.0" encoding="UTF-8"?>
@@ -275,5 +277,55 @@ class BpmnParserServiceTest {
     assertTrue(flows.contains("startEvent -> A06: Créer un projet"));
     assertTrue(flows.contains("A06: Créer un projet -> A07: Terminer le projet"));
     assertTrue(flows.contains("A07: Terminer le projet -> endEvent"));
+  }
+
+  @Test
+  void shouldReturnEmptyListForNoFlows() {
+    String noFlowBpmn = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" id="Definitions_1hi09mf" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.13.1">
+          <bpmn:process id="Process_05bei3p" isExecutable="false" />
+          <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+            <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_05bei3p" />
+          </bpmndi:BPMNDiagram>
+        </bpmn:definitions>
+                """;
+
+    List<String> flows = parser.extract(noFlowBpmn.getBytes(), DataType.FLOW);
+
+    assertTrue(flows.isEmpty());
+  }
+
+  @Test
+  void shouldExtractActionsFromCollaborationBpmn() {
+    List<String> actions = parser.extract(COLLABORATION_BPMN.getBytes(), DataType.ACTION);
+
+    assertEquals(7, actions.size());
+    assertTrue(actions.contains("Soumettre demande via formulaire"));
+    assertTrue(actions.contains("Analyser disponibilité équipe"));
+    assertTrue(actions.contains("Valider la demande"));
+    assertTrue(actions.contains("Rejeter avec motif"));
+    assertTrue(actions.contains("Vérifier solde congés"));
+    assertTrue(actions.contains("Enregistrer dans SIRH"));
+    assertTrue(actions.contains("Notifier l'employé"));
+  }
+
+  @Test
+  void shouldExtractFlowsFromCollaborationBpmn() {
+    List<String> flows = parser.extract(COLLABORATION_BPMN.getBytes(), DataType.FLOW);
+
+    assertEquals(13, flows.size());
+    assertTrue(flows.contains("Soumettre demande via formulaire -> Réception\nconfirmation"));
+    assertTrue(flows.contains("Valider la demande -> Demande\napprouvée"));
+    assertTrue(flows.contains("Analyser disponibilité équipe -> Accepter ?"));
+    assertTrue(flows.contains("Accepter ? -> Valider la demande"));
+    assertTrue(flows.contains("Accepter ? -> Rejeter avec motif"));
+  }
+
+  @Test
+  void shouldThrowForUnsupportedDataType() {
+    assertThrows(IllegalArgumentException.class, () -> {
+      parser.extract(SIMPLE_BPMN.getBytes(), DataType.US);
+    });
   }
 }
