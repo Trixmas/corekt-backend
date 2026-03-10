@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
+import lab.corekt.backend.modules.project.parsing.enums.DataType;
+
 class BpmnParserServiceTest {
 
   private final BpmnParserService parser = new BpmnParserService();
@@ -70,7 +72,7 @@ class BpmnParserServiceTest {
   void shouldExtractTaskNames() {
     byte[] bpmn = SIMPLE_BPMN.getBytes();
 
-    List<String> taskNames = parser.extractTaskNames(bpmn);
+    List<String> taskNames = parser.extract(bpmn, DataType.ACTION);
 
     assertEquals(2, taskNames.size());
     assertTrue(taskNames.contains("A06: Créer un projet"));
@@ -89,7 +91,7 @@ class BpmnParserServiceTest {
         </bpmn:definitions>
                 """;
 
-    List<String> taskNames = parser.extractTaskNames(noTaskBpmn.getBytes());
+    List<String> taskNames = parser.extract(noTaskBpmn.getBytes(), DataType.ACTION);
 
     assertTrue(taskNames.isEmpty());
   }
@@ -144,7 +146,7 @@ class BpmnParserServiceTest {
         </bpmn:definitions>
         """;
 
-    List<String> taskNames = parser.extractTaskNames(bpmn.getBytes(StandardCharsets.UTF_8));
+    List<String> taskNames = parser.extract(bpmn.getBytes(StandardCharsets.UTF_8), DataType.ACTION);
 
     assertEquals(6, taskNames.size());
     assertTrue(taskNames.contains("A01: Bonjour"));
@@ -158,7 +160,7 @@ class BpmnParserServiceTest {
   // https://gibson-pages.telecomnancy.univ-lorraine.fr/francois.charoy/coursbpm/td/corrections/TD2_Correction/
   @Test
   void shouldExtractParticipantNames() {
-    List<String> participants = parser.extractParticipantNames(COLLABORATION_BPMN.getBytes());
+    List<String> participants = parser.extract(COLLABORATION_BPMN.getBytes(), DataType.ACTOR);
 
     assertEquals(3, participants.size());
     assertTrue(participants.contains("Employé"));
@@ -168,7 +170,7 @@ class BpmnParserServiceTest {
 
   @Test
   void shouldReturnEmptyListForNoParticipants() {
-    List<String> participants = parser.extractParticipantNames(SIMPLE_BPMN.getBytes());
+    List<String> participants = parser.extract(SIMPLE_BPMN.getBytes(), DataType.ACTOR);
 
     assertTrue(participants.isEmpty());
   }
@@ -266,23 +268,8 @@ class BpmnParserServiceTest {
               """;
 
   @Test
-  void shouldExtractGateways() {
-    List<String> gateways = parser.extractGateways(COLLABORATION_BPMN.getBytes());
-
-    assertEquals(1, gateways.size());
-    assertTrue(gateways.contains("exclusiveGateway: Accepter ?"));
-  }
-
-  @Test
-  void shouldReturnEmptyListForNoGateways() {
-    List<String> gateways = parser.extractGateways(SIMPLE_BPMN.getBytes());
-
-    assertTrue(gateways.isEmpty());
-  }
-
-  @Test
   void shouldExtractSequenceFlows() {
-    List<String> flows = parser.extractSequenceFlows(SIMPLE_BPMN.getBytes());
+    List<String> flows = parser.extract(SIMPLE_BPMN.getBytes(), DataType.FLOW);
 
     assertEquals(3, flows.size());
     assertTrue(flows.contains("startEvent -> A06: Créer un projet"));
