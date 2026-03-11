@@ -28,7 +28,6 @@ public class ProjectResponse {
         this.description = entity.getDescription();
         this.createdAt = entity.getCreatedAt();
         this.updatedAt = entity.getUpdatedAt();
-        this.totalVersions = (entity.getVersions() != null) ? entity.getVersions().size() : 1;
+        this.totalVersions = entity.getVersions().size();
     }
-
 }
