@@ -1,6 +1,7 @@
 package lab.corekt.backend.modules.project.service;
 
 import lab.corekt.backend.modules.project.dto.CreateProjectRequest;
+import lab.corekt.backend.modules.project.dto.ProjectResponse;
 import lab.corekt.backend.modules.project.dto.UpdateProjectRequest;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
@@ -42,25 +43,24 @@ class ProjectServiceTest {
     }
 
     @Test
-    @DisplayName("Should create and return project when request is valid")
-    void testCreatesAndReturnsProjectWhenRequestIsValid() {
+    @DisplayName("Should create and return project response when request is valid")
+    void testCreatesAndReturnsProjectResponseWhenRequestIsValid() {
         UserEntity user = buildUser();
         CreateProjectRequest request = buildCreateRequest("My Project", "A description");
         ProjectEntity savedProject = new ProjectEntity("My Project", "A description", user);
 
         when(projectRepository.save(any(ProjectEntity.class))).thenReturn(savedProject);
 
-        ProjectEntity result = projectService.createProject(request, user);
+        ProjectResponse result = projectService.createProject(request, user);
 
         assertThat(result.getTitle()).isEqualTo("My Project");
         assertThat(result.getDescription()).isEqualTo("A description");
-        assertThat(result.getOwner()).isEqualTo(user);
         verify(projectRepository).save(any(ProjectEntity.class));
     }
 
     @Test
-    @DisplayName("Should return all projects belonging to owner")
-    void testReturnsAllProjectsBelongingToOwner() {
+    @DisplayName("Should return all project responses belonging to owner")
+    void testReturnsAllProjectResponsesBelongingToOwner() {
         UserEntity user = buildUser();
         List<ProjectEntity> projects = List.of(
             new ProjectEntity("Project A", "Desc A", user),
@@ -69,22 +69,24 @@ class ProjectServiceTest {
 
         when(projectRepository.findByOwner(user)).thenReturn(projects);
 
-        List<ProjectEntity> result = projectService.getAllOwnerProjects(user);
+        List<ProjectResponse> result = projectService.getAllOwnerProjects(user);
 
         assertThat(result).hasSize(2);
+        assertThat(result.get(0).getTitle()).isEqualTo("Project A");
+        assertThat(result.get(1).getTitle()).isEqualTo("Project B");
         verify(projectRepository).findByOwner(user);
     }
 
     @Test
-    @DisplayName("Should return project when it belongs to owner")
-    void testReturnsProjectWhenItBelongsToOwner() {
+    @DisplayName("Should return project response when it belongs to owner")
+    void testReturnsProjectResponseWhenItBelongsToOwner() {
         UserEntity user = buildUser();
         UUID projectId = UUID.randomUUID();
         ProjectEntity project = new ProjectEntity("My Project", "A description", user);
 
         when(projectRepository.findByIdAndOwner(projectId, user)).thenReturn(Optional.of(project));
 
-        ProjectEntity result = projectService.getOwnersProjectById(projectId, user);
+        ProjectResponse result = projectService.getOwnersProjectById(projectId, user);
 
         assertThat(result).isNotNull();
         assertThat(result.getTitle()).isEqualTo("My Project");
@@ -98,13 +100,13 @@ class ProjectServiceTest {
 
         when(projectRepository.findByIdAndOwner(projectId, user)).thenReturn(Optional.empty());
 
-        ProjectEntity result = projectService.getOwnersProjectById(projectId, user);
+        ProjectResponse result = projectService.getOwnersProjectById(projectId, user);
 
         assertThat(result).isNull();
     }
 
     @Test
-    @DisplayName("Should update title and description when both are provided")
+    @DisplayName("Should update title and description and return response when both are provided")
     void testUpdatesTitleAndDescriptionWhenBothAreProvided() {
         UserEntity user = buildUser();
         UUID projectId = UUID.randomUUID();
@@ -117,7 +119,7 @@ class ProjectServiceTest {
         when(projectRepository.findByIdAndOwner(projectId, user)).thenReturn(Optional.of(project));
         when(projectRepository.save(project)).thenReturn(project);
 
-        ProjectEntity result = projectService.updateProject(projectId, request, user);
+        ProjectResponse result = projectService.updateProject(projectId, request, user);
 
         assertThat(result.getTitle()).isEqualTo("New Title");
         assertThat(result.getDescription()).isEqualTo("New Description");
@@ -137,7 +139,7 @@ class ProjectServiceTest {
         when(projectRepository.findByIdAndOwner(projectId, user)).thenReturn(Optional.of(project));
         when(projectRepository.save(project)).thenReturn(project);
 
-        ProjectEntity result = projectService.updateProject(projectId, request, user);
+        ProjectResponse result = projectService.updateProject(projectId, request, user);
 
         assertThat(result.getTitle()).isEqualTo("New Title");
         assertThat(result.getDescription()).isEqualTo("Old Description");
@@ -184,3 +186,4 @@ class ProjectServiceTest {
             .isInstanceOf(ResponseStatusException.class);
     }
 }
+

@@ -2,9 +2,9 @@ package lab.corekt.backend.modules.project.controller;
 
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.auth.service.JwtService;
+import lab.corekt.backend.modules.project.dto.ProjectResponse;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.service.ProjectService;
-import lab.corekt.backend.modules.project.utils.ProjectUtils;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.utils.BaseControllerTest;
 import org.junit.jupiter.api.DisplayName;
@@ -43,11 +43,13 @@ class ProjectControllerTest extends BaseControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
-    @MockitoBean
-    private ProjectUtils projectUtils;
-
     private UserEntity buildUser() {
         return new UserEntity("user@test.com", "testuser");
+    }
+
+    private ProjectResponse buildProjectResponse(String title, String description) {
+        ProjectEntity entity = new ProjectEntity(title, description, buildUser());
+        return new ProjectResponse(entity);
     }
 
     @Test
@@ -55,19 +57,19 @@ class ProjectControllerTest extends BaseControllerTest {
     @DisplayName("Should return 200 with list of projects when user is authenticated")
     void testReturns200WithProjectListWhenUserIsAuthenticated() throws Exception {
         UserEntity user = buildUser();
-        List<ProjectEntity> projects = List.of(
-                new ProjectEntity("Project A", "Desc A", user),
-                new ProjectEntity("Project B", "Desc B", user)
+        List<ProjectResponse> responses = List.of(
+            buildProjectResponse("Project A", "Desc A"),
+            buildProjectResponse("Project B", "Desc B")
         );
 
         when(authContext.getCurrentUser()).thenReturn(user);
-        when(projectService.getAllOwnerProjects(user)).thenReturn(projects);
+        when(projectService.getAllOwnerProjects(user)).thenReturn(responses);
 
         mockMvc.perform(get("/projects"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].title").value("Project A"))
-                .andExpect(jsonPath("$[1].title").value("Project B"));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].title").value("Project A"))
+            .andExpect(jsonPath("$[1].title").value("Project B"));
     }
 
     @Test
@@ -75,19 +77,19 @@ class ProjectControllerTest extends BaseControllerTest {
     @DisplayName("Should return 201 when project is created successfully")
     void testReturns201WhenProjectIsCreatedSuccessfully() throws Exception {
         UserEntity user = buildUser();
-        ProjectEntity project = new ProjectEntity("New Project", "A description", user);
+        ProjectResponse response = buildProjectResponse("New Project", "A description");
 
         when(authContext.getCurrentUser()).thenReturn(user);
-        when(projectService.createProject(any(), eq(user))).thenReturn(project);
+        when(projectService.createProject(any(), eq(user))).thenReturn(response);
 
         mockMvc.perform(post("/projects")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
                                     {"title": "New Project", "description": "A description"}
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("New Project"))
-                .andExpect(jsonPath("$.description").value("A description"));
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.title").value("New Project"))
+            .andExpect(jsonPath("$.description").value("A description"));
     }
 
     @Test
@@ -95,11 +97,11 @@ class ProjectControllerTest extends BaseControllerTest {
     @DisplayName("Should return 400 when create request is missing title")
     void testReturns400WhenCreateRequestIsMissingTitle() throws Exception {
         mockMvc.perform(post("/projects")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
                                     {"description": "A description"}
                                 """))
-                .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -108,14 +110,14 @@ class ProjectControllerTest extends BaseControllerTest {
     void testReturns200WithProjectWhenItBelongsToOwner() throws Exception {
         UserEntity user = buildUser();
         UUID projectId = UUID.randomUUID();
-        ProjectEntity project = new ProjectEntity("My Project", "A description", user);
+        ProjectResponse response = buildProjectResponse("My Project", "A description");
 
         when(authContext.getCurrentUser()).thenReturn(user);
-        when(projectUtils.resolveProject(projectId)).thenReturn(project);
+        when(projectService.getOwnersProjectById(projectId, user)).thenReturn(response);
 
         mockMvc.perform(get("/projects/{projectId}", projectId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("My Project"));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("My Project"));
     }
 
     @Test
@@ -126,10 +128,10 @@ class ProjectControllerTest extends BaseControllerTest {
         UUID projectId = UUID.randomUUID();
 
         when(authContext.getCurrentUser()).thenReturn(user);
-        when(projectUtils.resolveProject(projectId)).thenReturn(null);
+        when(projectService.getOwnersProjectById(projectId, user)).thenReturn(null);
 
         mockMvc.perform(get("/projects/{projectId}", projectId))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -138,19 +140,19 @@ class ProjectControllerTest extends BaseControllerTest {
     void testReturns201WhenProjectIsUpdatedSuccessfully() throws Exception {
         UserEntity user = buildUser();
         UUID projectId = UUID.randomUUID();
-        ProjectEntity updatedProject = new ProjectEntity("Updated Title", "Updated Description", user);
+        ProjectResponse response = buildProjectResponse("Updated Title", "Updated Description");
 
         when(authContext.getCurrentUser()).thenReturn(user);
-        when(projectService.updateProject(eq(projectId), any(), eq(user))).thenReturn(updatedProject);
+        when(projectService.updateProject(eq(projectId), any(), eq(user))).thenReturn(response);
 
         mockMvc.perform(patch("/projects/{projectId}", projectId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
                                     {"title": "Updated Title", "description": "Updated Description"}
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("Updated Title"))
-                .andExpect(jsonPath("$.description").value("Updated Description"));
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.title").value("Updated Title"))
+            .andExpect(jsonPath("$.description").value("Updated Description"));
     }
 
     @Test
@@ -162,14 +164,14 @@ class ProjectControllerTest extends BaseControllerTest {
 
         when(authContext.getCurrentUser()).thenReturn(user);
         when(projectService.updateProject(eq(projectId), any(), eq(user)))
-                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
+            .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         mockMvc.perform(patch("/projects/{projectId}", projectId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
                                     {"title": "Updated Title", "description": "Updated Description"}
                                 """))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -183,7 +185,7 @@ class ProjectControllerTest extends BaseControllerTest {
         doNothing().when(projectService).deleteProject(projectId, user);
 
         mockMvc.perform(delete("/projects/{projectId}", projectId))
-                .andExpect(status().isNoContent());
+            .andExpect(status().isNoContent());
     }
 
     @Test
@@ -195,9 +197,9 @@ class ProjectControllerTest extends BaseControllerTest {
 
         when(authContext.getCurrentUser()).thenReturn(user);
         doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND))
-                .when(projectService).deleteProject(projectId, user);
+            .when(projectService).deleteProject(projectId, user);
 
         mockMvc.perform(delete("/projects/{projectId}", projectId))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 }
