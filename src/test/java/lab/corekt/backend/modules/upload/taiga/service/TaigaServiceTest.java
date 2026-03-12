@@ -49,7 +49,7 @@ class TaigaServiceTest {
 
     @Test
     @DisplayName("authenticate returns token and user id when Taiga response is valid")
-    void authenticate_returnsCredentials_whenResponseIsValid() throws Exception {
+    void testAuthenticateReturnsCredentialsWhenResponseIsValid() throws Exception {
         when(httpService.post(eq("/auth"), anyString()))
                 .thenReturn("""
                         {
@@ -66,7 +66,7 @@ class TaigaServiceTest {
 
     @Test
     @DisplayName("authenticate throws when Taiga response is blank")
-    void authenticate_throws_whenResponseIsBlank() {
+    void testAuthenticateThrowsWhenResponseIsBlank() {
         when(httpService.post(eq("/auth"), anyString())).thenReturn(" ");
 
         assertThatThrownBy(() -> taigaService.authenticate("alice", "secret"))
@@ -76,7 +76,7 @@ class TaigaServiceTest {
 
     @Test
     @DisplayName("authenticate throws when token or id is missing")
-    void authenticate_throws_whenTokenOrIdIsMissing() {
+    void testAuthenticateThrowsWhenTokenOrIdIsMissing() {
         when(httpService.post(eq("/auth"), anyString()))
             .thenReturn("""
                     {
@@ -91,7 +91,7 @@ class TaigaServiceTest {
 
     @Test
     @DisplayName("fetchProjects returns ordered map of project names to ids")
-    void fetchProjects_returnsProjectMap() throws Exception {
+    void testFetchProjectsReturnsProjectMap() throws Exception {
         when(httpService.get("/projects?member=42", "token", null))
                 .thenReturn("""
                         [
@@ -109,7 +109,7 @@ class TaigaServiceTest {
 
     @Test
     @DisplayName("fetchAndSaveUserStories returns empty list when Taiga returns no user stories")
-    void fetchAndSaveUserStories_returnsEmptyList_whenNoStories() throws Exception {
+    void testFetchAndSaveUserStoriesReturnsEmptyListWhenNoStories() throws Exception {
         when(fileService.getOrCreate(FileType.US, "User Stories", version)).thenReturn(file);
         when(httpService.get(eq("/userstories?project=12"), eq("token"), anyMap()))
                 .thenReturn("[]");
@@ -122,7 +122,7 @@ class TaigaServiceTest {
 
     @Test
     @DisplayName("fetchAndSaveUserStories saves parsed data and returns stories")
-    void fetchAndSaveUserStories_savesParsedDataAndReturnsStories() throws Exception {
+    void testFetchAndSaveUserStoriesSavesParsedDataAndReturnsStories() throws Exception {
         when(fileService.getOrCreate(FileType.US, "User Stories", version)).thenReturn(file);
 
         when(httpService.get(eq("/userstories?project=12"), eq("token"), anyMap()))
@@ -162,7 +162,7 @@ class TaigaServiceTest {
 
     @Test
     @DisplayName("fetchAndSaveUserStories keeps empty description when story detail call fails")
-    void fetchAndSaveUserStories_usesEmptyDescription_whenStoryDetailFails() throws Exception {
+    void testFetchAndSaveUserStoriesUsesEmptyDescriptionWhenStoryDetailFails() throws Exception {
         when(fileService.getOrCreate(FileType.US, "User Stories", version)).thenReturn(file);
 
         when(httpService.get(eq("/userstories?project=12"), eq("token"), anyMap()))

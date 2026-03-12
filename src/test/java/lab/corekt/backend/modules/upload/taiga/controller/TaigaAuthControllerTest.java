@@ -44,7 +44,7 @@ class TaigaAuthControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("POST /taiga/login returns 200 and stores token on success")
-    void loginToTaiga_returns200_whenAuthenticationSucceeds() throws Exception {
+    void testLoginToTaigaReturns200WhenAuthenticationSucceeds() throws Exception {
         LoginRequest request = new LoginRequest();
         request.setUsername("alice");
         request.setPassword("secret");
@@ -64,7 +64,7 @@ class TaigaAuthControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("POST /taiga/login returns 500 on Taiga error")
-    void loginToTaiga_returns500_whenAuthenticationFails() throws Exception {
+    void testLoginToTaigaReturns500WhenAuthenticationFails() throws Exception {
         LoginRequest request = new LoginRequest();
         request.setUsername("alice");
         request.setPassword("secret");
@@ -83,7 +83,7 @@ class TaigaAuthControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("GET /taiga/projects returns 401 when user is not authenticated with Taiga")
-    void getProjects_returns401_whenNoTaigaToken() throws Exception {
+    void testGetProjectsReturns401WhenNoTaigaToken() throws Exception {
         when(taigaTokenService.getTaigaToken()).thenReturn(null);
         when(taigaTokenService.getTaigaUserId()).thenReturn(null);
 
@@ -94,7 +94,7 @@ class TaigaAuthControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("GET /taiga/projects returns 200 with projects")
-    void getProjects_returns200_whenAuthenticated() throws Exception {
+    void testGetProjectsReturns200WhenAuthenticated() throws Exception {
         Map<String, String> projects = new LinkedHashMap<>();
         projects.put("Project A", "1");
         projects.put("Project B", "2");
@@ -111,7 +111,7 @@ class TaigaAuthControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("GET /taiga/projects returns 500 when TaigaService fails")
-    void getProjects_returns500_whenServiceFails() throws Exception {
+    void testGetProjectsReturns500WhenServiceFails() throws Exception {
         when(taigaTokenService.getTaigaToken()).thenReturn("token-123");
         when(taigaTokenService.getTaigaUserId()).thenReturn("42");
         when(taigaService.fetchProjects("token-123", "42"))

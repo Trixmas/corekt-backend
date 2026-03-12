@@ -29,7 +29,7 @@ class TaigaTokenServiceTest {
     }
 
     @Test
-    void storeTaigaTokenAndGetters_workForAuthenticatedUser() {
+    void testStoreTaigaTokenAndGettersWorkForAuthenticatedUser() {
         authenticate("alice@example.com", true);
 
         taigaTokenService.storeTaigaToken("token-alice", "taiga-user-alice");
@@ -39,7 +39,7 @@ class TaigaTokenServiceTest {
     }
 
     @Test
-    void getters_returnNullWhenNoTokenStoredForAuthenticatedUser() {
+    void testGettersReturnNullWhenNoTokenStoredForAuthenticatedUser() {
         authenticate("alice@example.com", true);
 
         assertNull(taigaTokenService.getTaigaToken());
@@ -47,7 +47,7 @@ class TaigaTokenServiceTest {
     }
 
     @Test
-    void storeTaigaToken_doesNothingWhenAuthenticationIsNull() {
+    void testStoreTaigaTokenDoesNothingWhenAuthenticationIsNull() {
         setAuthentication(null);
 
         taigaTokenService.storeTaigaToken("token", "taiga-user");
@@ -56,7 +56,7 @@ class TaigaTokenServiceTest {
     }
 
     @Test
-    void getters_returnNullWhenAuthenticationIsNull() {
+    void testGettersReturnNullWhenAuthenticationIsNull() {
         setAuthentication(null);
 
         assertNull(taigaTokenService.getTaigaToken());
@@ -64,7 +64,7 @@ class TaigaTokenServiceTest {
     }
 
     @Test
-    void methods_ignoreUnauthenticatedUser() {
+    void testMethodsIgnoreUnauthenticatedUser() {
         authenticate("bob@example.com", false);
 
         taigaTokenService.storeTaigaToken("token-bob", "taiga-user-bob");
@@ -75,7 +75,7 @@ class TaigaTokenServiceTest {
     }
 
     @Test
-    void removeTaigaToken_removesOnlyCurrentUserToken() {
+    void testRemoveTaigaTokenRemovesOnlyCurrentUserToken() {
         authenticate("alice@example.com", true);
         taigaTokenService.storeTaigaToken("token-alice", "taiga-user-alice");
 
@@ -94,7 +94,7 @@ class TaigaTokenServiceTest {
     }
 
     @Test
-    void removeTaigaToken_doesNothingWhenAuthenticationIsNull() {
+    void testRemoveTaigaTokenDoesNothingWhenAuthenticationIsNull() {
         setAuthentication(null);
 
         taigaTokenService.removeTaigaToken();

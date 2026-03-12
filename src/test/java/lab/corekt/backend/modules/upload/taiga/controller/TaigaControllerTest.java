@@ -72,7 +72,7 @@ class TaigaControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("GET /projects/{projectId}/versions/{versionId}/taiga/us returns 401 when no Taiga token")
-    void getUs_returns401_whenNoTaigaToken() throws Exception {
+    void testGetUsReturns401WhenNoTaigaToken() throws Exception {
         when(taigaTokenService.getTaigaToken()).thenReturn(null);
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}/taiga/us", projectId, versionId)
@@ -86,7 +86,7 @@ class TaigaControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("GET /projects/{projectId}/versions/{versionsId}/taiga/us returns 404 when project is missing")
-    void getUs_returns404_whenProjectMissing() throws Exception {
+    void testGetUsReturns404WhenProjectMissing() throws Exception {
         when(taigaTokenService.getTaigaToken()).thenReturn("token");
         when(projectUtils.resolveProject(projectId)).thenReturn(null);
 
@@ -100,7 +100,7 @@ class TaigaControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("GET /projects/{projectId}/versions/{versionId}/taiga/us returns 404 when version is missing")
-    void getUs_returns404_whenVersionMissing() throws Exception {
+    void testGetUsReturns404WhenVersionMissing() throws Exception {
         when(taigaTokenService.getTaigaToken()).thenReturn("token");
         when(projectUtils.resolveProject(projectId)).thenReturn(project);
         when(versionRepository.findByProjectAndId(project,  versionId)).thenReturn(Optional.empty());
@@ -115,7 +115,7 @@ class TaigaControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("GET /projects/{projectId}/versions/{versionId}/taiga/us returns 200 with imported US")
-    void getUs_returns200_withImportSucceeds() throws Exception {
+    void testGetUsReturns200WithImportSucceeds() throws Exception {
         List<US> stories = List.of(new US("US 1", "Desc 1"), new US("US 2", "Desc 2"));
 
         when(taigaTokenService.getTaigaToken()).thenReturn("token");
@@ -134,7 +134,7 @@ class TaigaControllerTest extends BaseControllerTest {
 
     @Test
     @DisplayName("GET /projects/{projectId}/versions/{versionId}/taiga/us returns 500 when import fails")
-    void getUs_returns500_whenImportFails() throws Exception {
+    void testGetUsReturns500WhenImportFails() throws Exception {
         when(taigaTokenService.getTaigaToken()).thenReturn("token");
         when(projectUtils.resolveProject(projectId)).thenReturn(project);
         when(versionRepository.findByProjectAndId(project,  versionId)).thenReturn(Optional.of(version));
