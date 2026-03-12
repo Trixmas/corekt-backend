@@ -49,30 +49,25 @@ public class McdParserReader {
         }
     }
 
-        public void parseItems (List < ? > list) throws Exception {
+        private void parseItems (List < ? > list) throws Exception {
             for (Object item : list) {
                 if (item != null) {
                     String className = item.getClass().getName();
-
                     if (className.equals("IhmMCD2.IhmEntite2") || className.equals("IhmMCD.IhmEntite")) {
-
-                        Method methodGetEntite = item.getClass().getMethod("getEntite");
-                        Object entite = methodGetEntite.invoke(item);
-
-                        Method methodGetNom = entite.getClass().getMethod("getNom");
-                        String nomEntite = (String) methodGetNom.invoke(entite);
-                        this.entities.add(nomEntite);
+                        this.entities.add(extractName(item, "getEntite"));
                     }
                     if (className.equals("IhmMCD2.IhmRelation2") || className.equals("IhmMCD.IhmRelation")) {
-
-                        Method methodGetRelation = item.getClass().getMethod("getRelation");
-                        Object relation = methodGetRelation.invoke(item);
-
-                        Method methodGetNom = relation.getClass().getMethod("getNom");
-                        String nomRelation = (String) methodGetNom.invoke(relation);
-                        this.relations.add(nomRelation);
+                        this.relations.add(extractName(item, "getRelation"));
                     }
                 }
             }
+        }
+
+        private String extractName(Object ihmObject, String methodName) throws Exception {
+            Method methodGetObject = ihmObject.getClass().getMethod(methodName);
+            Object object = methodGetObject.invoke(ihmObject);
+
+            Method methodGetNom = object.getClass().getMethod("getNom");
+            return (String) methodGetNom.invoke(object);
         }
 }
