@@ -1,51 +1,52 @@
-package lab.corekt.backend.modules.mistral;/*
-package lab.corekt.corektbackend.modules.mistral;
+package lab.corekt.backend.modules.mistral;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestClient;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.embedding.EmbeddingResponse;
+import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
+@Service
 public class MistralService {
-    private final RestClient restClient;
+
+    private final EmbeddingModel embeddingModel;
+
+    public MistralService(EmbeddingModel embeddingModel) {
+        this.embeddingModel = embeddingModel;
+    }
+/*    private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
     public MistralService(
-        RestClient.Builder restClientBuilder,
-        @Value("${mistral.api.token}") String token
+            RestClient.Builder restClientBuilder,
+            @Value("${mistral.api.token}") String token
     ) {
         this.restClient = restClientBuilder
-            .baseUrl("https://api.mistral.ai/v1/conversations")
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-            .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-            .build();
+                .baseUrl("https://api.mistral.ai/v1/conversations")
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .build();
 
         this.objectMapper = new ObjectMapper();
     }
 
     public JsonNode sendMessage(String message) {
         Map<String, Object> body = Map.of(
-            "model", "mistral-medium-latest",
-            "inputs", new Object[]{
-                Map.of(
-                    "role", "user",
-                    "content", message
-                )
-            }
+                "model", "mistral-medium-latest",
+                "inputs", new Object[]{
+                        Map.of(
+                                "role", "user",
+                                "content", message
+                        )
+                }
         );
 
         String responseBody = restClient.post()
-            .body(body)
-            .retrieve()
-            .body(String.class);
+                .body(body)
+                .retrieve()
+                .body(String.class);
 
         if (responseBody == null || responseBody.isBlank()) {
             return objectMapper.createObjectNode();
@@ -60,13 +61,13 @@ public class MistralService {
 
     public JsonNode sendAdviceResponse(String message) throws Exception {
         Map<String, Object> body = Map.of(
-            "model", "mistral-medium-latest",
-            "inputs", new Object[]{
-                Map.of(
-                    "role", "user",
-                    "content", message
-                )
-            }
+                "model", "mistral-medium-latest",
+                "inputs", new Object[]{
+                        Map.of(
+                                "role", "user",
+                                "content", message
+                        )
+                }
         );
 
         long start = System.currentTimeMillis();
@@ -74,21 +75,21 @@ public class MistralService {
 
         try {
             String responseBody = restClient.post()
-                .body(body)
-                .retrieve()
-                .onStatus(
-                    HttpStatusCode::isError,
-                    (_, response) -> {
-                        String errorBody = response.getBody().readAllBytes().length == 0
-                            ? ""
-                            : new String(response.getBody().readAllBytes());
+                    .body(body)
+                    .retrieve()
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            (_, response) -> {
+                                String errorBody = response.getBody().readAllBytes().length == 0
+                                        ? ""
+                                        : new String(response.getBody().readAllBytes());
 
-                        throw new RuntimeException(
-                            "HTTP " + response.getStatusCode().value() + " -> " + errorBody
-                        );
-                    }
-                )
-                .body(String.class);
+                                throw new RuntimeException(
+                                        "HTTP " + response.getStatusCode().value() + " -> " + errorBody
+                                );
+                            }
+                    )
+                    .body(String.class);
 
             long duration = System.currentTimeMillis() - start;
 
@@ -116,5 +117,12 @@ public class MistralService {
             return result;
         }
     }
+
+ */
+
+
+    public Map embedParsedData(List<String> parsedData) {
+        EmbeddingResponse embeddingResponse = embeddingModel.embedForResponse(parsedData);
+        return Map.of("embedding", embeddingResponse);
+    }
 }
-*/
