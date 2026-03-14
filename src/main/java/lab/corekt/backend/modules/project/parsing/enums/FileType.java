@@ -6,4 +6,3 @@ public enum FileType {
     INTERVIEW,
     MCD
 }
-
