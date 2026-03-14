@@ -1,7 +1,8 @@
 package lab.corekt.backend.utils.error;
 
 import jakarta.validation.ConstraintViolationException;
-import lab.corekt.backend.modules.upload.taiga.dto.UsResponse;
+import lab.corekt.backend.modules.taiga.exception.TaigaAuthException;
+import lab.corekt.backend.modules.taiga.exception.TaigaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -27,159 +28,101 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
-            MethodArgumentNotValidException exception,
-            WebRequest request) {
+    @ExceptionHandler(TaigaAuthException.class)
+    public ResponseEntity<ErrorResponse> handleTaigaAuthException(TaigaAuthException e, WebRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
+    }
 
+    @ExceptionHandler(TaigaException.class)
+    public ResponseEntity<ErrorResponse> handleTaigaException(TaigaException e, WebRequest request) {
+        return build(HttpStatus.BAD_GATEWAY, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException e, WebRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e, WebRequest request) {
         Map<String, String> errors = new HashMap<>();
-        exception.getBindingResult().getAllErrors().forEach(error -> {
+        e.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             assert errorMessage != null;
             errors.put(HtmlUtils.htmlEscape(fieldName), HtmlUtils.htmlEscape(errorMessage));
         });
-
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Validation failed",
-                errors,
-                sanitizePath(request.getDescription(false)),
-                Instant.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return build(HttpStatus.BAD_REQUEST, "Validation failed", errors, request);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConstraintViolationException(
-            ConstraintViolationException exception,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException e, WebRequest request) {
         Map<String, String> errors = new HashMap<>();
-        exception.getConstraintViolations().forEach(violation -> {
-            String fieldName = violation.getPropertyPath().toString();
-            String errorMessage = violation.getMessage();
-            errors.put(HtmlUtils.htmlEscape(fieldName), HtmlUtils.htmlEscape(errorMessage));
-        });
-
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Constraint violation",
-                errors,
-                sanitizePath(request.getDescription(false)),
-                Instant.now()
+        e.getConstraintViolations().forEach(violation ->
+            errors.put(
+                HtmlUtils.htmlEscape(violation.getPropertyPath().toString()),
+                HtmlUtils.htmlEscape(violation.getMessage())
+            )
         );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return build(HttpStatus.BAD_REQUEST, "Constraint violation", errors, request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
-            HttpMessageNotReadableException exception,
-            WebRequest request) {
-
-        logger.warn("Malformed or missing request body: {}", exception.getMessage());
-
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Malformed or missing request body",
-                null,
-                sanitizePath(request.getDescription(false)),
-                Instant.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e, WebRequest request) {
+        logger.warn("Malformed or missing request body: {}", e.getMessage());
+        return build(HttpStatus.BAD_REQUEST, "Malformed or missing request body", request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-            IllegalArgumentException exception,
-            WebRequest request) {
-
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                HtmlUtils.htmlEscape(exception.getMessage()),
-                null,
-                sanitizePath(request.getDescription(false)),
-                Instant.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e, WebRequest request) {
+        return build(HttpStatus.BAD_REQUEST, HtmlUtils.htmlEscape(e.getMessage()), request);
     }
 
     @ExceptionHandler(CommunicationException.class)
-    public ResponseEntity<ErrorResponse> handleLdapCommunicationException(
-            CommunicationException exception,
-            WebRequest request) {
-
-        logger.error("LDAP communication failure: ", exception);
-
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.SERVICE_UNAVAILABLE.value(),
-                "Authentication service is currently unavailable",
-                null,
-                sanitizePath(request.getDescription(false)),
-                Instant.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    public ResponseEntity<ErrorResponse> handleLdapCommunicationException(CommunicationException e, WebRequest request) {
+        logger.error("LDAP communication failure: ", e);
+        return build(HttpStatus.SERVICE_UNAVAILABLE, "Authentication service is currently unavailable", request);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<UsResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String msg = String.format("Invalid value '%s' for parameter '%s': expected %s",
-                ex.getValue(), ex.getName(),
-                ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown type");
-        return ResponseEntity.badRequest().body(new UsResponse(null, false, msg));
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e, WebRequest request) {
+        String message = "Invalid value '%s' for parameter '%s': expected %s".formatted(
+            e.getValue(),
+            e.getName(),
+            e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown type"
+        );
+        return build(HttpStatus.BAD_REQUEST, message, request);
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
-            WebRequest request
-    ) {
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Resource not found",
-                null,
-                sanitizePath(request.getDescription(false)),
-                Instant.now()
-        );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(
-            Exception exception,
-            WebRequest request) {
-
-        logger.error("Unhandled exception occurred: ", exception);
-
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Internal server error",
-                null,
-                sanitizePath(request.getDescription(false)),
-                Instant.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    public ResponseEntity<ErrorResponse> handleNoHandlerFoundException(WebRequest request) {
+        return build(HttpStatus.NOT_FOUND, "Resource not found", request);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<ErrorResponse> handleResponseStatusException(
-            ResponseStatusException exception,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException e, WebRequest request) {
+        String message = e.getReason() != null ? e.getReason() : e.getMessage();
+        return build(HttpStatus.valueOf(e.getStatusCode().value()), message, request);
+    }
 
-        ErrorResponse response = new ErrorResponse(
-                exception.getStatusCode().value(),
-                exception.getReason() != null ? exception.getReason() : exception.getMessage(),
-                null,
-                sanitizePath(request.getDescription(false)),
-                Instant.now()
-        );
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGlobalException(Exception e, WebRequest request) {
+        logger.error("Unhandled exception occurred: ", e);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request);
+    }
 
-        return ResponseEntity.status(exception.getStatusCode()).body(response);
+    private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, WebRequest request) {
+        return build(status, message, null, request);
+    }
+
+    private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, Map<String, String> errors, WebRequest request) {
+        return ResponseEntity.status(status).body(new ErrorResponse(
+            status.value(),
+            message,
+            errors,
+            sanitizePath(request.getDescription(false)),
+            Instant.now()
+        ));
     }
 
     private String sanitizePath(String description) {
