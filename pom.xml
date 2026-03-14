@@ -29,6 +29,12 @@
     <properties>
         <java.version>25</java.version>
     </properties>
+    <repositories>
+        <repository>
+            <id>project-local-repo</id>
+            <url>file://${project.basedir}/libs</url>
+        </repository>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -162,6 +168,13 @@
             <groupId>org.springframework.restdocs</groupId>
             <artifactId>spring-restdocs-mockmvc</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- JMerise -->
+        <dependency>
+            <groupId>com.jmerise</groupId>
+            <artifactId>jmerise-core</artifactId>
+            <version>0.6.1</version>
         </dependency>
     </dependencies>
 

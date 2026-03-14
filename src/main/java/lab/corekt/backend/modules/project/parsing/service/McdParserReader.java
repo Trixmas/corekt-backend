@@ -8,6 +8,11 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class handles the reading and extraction of data from .mcd files.
+ * The parsing logic relies on the JMerise library developed by M.Messouci
+ * Official website: http://www.jfreesoft.com/JMerise/
+ */
 @Getter
 public class McdParserReader {
 
