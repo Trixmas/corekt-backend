@@ -31,43 +31,45 @@ public class McdParserReader {
 
         try (ByteArrayInputStream input = new ByteArrayInputStream(fileData)) {
             ObjectInputStream oIn = new ObjectInputStream(input);
-            int idxObj = 0;
 
-            while (true) {
-                try {
-                    Object obj = oIn.readObject();
-                    if (obj instanceof ArrayList && idxObj == ENTITY_RELATION_INDEX_OBJECT) {
-                        this.parseItems((List<?>) obj);
-                        break;
-                    }
-                    idxObj++;
-                } catch (EOFException e) {
-                    break;
-                }
+            Object object = findObjectAtIndex(oIn, ENTITY_RELATION_INDEX_OBJECT);
+            if (object instanceof List) {
+                parseItems((List<?>) object);
             }
             oIn.close();
         }
     }
 
-        private void parseItems (List < ? > list) throws Exception {
-            for (Object item : list) {
-                if (item != null) {
-                    String className = item.getClass().getName();
-                    if (className.equals("IhmMCD2.IhmEntite2") || className.equals("IhmMCD.IhmEntite")) {
-                        this.entities.add(extractName(item, "getEntite"));
-                    }
-                    if (className.equals("IhmMCD2.IhmRelation2") || className.equals("IhmMCD.IhmRelation")) {
-                        this.relations.add(extractName(item, "getRelation"));
-                    }
-                }
+    private void parseItems (List<?> list) throws Exception {
+        for (Object item : list) {
+            if (item == null) continue;
+
+            String className = item.getClass().getName();
+            if (className.equals("IhmMCD2.IhmEntite2") || className.equals("IhmMCD.IhmEntite")) {
+                this.entities.add(extractName(item, "getEntite"));
+            }
+            if (className.equals("IhmMCD2.IhmRelation2") || className.equals("IhmMCD.IhmRelation")) {
+                this.relations.add(extractName(item, "getRelation"));
             }
         }
+    }
 
-        private String extractName(Object ihmObject, String methodName) throws Exception {
-            Method methodGetObject = ihmObject.getClass().getMethod(methodName);
-            Object object = methodGetObject.invoke(ihmObject);
+    private String extractName(Object ihmObject, String methodName) throws Exception {
+        Method methodGetObject = ihmObject.getClass().getMethod(methodName);
+        Object object = methodGetObject.invoke(ihmObject);
 
-            Method methodGetNom = object.getClass().getMethod("getNom");
-            return (String) methodGetNom.invoke(object);
+        Method methodGetNom = object.getClass().getMethod("getNom");
+        return (String) methodGetNom.invoke(object);
+    }
+
+    private Object findObjectAtIndex(ObjectInputStream oIn, int index) throws Exception {
+        try {
+            for (int i = 0; i < index; i++) {
+                oIn.readObject();
+            }
+            return oIn.readObject();
+        } catch (EOFException e) {
+            return null;
         }
+    }
 }
