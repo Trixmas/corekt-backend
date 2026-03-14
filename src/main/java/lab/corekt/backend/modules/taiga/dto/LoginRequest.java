@@ -1,4 +1,4 @@
-package lab.corekt.backend.modules.upload.taiga.dto;
+package lab.corekt.backend.modules.taiga.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
