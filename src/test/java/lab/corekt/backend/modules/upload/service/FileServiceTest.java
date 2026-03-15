@@ -51,9 +51,7 @@ class FileServiceTest {
 
         when(fileRepository.existsByVersionAndType(version, FileType.INTERVIEW)).thenReturn(true);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            fileService.uploadFile(version, file, FileType.INTERVIEW);
-        });
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> fileService.uploadFile(version, file, FileType.INTERVIEW));
 
         assertEquals("A file of type INTERVIEW already exists for this version", ex.getMessage());
         verify(fileRepository, never()).save(any());
@@ -79,9 +77,7 @@ class FileServiceTest {
         VersionEntity version = mock(VersionEntity.class);
         MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "hello".getBytes());
 
-        assertThrows(NullPointerException.class, () -> {
-            fileService.uploadFile(version, file, null);
-        });
+        assertThrows(NullPointerException.class, () -> fileService.uploadFile(version, file, null));
     }
 
     @Test
