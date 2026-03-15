@@ -111,4 +111,30 @@ class FileServiceTest {
         assertEquals(FileType.MCD, result.getType());
         assertEquals("schema.mcd", result.getName());
     }
+
+    @Test
+    void testUploadBpmnDuplicateThrows() {
+        VersionEntity version = mock(VersionEntity.class);
+        MockMultipartFile file = new MockMultipartFile("file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes());
+
+        when(fileRepository.existsByVersionAndType(version, FileType.BPMN)).thenReturn(true);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> fileService.uploadFile(version, file, FileType.BPMN));
+
+        assertEquals("A file of type BPMN already exists for this version", ex.getMessage());
+        verify(fileRepository, never()).save(any());
+    }
+
+    @Test
+    void testUploadMcdDuplicateThrows() {
+        VersionEntity version = mock(VersionEntity.class);
+        MockMultipartFile file = new MockMultipartFile("file", "schema.mcd", "text/plain", "MCD".getBytes());
+
+        when(fileRepository.existsByVersionAndType(version, FileType.MCD)).thenReturn(true);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> fileService.uploadFile(version, file, FileType.MCD));
+
+        assertEquals("A file of type MCD already exists for this version", ex.getMessage());
+        verify(fileRepository, never()).save(any());
+    }
 }
