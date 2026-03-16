@@ -5,6 +5,7 @@ import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import lombok.NonNull;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,17 +23,19 @@ public class FileService {
 
     @Transactional
     public FileEntity uploadFile(VersionEntity version, MultipartFile file, @NonNull FileType fileType)
-            throws IOException {
+            throws IOException, DataIntegrityViolationException {
 
-        if (fileRepository.existsByVersionAndType(version, fileType)) {
-            throw new IllegalArgumentException("A file of type " + fileType + " already exists for this version");
+        try {
+            FileEntity fileEntity = new FileEntity(fileType, file.getOriginalFilename());
+            fileEntity.setVersion(version);
+            fileEntity.setFile(file.getBytes());
+
+            return fileRepository.saveAndFlush(fileEntity);
+        } catch (IOException e) {
+            throw new IOException("Failed to read file content", e);
+        } catch (DataIntegrityViolationException e) {
+            throw new DataIntegrityViolationException("Failed to save file, a file of type " + fileType + " already exists for this version.", e);
         }
-
-        FileEntity fileEntity = new FileEntity(fileType, file.getOriginalFilename());
-        fileEntity.setVersion(version);
-        fileEntity.setFile(file.getBytes());
-
-        return fileRepository.save(fileEntity);
     }
 
     /**
