@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,8 +35,7 @@ class FileServiceTest {
         byte[] content = "hello".getBytes();
         MockMultipartFile file = new MockMultipartFile("file", "interview.pdf", "text/plain", "hello".getBytes());
 
-        when(fileRepository.existsByVersionAndType(version, FileType.INTERVIEW)).thenReturn(false);
-        when(fileRepository.save(any(FileEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(fileRepository.saveAndFlush(any(FileEntity.class))).thenAnswer(i -> i.getArgument(0));
 
         FileEntity result = fileService.uploadFile(version, file, FileType.INTERVIEW);
 
@@ -43,20 +43,25 @@ class FileServiceTest {
         assertEquals(FileType.INTERVIEW, result.getType());
         assertSame(version, result.getVersion());
         assertArrayEquals(content, result.getFile());
-        verify(fileRepository).existsByVersionAndType(version, FileType.INTERVIEW);
-        verify(fileRepository).save(any(FileEntity.class));
+        verify(fileRepository).saveAndFlush(any(FileEntity.class));
     }
 
     @Test
-    void uploadFileDuplicateTypeThrowsIllegalArgumentException() {
+    void uploadFileDuplicateTypeThrowsDataIntegrityViolationException() throws Exception {
         VersionEntity version = new VersionEntity();
         MockMultipartFile file = new MockMultipartFile("file", "interview.pdf", "text/plain", "hello".getBytes());
+        DataIntegrityViolationException rootCause = new DataIntegrityViolationException("duplicate key");
 
-        when(fileRepository.existsByVersionAndType(version, FileType.INTERVIEW)).thenReturn(true);
+        when(fileRepository.saveAndFlush(any(FileEntity.class))).thenThrow(rootCause);
 
-        assertThrows(IllegalArgumentException.class, () -> fileService.uploadFile(version, file, FileType.INTERVIEW));
-        verify(fileRepository).existsByVersionAndType(version, FileType.INTERVIEW);
-        verify(fileRepository, never()).save(any(FileEntity.class));
+        DataIntegrityViolationException thrown = assertThrows(
+                DataIntegrityViolationException.class,
+                () -> fileService.uploadFile(version, file, FileType.INTERVIEW)
+        );
+
+        assertTrue(thrown.getMessage().contains("already exists"));
+        assertSame(rootCause, thrown.getCause());
+        verify(fileRepository).saveAndFlush(any(FileEntity.class));
     }
 
     @Test
@@ -73,13 +78,11 @@ class FileServiceTest {
         VersionEntity version = new VersionEntity();
         MultipartFile file = mock(MultipartFile.class);
 
-        when(fileRepository.existsByVersionAndType(version, FileType.INTERVIEW)).thenReturn(false);
         when(file.getOriginalFilename()).thenReturn("broken.txt");
         when(file.getBytes()).thenThrow(new IOException("boom"));
 
         assertThrows(IOException.class, () -> fileService.uploadFile(version, file, FileType.INTERVIEW));
-        verify(fileRepository).existsByVersionAndType(version, FileType.INTERVIEW);
-        verify(fileRepository, never()).save(any(FileEntity.class));
+        verify(fileRepository, never()).saveAndFlush(any(FileEntity.class));
     }
 
     @Test
