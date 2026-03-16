@@ -24,14 +24,13 @@ public class McdParserService {
 
         List<ParsedDataEntity> parsedDataEntityList = new ArrayList<>();
 
-        for(String name : reader.getEntities()) {
-            parsedDataEntityList.add(createParsedDataEntity(name, DataType.ENTITY, fileEntity));
-        }
-        for(String name : reader.getRelations()) {
-            parsedDataEntityList.add(createParsedDataEntity(name, DataType.RELATION, fileEntity));
-        }
-
+        parsedDataEntityList.addAll(convertToParsedDataEntities(reader.getEntities(), DataType.ENTITY, fileEntity));
+        parsedDataEntityList.addAll(convertToParsedDataEntities(reader.getRelations(), DataType.RELATION, fileEntity));
         parsedDataRepository.saveAll(parsedDataEntityList);
+    }
+
+    private List<ParsedDataEntity> convertToParsedDataEntities(List<String> names, DataType dataType, FileEntity fileEntity) {
+        return names.stream().map(name -> createParsedDataEntity(name, dataType, fileEntity)).toList();
     }
 
     private ParsedDataEntity createParsedDataEntity(String content, DataType dataType, FileEntity fileEntity) {
