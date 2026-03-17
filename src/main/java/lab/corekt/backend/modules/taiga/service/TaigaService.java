@@ -159,6 +159,8 @@ public class TaigaService {
             extraHeaders.forEach(spec::header);
 
             return OBJECT_MAPPER.readTree(spec.retrieve().body(String.class));
+        } catch (HttpClientErrorException.Unauthorized e) {
+            throw e;
         } catch (Exception e) {
             throw new TaigaException("Taiga GET request failed: " + uri);
         }
@@ -176,6 +178,8 @@ public class TaigaService {
                 .retrieve()
                 .body(String.class);
             return OBJECT_MAPPER.readTree(response);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            throw e;
         } catch (Exception e) {
             throw new TaigaException("Taiga POST request failed: " + uri);
         }
