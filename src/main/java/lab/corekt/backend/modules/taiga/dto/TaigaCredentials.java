@@ -1,4 +1,4 @@
-package lab.corekt.backend.modules.upload.taiga.dto;
+package lab.corekt.backend.modules.taiga.dto;
 
 /**
  * Holds the Taiga authentication token and user identifier returned after a
