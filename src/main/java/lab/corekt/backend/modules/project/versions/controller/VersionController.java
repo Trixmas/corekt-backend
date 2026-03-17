@@ -3,6 +3,7 @@ package lab.corekt.backend.modules.project.versions.controller;
 import jakarta.validation.Valid;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.utils.ProjectUtils;
+import lab.corekt.backend.modules.project.versions.dto.VersionDetailsResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
 import lab.corekt.backend.modules.project.versions.service.VersionService;
@@ -32,12 +33,13 @@ public class VersionController {
     }
 
     @GetMapping("/{versionId}")
-    public ResponseEntity<VersionResponse> getVersion(@PathVariable UUID projectId, @PathVariable UUID versionId) {
+    public ResponseEntity<VersionDetailsResponse> getVersion(@PathVariable UUID projectId, @PathVariable UUID versionId) {
         ProjectEntity project = projectUtils.resolveProject(projectId);
         if (project == null) return ResponseEntity.notFound().build();
 
         return ResponseEntity.ok(versionService.getOneVersion(project, versionId));
     }
+
 
     @PostMapping
     public ResponseEntity<VersionResponse> createVersion(
