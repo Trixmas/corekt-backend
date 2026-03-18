@@ -50,10 +50,10 @@ public class McdParserReader {
             if (item == null) continue;
 
             String className = item.getClass().getName();
-            if (className.equals("IhmMCD2.IhmEntite2") || className.equals("IhmMCD.IhmEntite")) {
+            if (className.endsWith("IhmEntite2") || className.endsWith("IhmEntite")) {
                 this.entities.add(extractName(item, "getEntite"));
             }
-            if (className.equals("IhmMCD2.IhmRelation2") || className.equals("IhmMCD.IhmRelation")) {
+            if (className.endsWith("IhmRelation2") || className.endsWith("IhmRelation")) {
                 this.relations.add(extractName(item, "getRelation"));
             }
         }
