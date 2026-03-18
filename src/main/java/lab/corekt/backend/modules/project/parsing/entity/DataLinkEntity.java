@@ -28,7 +28,7 @@ public class DataLinkEntity {
     private MatchType match;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column()
     private Severity severity;
 
     @Column
@@ -56,7 +56,7 @@ public class DataLinkEntity {
     }
 
     public DataLinkEntity(MatchType match, Severity severity, ParsedDataEntity sourceParsedData,
-            ParsedDataEntity targetParsedData) {
+                          ParsedDataEntity targetParsedData) {
         this.match = match;
         this.severity = severity;
         this.sourceParsedData = sourceParsedData;
