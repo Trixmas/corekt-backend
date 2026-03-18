@@ -36,10 +36,10 @@ public class UserEntity {
     @Column
     private String mistralToken;
 
-    @OneToMany(mappedBy = "owner")
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<ProjectEntity> projects;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<HasAchievementsEntity> achievements;
 
     @CreatedDate
