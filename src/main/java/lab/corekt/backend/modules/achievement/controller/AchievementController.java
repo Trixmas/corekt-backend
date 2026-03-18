@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/achievements")
 @RequiredArgsConstructor
-public class AchievementsController {
+public class AchievementController {
 
     private final AchievementManager achievementManager;
 
