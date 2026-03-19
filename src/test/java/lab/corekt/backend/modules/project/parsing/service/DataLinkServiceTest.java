@@ -64,6 +64,10 @@ class DataLinkServiceTest {
     @Test
     void testGetRequiredFilesMissingDocumentThrows() {
         VersionEntity version = new VersionEntity();
+        List<FileEntity> files = List.of(
+                new FileEntity(FileType.INTERVIEW, "interview.pdf"),
+                new FileEntity(FileType.BPMN, "process.bpmn"),
+                new FileEntity(FileType.US, "user-stories"));
 
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
         FileEntity bpmnFile = new FileEntity(FileType.BPMN, "process.bpmn");

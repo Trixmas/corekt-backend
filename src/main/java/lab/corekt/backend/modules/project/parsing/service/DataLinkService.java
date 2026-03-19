@@ -16,7 +16,6 @@ import lab.corekt.backend.modules.upload.repository.FileRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-
 @Service
 public class DataLinkService {
 
@@ -29,8 +28,8 @@ public class DataLinkService {
     private final MistralService mistralService;
 
     public DataLinkService(FileRepository fileRepository, DataLinkRepository dataLinkRepository,
-                           ParsedDataRepository parsedDataRepository,
-                           MistralService mistralService) {
+            ParsedDataRepository parsedDataRepository,
+            MistralService mistralService) {
         this.fileRepository = fileRepository;
         this.dataLinkRepository = dataLinkRepository;
         this.parsedDataRepository = parsedDataRepository;
@@ -78,7 +77,7 @@ public class DataLinkService {
         Map<FileType, FileEntity> filesByType = new HashMap<>();
         List<FileType> missingTypes = new ArrayList<>();
 
-//        Get all files of the version and check if all required files are present.
+        // Get all files of the version and check if all required files are present.
         List<FileEntity> allFiles = fileRepository.findByVersion(version);
         for (FileType fileType : FileType.values()) {
             FileEntity file = allFiles.stream().filter(f -> f.getType() == fileType).findFirst().orElse(null);
@@ -88,16 +87,6 @@ public class DataLinkService {
                 missingTypes.add(fileType);
             }
         }
-
-//        for (FileType fileType : FileType.values()) {
-//            FileEntity file = fileRepository.findByTypeAndVersion(fileType, version).orElse(null);
-//
-//            if (file != null) {
-//                filesByType.put(fileType, file);
-//            } else {
-//                missingTypes.add(fileType);
-//            }
-//        }
 
         if (!missingTypes.isEmpty()) {
             String missingFiles = String.join(", ",
@@ -110,14 +99,29 @@ public class DataLinkService {
     }
 
     public Map<FileType, List<ParsedDataEntity>> getParsedDataByFileType(VersionEntity version) {
-        Map<FileType, FileEntity> requiredFiles = getRequiredFiles(version);
+       getRequiredFiles(version); // ici c surtout pour la validation, autant ne pas refaire une émthode pr ça
+
+        List<ParsedDataEntity> parsedData = parsedDataRepository.findByVersion(version);
         Map<FileType, List<ParsedDataEntity>> parsedDataByFileType = new HashMap<>();
 
+        for (ParsedDataEntity data : parsedData) {
+            FileType fileType = data.getFile().getType(); //
+            List<ParsedDataEntity> dataList = parsedDataByFileType.get(fileType); // on récupère le type de fichier dans la map
 
-        for (Map.Entry<FileType, FileEntity> entry : requiredFiles.entrySet()) {
-            List<ParsedDataEntity> parsedData = parsedDataRepository.findByFile(entry.getValue());
-            parsedDataByFileType.put(entry.getKey(), parsedData);
+            if (dataList == null) { // si y'a aucune liste pour ce fileType dans la map
+                dataList = new ArrayList<>();
+                parsedDataByFileType.put(fileType, dataList);
+            }
+
+            dataList.add(data);
+
         }
+
+        // for (Map.Entry<FileType, FileEntity> entry : requiredFiles.entrySet()) {
+        // List<ParsedDataEntity> parsedData =
+        // parsedDataRepository.findByFile(entry.getValue());
+        // parsedDataByFileType.put(entry.getKey(), parsedData);
+        // }
 
         return parsedDataByFileType;
     }
