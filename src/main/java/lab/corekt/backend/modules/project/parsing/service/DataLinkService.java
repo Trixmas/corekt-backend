@@ -1,8 +1,10 @@
 package lab.corekt.backend.modules.project.parsing.service;
 
 import lab.corekt.backend.modules.mistral.service.MistralService;
+import lab.corekt.backend.modules.mistral.service.MistralService.EmbeddingTuple;
 import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
 import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
+import lab.corekt.backend.modules.project.parsing.enums.DataType;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.enums.MatchType;
 import lab.corekt.backend.modules.project.parsing.enums.Severity;
@@ -13,15 +15,13 @@ import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class DataLinkService {
 
-    private static final int MIN_SEMANTIC_CONFIDENCE = 80; // arbitraire pr le moment
+    private static final int MIN_SEMANTIC_CONFIDENCE = 70; // arbitraire pour le moment
+    private static final Map<DataProfile, Set<DataProfile>> COMPATIBILITY_MATRIX = buildCompatibilityMatrix();
 
     private final FileRepository fileRepository;
     private final DataLinkRepository dataLinkRepository;
@@ -35,6 +35,39 @@ public class DataLinkService {
         this.dataLinkRepository = dataLinkRepository;
         this.parsedDataRepository = parsedDataRepository;
         this.mistralService = mistralService;
+    }
+
+    private static Map<DataProfile, Set<DataProfile>> buildCompatibilityMatrix() {
+        Map<DataProfile, Set<DataProfile>> matrix = new HashMap<>();
+
+        registerCompatible(matrix,
+                new DataProfile(FileType.BPMN, DataType.ACTOR),
+                new DataProfile(FileType.INTERVIEW, DataType.ACTOR));
+
+        registerCompatible(matrix,
+                new DataProfile(FileType.BPMN, DataType.ACTION),
+                new DataProfile(FileType.INTERVIEW, DataType.ACTION));
+
+        registerCompatible(matrix,
+                new DataProfile(FileType.BPMN, DataType.FLOW),
+                new DataProfile(FileType.INTERVIEW, DataType.FLOW));
+
+        registerCompatible(matrix,
+                new DataProfile(FileType.MCD, DataType.ENTITY),
+                new DataProfile(FileType.INTERVIEW, DataType.ENTITY));
+
+        registerCompatible(matrix,
+                new DataProfile(FileType.US, DataType.US),
+                new DataProfile(FileType.INTERVIEW, DataType.ACTION));
+
+        return matrix;
+    }
+
+    private static void registerCompatible(Map<DataProfile, Set<DataProfile>> matrix,
+                                           DataProfile left,
+                                           DataProfile right) {
+        matrix.computeIfAbsent(left, ignored -> new HashSet<>()).add(right);
+        matrix.computeIfAbsent(right, ignored -> new HashSet<>()).add(left);
     }
 
     public Map<FileType, FileEntity> getRequiredFiles(VersionEntity version) {
@@ -89,12 +122,12 @@ public class DataLinkService {
         return parsedDataByFileType;
     }
 
-    public Map<FileType, List<MistralService.EmbeddingTuple>> getEmbeddingsByFileType(VersionEntity version) {
+    public Map<FileType, List<EmbeddingTuple>> getEmbeddingsByFileType(VersionEntity version) {
         Map<FileType, List<ParsedDataEntity>> parsedDataByFileType = getParsedDataByFileType(version);
-        Map<FileType, List<MistralService.EmbeddingTuple>> embeddingsByFileType = new HashMap<>();
+        Map<FileType, List<EmbeddingTuple>> embeddingsByFileType = new HashMap<>();
 
         for (Map.Entry<FileType, List<ParsedDataEntity>> entry : parsedDataByFileType.entrySet()) {
-            List<MistralService.EmbeddingTuple> embeddings = mistralService.embedParsedData(entry.getValue());
+            List<EmbeddingTuple> embeddings = mistralService.embedParsedData(entry.getValue());
             embeddingsByFileType.put(entry.getKey(), embeddings);
         }
 
@@ -102,20 +135,21 @@ public class DataLinkService {
     }
 
     public List<DataLinkEntity> buildDataLinks(VersionEntity version) {
-        Map<FileType, List<MistralService.EmbeddingTuple>> embeddingsByFileType = getEmbeddingsByFileType(version);
-        List<MistralService.EmbeddingTuple> allEmbeddings = new ArrayList<>();
+        Map<FileType, List<EmbeddingTuple>> embeddingsByFileType = getEmbeddingsByFileType(version);
+        List<EmbeddingTuple> allEmbeddings = new ArrayList<>();
 
-        for (List<MistralService.EmbeddingTuple> embeddings : embeddingsByFileType.values()) {
+        for (List<EmbeddingTuple> embeddings : embeddingsByFileType.values()) {
             allEmbeddings.addAll(embeddings);
         }
 
+        Map<DataProfile, List<EmbeddingTuple>> embeddingsByProfile = indexByProfile(allEmbeddings);
         List<DataLinkEntity> dataLinks = new ArrayList<>();
 
-        for (MistralService.EmbeddingTuple source : allEmbeddings) {
-            MistralService.EmbeddingTuple bestTarget = null;
+        for (EmbeddingTuple source : allEmbeddings) {
+            EmbeddingTuple bestTarget = null;
             int bestConfidence = -1;
 
-            for (MistralService.EmbeddingTuple candidate : allEmbeddings) {
+            for (EmbeddingTuple candidate : getComparableCandidates(source, embeddingsByProfile)) {
                 if (!isComparable(source, candidate)) {
                     continue;
                 }
@@ -157,22 +191,62 @@ public class DataLinkService {
         return dataLinkRepository.saveAll(buildDataLinks(version));
     }
 
-    private boolean isComparable(MistralService.EmbeddingTuple source, MistralService.EmbeddingTuple candidate) {
+    private boolean isComparable(EmbeddingTuple source, EmbeddingTuple candidate) {
         ParsedDataEntity sourceData = source.parsedData();
         ParsedDataEntity candidateData = candidate.parsedData();
 
-        if (sourceData == candidateData) {
+        if (sourceData == candidateData || sourceData.getFile() == candidateData.getFile()) {
             return false;
         }
 
-        if (sourceData.getDataType() != candidateData.getDataType()) {
+        DataProfile sourceProfile = DataProfile.from(sourceData);
+        DataProfile candidateProfile = DataProfile.from(candidateData);
+
+        if (sourceProfile == null || candidateProfile == null) {
             return false;
         }
 
-        return sourceData.getFile() != candidateData.getFile();
+        return COMPATIBILITY_MATRIX
+                .getOrDefault(sourceProfile, Set.of())
+                .contains(candidateProfile);
     }
 
-    private int getConfidenceScore(MistralService.EmbeddingTuple source, MistralService.EmbeddingTuple target) {
+    private Map<DataProfile, List<EmbeddingTuple>> indexByProfile(List<EmbeddingTuple> embeddings) {
+        Map<DataProfile, List<EmbeddingTuple>> embeddingsByProfile = new HashMap<>();
+
+        for (EmbeddingTuple embedding : embeddings) {
+            DataProfile profile = DataProfile.from(embedding.parsedData());
+            if (profile == null) {
+                continue;
+            }
+
+            embeddingsByProfile.computeIfAbsent(profile, ignored -> new ArrayList<>()).add(embedding);
+        }
+
+        return embeddingsByProfile;
+    }
+
+    private List<EmbeddingTuple> getComparableCandidates(EmbeddingTuple source,
+                                                         Map<DataProfile, List<EmbeddingTuple>> embeddingsByProfile) {
+        DataProfile sourceProfile = DataProfile.from(source.parsedData());
+        if (sourceProfile == null) {
+            return List.of();
+        }
+
+        Set<DataProfile> compatibleProfiles = COMPATIBILITY_MATRIX.getOrDefault(sourceProfile, Set.of());
+        if (compatibleProfiles.isEmpty()) {
+            return List.of();
+        }
+
+        List<EmbeddingTuple> candidates = new ArrayList<>();
+        for (DataProfile compatibleProfile : compatibleProfiles) {
+            candidates.addAll(embeddingsByProfile.getOrDefault(compatibleProfile, List.of()));
+        }
+
+        return candidates;
+    }
+
+    private int getConfidenceScore(EmbeddingTuple source, EmbeddingTuple target) {
         String sourceContent = source.parsedData().getContent();
         String targetContent = target.parsedData().getContent();
 
@@ -203,5 +277,16 @@ public class DataLinkService {
         }
 
         return dotProduct / (Math.sqrt(leftNorm) * Math.sqrt(rightNorm));
+    }
+
+    private record DataProfile(FileType fileType, DataType dataType) {
+        private static DataProfile from(ParsedDataEntity parsedData) {
+            if (parsedData == null || parsedData.getFile() == null || parsedData.getFile().getType() == null
+                    || parsedData.getDataType() == null) {
+                return null;
+            }
+
+            return new DataProfile(parsedData.getFile().getType(), parsedData.getDataType());
+        }
     }
 }
