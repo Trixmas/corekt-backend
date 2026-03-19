@@ -30,7 +30,7 @@ public class McdParserServiceTest {
 
     @Test
     @DisplayName("Should parse and save entities and relations from a valid file")
-    void shouldProcessValidFile() throws Exception {
+    void testShouldProcessValidFile() throws Exception {
         FileEntity fileEntity = new FileEntity();
         fileEntity.setId(UUID.randomUUID());
 
@@ -55,7 +55,7 @@ public class McdParserServiceTest {
 
     @Test
     @DisplayName("Should truncate content if it exceeds MAX_CONTENT_LENGTH")
-    void shouldTruncateLongContent() throws Exception {
+    void testShouldTruncateLongContent() throws Exception {
         String longName = "A".repeat(600);
         FileEntity fileEntity = new FileEntity();
         fileEntity.setFile(serializeTestData(List.of(new MockIhmEntite(longName))));
@@ -72,7 +72,7 @@ public class McdParserServiceTest {
 
     @Test
     @DisplayName("Should handle null file data")
-    void shouldHandleNullFile() throws Exception {
+    void testShouldHandleNullFile() throws Exception {
         FileEntity fileEntity = new FileEntity();
 
         fileEntity.setFile(null);
@@ -84,7 +84,7 @@ public class McdParserServiceTest {
 
     @Test
     @DisplayName("Should handle empty file data")
-    void shouldHandleEmptyFile() throws Exception {
+    void testShouldHandleEmptyFile() throws Exception {
         FileEntity fileEntity = new FileEntity();
 
         fileEntity.setFile(new byte[0]);
@@ -95,7 +95,7 @@ public class McdParserServiceTest {
 
     @Test
     @DisplayName("Should throw exception for corrupted serialized data")
-    void shouldThrowOnInvalidData() {
+    void testShouldThrowOnInvalidData() {
         FileEntity fileEntity = new FileEntity();
         fileEntity.setFile("corrupted".getBytes());
 
