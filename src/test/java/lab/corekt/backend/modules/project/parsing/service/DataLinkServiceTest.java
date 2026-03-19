@@ -47,33 +47,32 @@ class DataLinkServiceTest {
     @Test
     void testGetRequiredFiles() {
         VersionEntity version = new VersionEntity();
+        List<FileEntity> files = List.of(
+                new FileEntity(FileType.INTERVIEW, "interview"),
+                new FileEntity(FileType.BPMN, "bpmn"),
+                new FileEntity(FileType.US, "us"),
+                new FileEntity(FileType.MCD, "mcd"));
 
-        for (FileType fileType : FileType.values()) {
-            FileEntity file = new FileEntity(fileType, fileType.name().toLowerCase());
-            when(fileRepository.findByTypeAndVersion(fileType, version)).thenReturn(Optional.of(file));
-        }
+        when(fileRepository.findByVersion(version)).thenReturn(files);
 
-        Map<FileType, FileEntity> files = dataLinkService.getRequiredFiles(version);
+        Map<FileType, FileEntity> filesByType = dataLinkService.getRequiredFiles(version);
 
-        assertEquals(FileType.values().length, files.size());
-        assertEquals(FileType.INTERVIEW, files.get(FileType.INTERVIEW).getType());
-        assertEquals(FileType.BPMN, files.get(FileType.BPMN).getType());
-        assertEquals(FileType.US, files.get(FileType.US).getType());
-        assertEquals(FileType.MCD, files.get(FileType.MCD).getType());
+        assertEquals(FileType.values().length, filesByType.size());
+        assertEquals(FileType.INTERVIEW, filesByType.get(FileType.INTERVIEW).getType());
+        assertEquals(FileType.BPMN, filesByType.get(FileType.BPMN).getType());
+        assertEquals(FileType.US, filesByType.get(FileType.US).getType());
+        assertEquals(FileType.MCD, filesByType.get(FileType.MCD).getType());
     }
 
     @Test
     void testGetRequiredFilesMissingDocumentThrows() {
         VersionEntity version = new VersionEntity();
+        List<FileEntity> files = List.of(
+                new FileEntity(FileType.INTERVIEW, "interview.pdf"),
+                new FileEntity(FileType.BPMN, "process.bpmn"),
+                new FileEntity(FileType.US, "user-stories"));
 
-        when(fileRepository.findByTypeAndVersion(FileType.INTERVIEW, version))
-                .thenReturn(Optional.of(new FileEntity(FileType.INTERVIEW, "interview.pdf")));
-        when(fileRepository.findByTypeAndVersion(FileType.BPMN, version))
-                .thenReturn(Optional.of(new FileEntity(FileType.BPMN, "process.bpmn")));
-        when(fileRepository.findByTypeAndVersion(FileType.US, version))
-                .thenReturn(Optional.of(new FileEntity(FileType.US, "user-stories")));
-        when(fileRepository.findByTypeAndVersion(FileType.MCD, version))
-                .thenReturn(Optional.empty());
+        when(fileRepository.findByVersion(version)).thenReturn(files);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> dataLinkService.getRequiredFiles(version));
@@ -84,15 +83,24 @@ class DataLinkServiceTest {
     @Test
     void testGetParsedDataByFileType() {
         VersionEntity version = new VersionEntity();
+        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview");
+        FileEntity bpmnFile = new FileEntity(FileType.BPMN, "bpmn");
+        FileEntity usFile = new FileEntity(FileType.US, "us");
+        FileEntity mcdFile = new FileEntity(FileType.MCD, "mcd");
 
-        for (FileType fileType : FileType.values()) {
-            FileEntity file = new FileEntity(fileType, fileType.name().toLowerCase());
-            when(fileRepository.findByTypeAndVersion(fileType, version)).thenReturn(Optional.of(file));
+        when(fileRepository.findByVersion(version)).thenReturn(List.of(interviewFile, bpmnFile, usFile, mcdFile));
 
-            ParsedDataEntity parsedData = new ParsedDataEntity(DataType.ACTION, fileType.name().toLowerCase());
-            parsedData.setFile(file);
-            when(parsedDataRepository.findByFile(file)).thenReturn(List.of(parsedData));
-        }
+        ParsedDataEntity interviewData = new ParsedDataEntity(DataType.ACTION, "interview");
+        interviewData.setFile(interviewFile);
+        ParsedDataEntity bpmnData = new ParsedDataEntity(DataType.ACTION, "bpmn");
+        bpmnData.setFile(bpmnFile);
+        ParsedDataEntity usData = new ParsedDataEntity(DataType.ACTION, "us");
+        usData.setFile(usFile);
+        ParsedDataEntity mcdData = new ParsedDataEntity(DataType.ACTION, "mcd");
+        mcdData.setFile(mcdFile);
+
+        when(parsedDataRepository.findByVersion(version))
+                .thenReturn(List.of(interviewData, bpmnData, usData, mcdData));
 
         Map<FileType, List<ParsedDataEntity>> parsedDataByFileType = dataLinkService.getParsedDataByFileType(version);
 
@@ -106,19 +114,33 @@ class DataLinkServiceTest {
     @Test
     void testGetEmbeddingsByFileType() {
         VersionEntity version = new VersionEntity();
+        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview");
+        FileEntity bpmnFile = new FileEntity(FileType.BPMN, "bpmn");
+        FileEntity usFile = new FileEntity(FileType.US, "us");
+        FileEntity mcdFile = new FileEntity(FileType.MCD, "mcd");
 
-        for (FileType fileType : FileType.values()) {
-            FileEntity file = new FileEntity(fileType, fileType.name().toLowerCase());
-            when(fileRepository.findByTypeAndVersion(fileType, version)).thenReturn(Optional.of(file));
+        when(fileRepository.findByVersion(version)).thenReturn(List.of(interviewFile, bpmnFile, usFile, mcdFile));
 
-            ParsedDataEntity parsedData = new ParsedDataEntity(DataType.ACTION, fileType.name().toLowerCase());
-            parsedData.setFile(file);
-            when(parsedDataRepository.findByFile(file)).thenReturn(List.of(parsedData));
+        ParsedDataEntity interviewData = new ParsedDataEntity(DataType.ACTION, "interview");
+        interviewData.setFile(interviewFile);
+        ParsedDataEntity bpmnData = new ParsedDataEntity(DataType.ACTION, "bpmn");
+        bpmnData.setFile(bpmnFile);
+        ParsedDataEntity usData = new ParsedDataEntity(DataType.ACTION, "us");
+        usData.setFile(usFile);
+        ParsedDataEntity mcdData = new ParsedDataEntity(DataType.ACTION, "mcd");
+        mcdData.setFile(mcdFile);
 
-            MistralService.EmbeddingTuple embeddingTuple = new MistralService.EmbeddingTuple(parsedData,
-                    new float[] { 1.0f });
-            when(mistralService.embedParsedData(List.of(parsedData))).thenReturn(List.of(embeddingTuple));
-        }
+        when(parsedDataRepository.findByVersion(version))
+                .thenReturn(List.of(interviewData, bpmnData, usData, mcdData));
+
+        when(mistralService.embedParsedData(List.of(interviewData)))
+                .thenReturn(List.of(new MistralService.EmbeddingTuple(interviewData, new float[] { 1.0f })));
+        when(mistralService.embedParsedData(List.of(bpmnData)))
+                .thenReturn(List.of(new MistralService.EmbeddingTuple(bpmnData, new float[] { 1.0f })));
+        when(mistralService.embedParsedData(List.of(usData)))
+                .thenReturn(List.of(new MistralService.EmbeddingTuple(usData, new float[] { 1.0f })));
+        when(mistralService.embedParsedData(List.of(mcdData)))
+                .thenReturn(List.of(new MistralService.EmbeddingTuple(mcdData, new float[] { 1.0f })));
 
         Map<FileType, List<MistralService.EmbeddingTuple>> embeddingsByFileType = dataLinkService
                 .getEmbeddingsByFileType(version);
@@ -157,20 +179,9 @@ class DataLinkServiceTest {
         ParsedDataEntity entity = new ParsedDataEntity(DataType.ENTITY, "absence");
         entity.setFile(mcdFile);
 
-        for (FileType fileType : FileType.values()) {
-            FileEntity file = switch (fileType) {
-                case INTERVIEW -> interviewFile;
-                case BPMN -> bpmnFile;
-                case US -> usFile;
-                case MCD -> mcdFile;
-            };
-            when(fileRepository.findByTypeAndVersion(fileType, version)).thenReturn(Optional.of(file));
-        }
-
-        when(parsedDataRepository.findByFile(interviewFile)).thenReturn(List.of(interviewActor));
-        when(parsedDataRepository.findByFile(bpmnFile)).thenReturn(List.of(bpmnActor));
-        when(parsedDataRepository.findByFile(usFile)).thenReturn(List.of(userStory));
-        when(parsedDataRepository.findByFile(mcdFile)).thenReturn(List.of(entity));
+        when(fileRepository.findByVersion(version)).thenReturn(List.of(interviewFile, bpmnFile, usFile, mcdFile));
+        when(parsedDataRepository.findByVersion(version))
+                .thenReturn(List.of(interviewActor, bpmnActor, userStory, entity));
 
         when(mistralService.embedParsedData(List.of(interviewActor)))
                 .thenReturn(List.of(new MistralService.EmbeddingTuple(interviewActor, new float[] { 1.0f, 0.0f })));
@@ -220,20 +231,9 @@ class DataLinkServiceTest {
         ParsedDataEntity entity = new ParsedDataEntity(DataType.ENTITY, "absence");
         entity.setFile(mcdFile);
 
-        for (FileType fileType : FileType.values()) {
-            FileEntity file = switch (fileType) {
-                case INTERVIEW -> interviewFile;
-                case BPMN -> bpmnFile;
-                case US -> usFile;
-                case MCD -> mcdFile;
-            };
-            when(fileRepository.findByTypeAndVersion(fileType, version)).thenReturn(Optional.of(file));
-        }
-
-        when(parsedDataRepository.findByFile(interviewFile)).thenReturn(List.of(interviewActor));
-        when(parsedDataRepository.findByFile(bpmnFile)).thenReturn(List.of(bpmnActor));
-        when(parsedDataRepository.findByFile(usFile)).thenReturn(List.of(userStory));
-        when(parsedDataRepository.findByFile(mcdFile)).thenReturn(List.of(entity));
+        when(fileRepository.findByVersion(version)).thenReturn(List.of(interviewFile, bpmnFile, usFile, mcdFile));
+        when(parsedDataRepository.findByVersion(version))
+                .thenReturn(List.of(interviewActor, bpmnActor, userStory, entity));
 
         when(mistralService.embedParsedData(List.of(interviewActor)))
                 .thenReturn(List.of(new MistralService.EmbeddingTuple(interviewActor, new float[] { 1.0f, 0.0f })));
