@@ -84,12 +84,15 @@ class DataLinkServiceTest {
     void testGetParsedDataByFileType() {
         VersionEntity version = new VersionEntity();
         Map<FileType, FileEntity> filesByType = stubAllFiles(version);
+        List<ParsedDataEntity> parsedDataForVersion = new java.util.ArrayList<>();
 
         for (Map.Entry<FileType, FileEntity> entry : filesByType.entrySet()) {
             ParsedDataEntity parsedData = new ParsedDataEntity(DataType.ACTION, entry.getKey().name().toLowerCase());
             parsedData.setFile(entry.getValue());
-            when(parsedDataRepository.findByFile(entry.getValue())).thenReturn(List.of(parsedData));
+            parsedDataForVersion.add(parsedData);
         }
+
+        when(parsedDataRepository.findByVersion(version)).thenReturn(parsedDataForVersion);
 
         Map<FileType, List<ParsedDataEntity>> parsedDataByFileType = dataLinkService.getParsedDataByFileType(version);
 
@@ -104,16 +107,19 @@ class DataLinkServiceTest {
     void testGetEmbeddingsByFileType() {
         VersionEntity version = new VersionEntity();
         Map<FileType, FileEntity> filesByType = stubAllFiles(version);
+        List<ParsedDataEntity> parsedDataForVersion = new java.util.ArrayList<>();
 
         for (Map.Entry<FileType, FileEntity> entry : filesByType.entrySet()) {
             ParsedDataEntity parsedData = new ParsedDataEntity(DataType.ACTION, entry.getKey().name().toLowerCase());
             parsedData.setFile(entry.getValue());
-            when(parsedDataRepository.findByFile(entry.getValue())).thenReturn(List.of(parsedData));
+            parsedDataForVersion.add(parsedData);
 
             MistralService.EmbeddingTuple embeddingTuple = new MistralService.EmbeddingTuple(parsedData,
                     new float[] { 1.0f });
             when(mistralService.embedParsedData(List.of(parsedData))).thenReturn(List.of(embeddingTuple));
         }
+
+        when(parsedDataRepository.findByVersion(version)).thenReturn(parsedDataForVersion);
 
         Map<FileType, List<MistralService.EmbeddingTuple>> embeddingsByFileType = dataLinkService
                 .getEmbeddingsByFileType(version);
@@ -124,9 +130,14 @@ class DataLinkServiceTest {
         assertEquals("us", embeddingsByFileType.get(FileType.US).getFirst().parsedData().getContent());
         assertEquals("mcd", embeddingsByFileType.get(FileType.MCD).getFirst().parsedData().getContent());
 
-        for (FileEntity file : filesByType.values()) {
-            verify(mistralService).embedParsedData(parsedDataRepository.findByFile(file));
-        }
+        verify(mistralService).embedParsedData(embeddingsByFileType.get(FileType.INTERVIEW).stream()
+                .map(MistralService.EmbeddingTuple::parsedData).toList());
+        verify(mistralService).embedParsedData(embeddingsByFileType.get(FileType.BPMN).stream()
+                .map(MistralService.EmbeddingTuple::parsedData).toList());
+        verify(mistralService).embedParsedData(embeddingsByFileType.get(FileType.US).stream()
+                .map(MistralService.EmbeddingTuple::parsedData).toList());
+        verify(mistralService).embedParsedData(embeddingsByFileType.get(FileType.MCD).stream()
+                .map(MistralService.EmbeddingTuple::parsedData).toList());
     }
 
     @Test
@@ -148,12 +159,11 @@ class DataLinkServiceTest {
         ParsedDataEntity userStory = parsedData(filesByType.get(FileType.US), DataType.US, "valider une demande");
         ParsedDataEntity mcdEntity = parsedData(filesByType.get(FileType.MCD), DataType.ENTITY, "absence");
 
-        when(parsedDataRepository.findByFile(filesByType.get(FileType.INTERVIEW)))
-                .thenReturn(List.of(interviewActor, interviewAction, interviewEntity));
-        when(parsedDataRepository.findByFile(filesByType.get(FileType.BPMN)))
-                .thenReturn(List.of(bpmnActor, bpmnAction, bpmnFlow));
-        when(parsedDataRepository.findByFile(filesByType.get(FileType.US))).thenReturn(List.of(userStory));
-        when(parsedDataRepository.findByFile(filesByType.get(FileType.MCD))).thenReturn(List.of(mcdEntity));
+        when(parsedDataRepository.findByVersion(version)).thenReturn(List.of(
+                interviewActor, interviewAction, interviewEntity,
+                bpmnActor, bpmnAction, bpmnFlow,
+                userStory,
+                mcdEntity));
 
         when(mistralService.embedParsedData(List.of(interviewActor, interviewAction, interviewEntity)))
                 .thenReturn(List.of(
@@ -198,10 +208,7 @@ class DataLinkServiceTest {
         ParsedDataEntity userStory = parsedData(filesByType.get(FileType.US), DataType.US, "En tant que manager...");
         ParsedDataEntity entity = parsedData(filesByType.get(FileType.MCD), DataType.ENTITY, "absence");
 
-        when(parsedDataRepository.findByFile(filesByType.get(FileType.INTERVIEW))).thenReturn(List.of(interviewActor));
-        when(parsedDataRepository.findByFile(filesByType.get(FileType.BPMN))).thenReturn(List.of(bpmnActor));
-        when(parsedDataRepository.findByFile(filesByType.get(FileType.US))).thenReturn(List.of(userStory));
-        when(parsedDataRepository.findByFile(filesByType.get(FileType.MCD))).thenReturn(List.of(entity));
+        when(parsedDataRepository.findByVersion(version)).thenReturn(List.of(interviewActor, bpmnActor, userStory, entity));
 
         when(mistralService.embedParsedData(List.of(interviewActor)))
                 .thenReturn(List.of(tuple(interviewActor, 1.0f, 0.0f)));
