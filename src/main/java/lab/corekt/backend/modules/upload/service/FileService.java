@@ -1,14 +1,18 @@
 package lab.corekt.backend.modules.upload.service;
 
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
+import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
+import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import lombok.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 
@@ -16,9 +20,13 @@ import java.io.IOException;
 public class FileService {
 
     private final FileRepository fileRepository;
+    private final BpmnParserService bpmnParserService;
+    private final McdParserService mcdParserService;
 
-    public FileService(FileRepository fileRepository) {
+    public FileService(FileRepository fileRepository, BpmnParserService bpmnParserService, McdParserService mcdParserService) {
         this.fileRepository = fileRepository;
+        this.bpmnParserService = bpmnParserService;
+        this.mcdParserService = mcdParserService;
     }
 
     @Transactional
@@ -30,7 +38,26 @@ public class FileService {
             fileEntity.setVersion(version);
             fileEntity.setFile(file.getBytes());
 
-            return fileRepository.saveAndFlush(fileEntity);
+            FileEntity savedFileEntity = fileRepository.save(fileEntity);
+            try {
+                switch (fileType) {
+                    case BPMN -> {
+                        bpmnParserService.processFile(savedFileEntity);
+                    }
+                    case MCD -> {
+                        mcdParserService.processFile(savedFileEntity);
+                    }
+                }
+
+            } catch (Exception e) {
+                // If parsing fails, delete the uploaded file to maintain data integrity
+                this.deleteFile(savedFileEntity);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse the uploaded file: " + e.getMessage());
+            }
+
+            return savedFileEntity;
+
+
         } catch (IOException e) {
             throw new IOException("Failed to read file content", e);
         } catch (DataIntegrityViolationException e) {
