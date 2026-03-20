@@ -1,25 +1,26 @@
 package lab.corekt.backend.modules.project.parsing.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
 import lab.corekt.backend.modules.project.parsing.enums.DataType;
 import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepository;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
@@ -32,6 +33,9 @@ class BpmnParserServiceTest {
 
   @InjectMocks
   private BpmnParserService parser;
+
+  @Captor
+  private org.mockito.ArgumentCaptor<List<ParsedDataEntity>> parsedDataCaptor;
 
   private static final String SIMPLE_BPMN;
   private static final String COLLABORATION_BPMN;
@@ -52,8 +56,12 @@ class BpmnParserServiceTest {
   }
 
   private static String loadResourceFile(String filename) throws IOException {
-    String resourcePath = "src/test/resources/" + filename;
-    return Files.readString(Paths.get(resourcePath), StandardCharsets.UTF_8);
+    try (InputStream in = BpmnParserServiceTest.class.getClassLoader().getResourceAsStream(filename)) {
+      if (in == null) {
+        throw new IOException("Missing test resource: " + filename);
+      }
+      return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+    }
   }
 
 
@@ -174,7 +182,14 @@ class BpmnParserServiceTest {
 
     parser.processFile(fileEntity);
 
-    verify(parsedDataRepository).saveAll(anyList());
+    verify(parsedDataRepository).saveAll(parsedDataCaptor.capture());
+
+    List<ParsedDataEntity> saved = parsedDataCaptor.getValue();
+    assertEquals(5, saved.size());
+    assertEquals(2, saved.stream().filter(e -> e.getDataType() == DataType.ACTION).count());
+    assertEquals(3, saved.stream().filter(e -> e.getDataType() == DataType.FLOW).count());
+    assertEquals(0, saved.stream().filter(e -> e.getDataType() == DataType.ACTOR).count());
+    assertTrue(saved.stream().allMatch(e -> Objects.equals(fileEntity, e.getFile())));
   }
 
   @Test
@@ -187,7 +202,13 @@ class BpmnParserServiceTest {
 
     parser.processFile(fileEntity);
 
-    verify(parsedDataRepository).saveAll(anyList());
+    verify(parsedDataRepository).saveAll(parsedDataCaptor.capture());
+
+    List<ParsedDataEntity> saved = parsedDataCaptor.getValue();
+    assertTrue(saved.stream().anyMatch(e -> e.getDataType() == DataType.ACTOR));
+    assertTrue(saved.stream().anyMatch(e -> e.getDataType() == DataType.ACTION));
+    assertTrue(saved.stream().anyMatch(e -> e.getDataType() == DataType.FLOW));
+    assertTrue(saved.stream().allMatch(e -> Objects.equals(fileEntity, e.getFile())));
   }
 
   @Test
@@ -200,6 +221,7 @@ class BpmnParserServiceTest {
 
     parser.processFile(fileEntity);
 
-    verify(parsedDataRepository).saveAll(anyList());
+    verify(parsedDataRepository).saveAll(parsedDataCaptor.capture());
+    assertTrue(parsedDataCaptor.getValue().isEmpty());
   }
 }
