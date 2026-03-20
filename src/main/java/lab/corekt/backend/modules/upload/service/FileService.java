@@ -38,30 +38,31 @@ public class FileService {
             fileEntity.setVersion(version);
             fileEntity.setFile(file.getBytes());
 
-            FileEntity savedFileEntity = fileRepository.save(fileEntity);
-            try {
-                switch (fileType) {
-                    case BPMN -> {
-                        bpmnParserService.processFile(savedFileEntity);
-                    }
-                    case MCD -> {
-                        mcdParserService.processFile(savedFileEntity);
-                    }
-                }
+            processFileByType(fileType, fileEntity);
 
-            } catch (Exception e) {
-                // If parsing fails, delete the uploaded file to maintain data integrity
-                this.deleteFile(savedFileEntity);
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse the uploaded file: " + e.getMessage());
-            }
-
-            return savedFileEntity;
+            return fileRepository.save(fileEntity);
 
 
         } catch (IOException e) {
             throw new IOException("Failed to read file content", e);
         } catch (DataIntegrityViolationException e) {
             throw new DataIntegrityViolationException("Failed to save file, a file of type " + fileType + " already exists for this version.", e);
+        }
+    }
+
+    private void processFileByType(@NonNull FileType fileType, FileEntity fileEntity) {
+        try {
+            switch (fileType) {
+                case BPMN -> {
+                    bpmnParserService.processFile(fileEntity);
+                }
+                case MCD -> {
+                    mcdParserService.processFile(fileEntity);
+                }
+            }
+
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse the uploaded file: " + e.getMessage());
         }
     }
 
