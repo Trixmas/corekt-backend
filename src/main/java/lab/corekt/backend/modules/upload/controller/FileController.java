@@ -3,6 +3,8 @@ package lab.corekt.backend.modules.upload.controller;
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
+import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
+import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
@@ -27,12 +29,16 @@ public class FileController {
     private final ProjectRepository projectRepository;
     private final VersionRepository versionRepository;
     private final AuthContext authContext;
+    private final BpmnParserService bpmnParserService;
+    private final McdParserService mcdParserService;
 
-    public FileController(FileService fileService, ProjectRepository projectRepository, VersionRepository versionRepository, AuthContext authContext) {
+    public FileController(FileService fileService, ProjectRepository projectRepository, VersionRepository versionRepository, AuthContext authContext, BpmnParserService bpmnParserService, McdParserService mcdParserService) {
         this.fileService = fileService;
         this.projectRepository = projectRepository;
         this.versionRepository = versionRepository;
         this.authContext = authContext;
+        this.bpmnParserService = bpmnParserService;
+        this.mcdParserService = mcdParserService;
     }
 
     @PostMapping
@@ -50,6 +56,22 @@ public class FileController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
 
         FileEntity saved = fileService.uploadFile(version, file, fileType);
+
+        try {
+            switch (fileType) {
+                case BPMN -> {
+                    bpmnParserService.processFile(saved);
+                }
+                case MCD -> {
+                    mcdParserService.processFile(saved);
+                }
+            }
+
+        } catch (Exception e) {
+            // If parsing fails, delete the uploaded file to maintain data integrity
+            fileService.deleteFile(saved);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse the uploaded file: " + e.getMessage());
+        }
 
         FileUploadResponse response = new FileUploadResponse();
         response.setFileId(saved.getId());

@@ -58,4 +58,9 @@ public class FileService {
                 });
     }
 
+    @Transactional
+    public void deleteFile(FileEntity fileEntity) {
+        fileRepository.delete(fileEntity);
+    }
+
 }

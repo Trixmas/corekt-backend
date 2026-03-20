@@ -53,5 +53,11 @@ public class ParsedDataEntity {
         this.content = content;
 
     }
+
+    public ParsedDataEntity(DataType dataType, String actor, FileEntity relatedFile) {
+        this.dataType = dataType;
+        this.content = actor;
+        this.file = relatedFile;
+    }
 }
 
