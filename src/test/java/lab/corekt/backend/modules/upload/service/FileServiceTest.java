@@ -11,25 +11,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FileServiceTest {
@@ -51,7 +47,7 @@ class FileServiceTest {
     void uploadFileSavesFileContent() throws Exception {
         VersionEntity version = new VersionEntity("Version 1");
         MockMultipartFile multipartFile = new MockMultipartFile(
-            "file", "interview.pdf", "text/plain", "hello".getBytes()
+                "file", "interview.pdf", "text/plain", "hello".getBytes()
         );
 
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> {
@@ -87,7 +83,7 @@ class FileServiceTest {
         when(multipartFile.getBytes()).thenThrow(new IOException("disk read failed"));
 
         IOException exception = assertThrows(IOException.class,
-            () -> fileService.uploadFile(version, multipartFile, FileType.MCD));
+                () -> fileService.uploadFile(version, multipartFile, FileType.MCD));
 
         assertEquals("Failed to read file content", exception.getMessage());
         assertEquals("disk read failed", exception.getCause().getMessage());
@@ -99,21 +95,21 @@ class FileServiceTest {
     void uploadFileWrapsConstraintViolation() throws Exception {
         VersionEntity version = new VersionEntity("Version 1");
         MockMultipartFile multipartFile = new MockMultipartFile(
-            "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
+                "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
         );
 
         when(fileRepository.save(any(FileEntity.class)))
-            .thenThrow(new DataIntegrityViolationException("duplicate key"));
+                .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         DataIntegrityViolationException exception = assertThrows(DataIntegrityViolationException.class,
-            () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
+                () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
 
         assertEquals(
-            "Failed to save file, a file of type BPMN already exists for this version.",
-            exception.getMessage()
+                "Failed to save file, a file of type BPMN already exists for this version.",
+                exception.getMessage()
         );
         assertEquals("duplicate key", exception.getCause().getMessage());
-        verify(bpmnParserService, never()).processFile(any(FileEntity.class));
+        verify(bpmnParserService).processFile(any(FileEntity.class));
         verify(mcdParserService, never()).processFile(any(FileEntity.class));
     }
 
@@ -122,15 +118,16 @@ class FileServiceTest {
     void uploadFileDispatchesBpmnParser() throws Exception {
         VersionEntity version = new VersionEntity("Version 1");
         MockMultipartFile multipartFile = new MockMultipartFile(
-            "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
+                "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
         );
 
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         FileEntity result = fileService.uploadFile(version, multipartFile, FileType.BPMN);
 
-        verify(fileRepository).save(any(FileEntity.class));
-        verify(bpmnParserService).processFile(result);
+        InOrder inOrder = inOrder(bpmnParserService, fileRepository);
+        inOrder.verify(bpmnParserService).processFile(result);
+        inOrder.verify(fileRepository).save(result);
         verify(mcdParserService, never()).processFile(any(FileEntity.class));
     }
 
@@ -139,45 +136,59 @@ class FileServiceTest {
     void uploadFileDispatchesMcdParser() throws Exception {
         VersionEntity version = new VersionEntity("Version 1");
         MockMultipartFile multipartFile = new MockMultipartFile(
-            "file", "diagram.mcd", "application/octet-stream", "mcd".getBytes()
+                "file", "diagram.mcd", "application/octet-stream", "mcd".getBytes()
         );
 
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         FileEntity result = fileService.uploadFile(version, multipartFile, FileType.MCD);
 
-        verify(fileRepository).save(any(FileEntity.class));
-        verify(mcdParserService).processFile(result);
+        InOrder inOrder = inOrder(mcdParserService, fileRepository);
+        inOrder.verify(mcdParserService).processFile(result);
+        inOrder.verify(fileRepository).save(result);
         verify(bpmnParserService, never()).processFile(any(FileEntity.class));
     }
 
     @Test
-    @DisplayName("uploadFile deletes persisted file and throws when parsing fails")
-    void uploadFileDeletesFileWhenParsingFails() throws Exception {
+    @DisplayName("uploadFile wraps BPMN parser failures and skips persistence")
+    void uploadFileWrapsBpmnParserFailure() throws Exception {
         VersionEntity version = new VersionEntity("Version 1");
         MockMultipartFile multipartFile = new MockMultipartFile(
-            "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
+                "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
         );
 
-        when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> {
-            FileEntity entity = invocation.getArgument(0);
-            entity.setId(java.util.UUID.randomUUID());
-            return entity;
-        });
-        doThrow(new RuntimeException("parse boom")).when(bpmnParserService).processFile(any(FileEntity.class));
+        doThrow(new IllegalStateException("invalid bpmn"))
+                .when(bpmnParserService).processFile(any(FileEntity.class));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
+                () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
 
-        assertEquals(500, exception.getStatusCode().value());
-        assertEquals("Failed to parse the uploaded file: parse boom", exception.getReason());
-
-        ArgumentCaptor<FileEntity> savedCaptor = ArgumentCaptor.forClass(FileEntity.class);
-        ArgumentCaptor<FileEntity> deletedCaptor = ArgumentCaptor.forClass(FileEntity.class);
-        verify(fileRepository).save(savedCaptor.capture());
-        verify(fileRepository).delete(deletedCaptor.capture());
-        assertSame(savedCaptor.getValue(), deletedCaptor.getValue());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+        assertTrue(exception.getReason().contains("Failed to parse the uploaded file: invalid bpmn"));
+        verify(fileRepository, never()).save(any(FileEntity.class));
+        verify(mcdParserService, never()).processFile(any(FileEntity.class));
     }
+
+    @Test
+    @DisplayName("uploadFile wraps MCD parser failures and skips persistence")
+    void uploadFileWrapsMcdParserFailure() throws Exception {
+        VersionEntity version = new VersionEntity("Version 1");
+        MockMultipartFile multipartFile = new MockMultipartFile(
+                "file", "diagram.mcd", "application/octet-stream", "mcd".getBytes()
+        );
+
+        doThrow(new IllegalArgumentException("invalid mcd"))
+                .when(mcdParserService).processFile(any(FileEntity.class));
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> fileService.uploadFile(version, multipartFile, FileType.MCD));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+        assertTrue(exception.getReason().contains("Failed to parse the uploaded file: invalid mcd"));
+        verify(fileRepository, never()).save(any(FileEntity.class));
+        verify(bpmnParserService, never()).processFile(any(FileEntity.class));
+    }
+
 
     @Test
     @DisplayName("getOrCreate returns existing file when one already exists")
