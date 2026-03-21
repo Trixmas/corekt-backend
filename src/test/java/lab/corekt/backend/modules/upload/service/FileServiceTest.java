@@ -10,8 +10,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.InOrder;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -79,7 +79,9 @@ class FileServiceTest {
     void uploadFileWrapsIoFailure() throws Exception {
         VersionEntity version = new VersionEntity("Version 1");
         MultipartFile multipartFile = org.mockito.Mockito.mock(MultipartFile.class);
-        when(multipartFile.getOriginalFilename()).thenReturn("broken.txt");
+        when(multipartFile.getOriginalFilename()).thenReturn("broken.mcd");
+        when(multipartFile.isEmpty()).thenReturn(false);
+        when(multipartFile.getSize()).thenReturn(1000L);
         when(multipartFile.getBytes()).thenThrow(new IOException("disk read failed"));
 
         IOException exception = assertThrows(IOException.class,
@@ -164,7 +166,8 @@ class FileServiceTest {
                 () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
-        assertTrue(exception.getReason().contains("Failed to parse the uploaded file: invalid bpmn"));
+        String reason = exception.getReason();
+        assertTrue(reason != null && reason.contains("Failed to parse the uploaded file: invalid bpmn"));
         verify(fileRepository, never()).save(any(FileEntity.class));
         verify(mcdParserService, never()).processFile(any(FileEntity.class));
     }
@@ -184,7 +187,8 @@ class FileServiceTest {
                 () -> fileService.uploadFile(version, multipartFile, FileType.MCD));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
-        assertTrue(exception.getReason().contains("Failed to parse the uploaded file: invalid mcd"));
+        String reason = exception.getReason();
+        assertTrue(reason != null && reason.contains("Failed to parse the uploaded file: invalid mcd"));
         verify(fileRepository, never()).save(any(FileEntity.class));
         verify(bpmnParserService, never()).processFile(any(FileEntity.class));
     }
@@ -223,5 +227,74 @@ class FileServiceTest {
         assertEquals("User Stories", saved.getName());
         assertSame(version, saved.getVersion());
         assertSame(saved, result);
+    }
+
+    @Test
+    @DisplayName("uploadFile rejects empty files")
+    void uploadFileRejectsEmptyFile() {
+        VersionEntity version = new VersionEntity("Version 1");
+        MockMultipartFile emptyFile = new MockMultipartFile(
+                "file", "empty.pdf", "application/pdf", new byte[0]
+        );
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> fileService.uploadFile(version, emptyFile, FileType.INTERVIEW));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals("File is empty", exception.getReason());
+        verify(fileRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("uploadFile rejects files exceeding 10MB limit")
+    void uploadFileRejectsOversizedFile() {
+        VersionEntity version = new VersionEntity("Version 1");
+        MultipartFile oversizedFile = mock(MultipartFile.class);
+        when(oversizedFile.isEmpty()).thenReturn(false);
+        when(oversizedFile.getSize()).thenReturn(11L * 1024 * 1024);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> fileService.uploadFile(version, oversizedFile, FileType.INTERVIEW));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals("File size exceeds 10MB limit", exception.getReason());
+        verify(fileRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("uploadFile rejects invalid file type extension")
+    void uploadFileRejectsInvalidFileExtension() {
+        VersionEntity version = new VersionEntity("Version 1");
+        MockMultipartFile invalidFile = new MockMultipartFile(
+                "file", "wrong.txt", "text/plain", "content".getBytes()
+        );
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> fileService.uploadFile(version, invalidFile, FileType.INTERVIEW));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        String reason = exception.getReason();
+        assertTrue(reason != null && reason.contains("Invalid file type or extension"));
+        verify(fileRepository, never()).save(any());
+    }
+
+
+    @Test
+    @DisplayName("uploadFile successfully processes valid PDF interview file")
+    void uploadFileSavesValidPdfFile() throws Exception {
+        VersionEntity version = new VersionEntity("Version 1");
+        byte[] pdfContent = "PDF mock content".getBytes();
+        MockMultipartFile pdfFile = new MockMultipartFile(
+                "file", "interview.pdf", "application/pdf", pdfContent
+        );
+
+        when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FileEntity result = fileService.uploadFile(version, pdfFile, FileType.INTERVIEW);
+
+        assertEquals("interview.pdf", result.getName());
+        assertEquals(FileType.INTERVIEW, result.getType());
+        assertArrayEquals(pdfContent, result.getFile());
+        verify(fileRepository).save(any(FileEntity.class));
     }
 }
