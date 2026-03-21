@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lab.corekt.backend.modules.mistral.dto.DetectedUserStory;
 import lab.corekt.backend.modules.mistral.dto.InterviewAnalysisResult;
-import lab.corekt.backend.modules.mistral.dto.QqoqcpAnalysis;
+import lab.corekt.backend.modules.mistral.dto.QqoqcpDetails;
 import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
 import lab.corekt.backend.modules.project.parsing.enums.DataType;
 import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepository;
@@ -97,9 +97,6 @@ public class MistralService {
                     .retrieve()
                     .body(String.class);
 
-            System.out.println("=== RAW MISTRAL HTTP RESPONSE ===");
-            System.out.println(responseBody);
-
             JsonNode root = objectMapper.readTree(responseBody);
             String output = extractAssistantOutput(root);
 
@@ -150,20 +147,21 @@ public class MistralService {
         }
 
         List<ParsedDataEntity> batch = new ArrayList<>();
-        QqoqcpAnalysis qqoqcpAnalysis = analysisResult.getQqoqcpAnalysis();
-
+        QqoqcpDetails qqoqcpAnalysis = analysisResult.getQqoqcpAnalysis();
         if (qqoqcpAnalysis != null) {
             addParsedDataBatch(batch, interviewFile, DataType.ACTOR,
-                    qqoqcpAnalysis.getQui() != null ? qqoqcpAnalysis.getQui().getElementsFound() : null);
+                    qqoqcpAnalysis.getQui() == null ? null : qqoqcpAnalysis.getQui().getElementsFound());
             addParsedDataBatch(batch, interviewFile, DataType.ACTION,
-                    qqoqcpAnalysis.getQuoi() != null ? qqoqcpAnalysis.getQuoi().getElementsFound() : null);
+                    qqoqcpAnalysis.getQuoi() == null ? null : qqoqcpAnalysis.getQuoi().getElementsFound());
         }
 
-        if (analysisResult.getDetectedUserStories() != null) {
-            analysisResult.getDetectedUserStories().stream()
+        List<DetectedUserStory> detectedUserStories = analysisResult.getDetectedUserStories();
+        if (detectedUserStories != null) {
+            detectedUserStories.stream()
                     .map(this::formatUserStory)
                     .filter(Objects::nonNull)
-                    .forEach(content -> batch.add(buildParsedData(interviewFile, DataType.US, content)));
+                    .map(content -> buildParsedData(interviewFile, DataType.US, content))
+                    .forEach(batch::add);
         }
 
         if (batch.isEmpty()) {

@@ -1,9 +1,13 @@
 package lab.corekt.backend.modules.mistral.service;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -21,7 +25,7 @@ import lab.corekt.backend.modules.mistral.dto.DetectedUserStory;
 import lab.corekt.backend.modules.mistral.dto.InterviewAnalysisResult;
 import lab.corekt.backend.modules.mistral.dto.InterviewIssue;
 import lab.corekt.backend.modules.mistral.dto.InterviewSuggestion;
-import lab.corekt.backend.modules.mistral.dto.QqoqcpAnalysis;
+import lab.corekt.backend.modules.mistral.dto.QqoqcpDetails;
 import lab.corekt.backend.modules.mistral.dto.QqoqcpDimensionDetailed;
 import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
 import lab.corekt.backend.modules.project.parsing.enums.DataType;
@@ -33,9 +37,11 @@ import lab.corekt.backend.modules.upload.entity.FileEntity;
 
 class MistralServiceTest {
 
-    private static final String MISTRAL_API_TOKEN = "VbUe7zZuT5kQmFeNgdQZGYbM2khIxf6R";
-    private static final String MISTRAL_AGENT_ID = "ag_019cec1c9d7a7193b2fe30a4b29d20d7";
-    private static final int MISTRAL_AGENT_VERSION = 1;
+    private static final Properties TEST_PROPERTIES = loadTestProperties();
+    private static final String MISTRAL_API_TOKEN = resolveTestProperty("mistral.api.token");
+    private static final String MISTRAL_AGENT_ID = resolveTestProperty("mistral.agent.id");
+    private static final int MISTRAL_AGENT_VERSION = Integer.parseInt(resolveTestProperty("mistral.agent.version"));
+    private static final String MISTRAL_BASE_URL = "https://api.mistral.ai";
 
     private static final String SAMPLE_INTERVIEW = """
             Je suis responsable RH.
@@ -45,15 +51,19 @@ class MistralServiceTest {
             Pour les conges exceptionnels, ca depend du contexte et on traite parfois au cas par cas.
             """;
 
-    @Test
-    @DisplayName("Should analyze a sample interview through the configured Mistral agent")
-    @EnabledIfSystemProperty(named = "runMistralIntegrationTest", matches = "true")
-    void testAnalyzeInterview() {
-        EmbeddingModel embeddingModel = mock(EmbeddingModel.class);
-        AIAnalysisRepository aiAnalysisRepository = mock(AIAnalysisRepository.class);
-        ParsedDataRepository parsedDataRepository = mock(ParsedDataRepository.class);
-        ObjectMapper objectMapper = new ObjectMapper();
-        MistralService mistralService = new MistralService(
+    private EmbeddingModel embeddingModel;
+    private AIAnalysisRepository aiAnalysisRepository;
+    private ParsedDataRepository parsedDataRepository;
+    private ObjectMapper objectMapper;
+    private MistralService mistralService;
+
+    @BeforeEach
+    void setUp() {
+        embeddingModel = mock(EmbeddingModel.class);
+        aiAnalysisRepository = mock(AIAnalysisRepository.class);
+        parsedDataRepository = mock(ParsedDataRepository.class);
+        objectMapper = new ObjectMapper();
+        mistralService = new MistralService(
                 embeddingModel,
                 objectMapper,
                 aiAnalysisRepository,
@@ -62,30 +72,22 @@ class MistralServiceTest {
                 MISTRAL_API_TOKEN,
                 MISTRAL_AGENT_ID,
                 MISTRAL_AGENT_VERSION,
-                "https://api.mistral.ai");
+                MISTRAL_BASE_URL);
+    }
 
+    @Test
+    @DisplayName("Should analyze a sample interview through the configured Mistral agent")
+    @EnabledIfSystemProperty(named = "runMistralIntegrationTest", matches = "true")
+    void testAnalyzeInterview() {
         when(aiAnalysisRepository.save(any(AIAnalysisEntity.class)))
             .thenAnswer(inv -> inv.getArgument(0));
 
-        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf"); // just a file for this test
+        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
         interviewFile.setId(UUID.randomUUID());
 
         InterviewAnalysisResult result = mistralService.analyzeInterview(SAMPLE_INTERVIEW);
-        try {
-            System.out.println("--- MISTRAL DTO RESULT ---");
-            System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to print Mistral analysis result", e);
-        }
 
         AIAnalysisEntity saved = mistralService.saveInterviewAnalysis(interviewFile, result);
-        System.out.println("--- AI_ANALYSIS_ENTITY TO SAVE ---");
-        System.out.println("fileId: " + saved.getFile().getId());
-        System.out.println("fileName: " + saved.getFile().getName());
-        System.out.println("qualityScore: " + saved.getQualityScore());
-        System.out.println("summary: " + saved.getSummary());
-        System.out.println("issues: " + saved.getIssues());
-        System.out.println("suggestions: " + saved.getSuggestions());
 
         assertThat(result).isNotNull();
         assertThat(result.getQualityScore()).isBetween(0, 100);
@@ -99,21 +101,6 @@ class MistralServiceTest {
     @DisplayName("Should analyze and save a sample interview through the configured Mistral agent")
     @EnabledIfSystemProperty(named = "runMistralIntegrationTest", matches = "true")
     void testAnalyzeAndSaveInterview() {
-        EmbeddingModel embeddingModel = mock(EmbeddingModel.class);
-        AIAnalysisRepository aiAnalysisRepository = mock(AIAnalysisRepository.class);
-        ParsedDataRepository parsedDataRepository = mock(ParsedDataRepository.class);
-        ObjectMapper objectMapper = new ObjectMapper();
-        MistralService mistralService = new MistralService(
-                embeddingModel,
-                objectMapper,
-                aiAnalysisRepository,
-                parsedDataRepository,
-                RestClient.builder(),
-                MISTRAL_API_TOKEN,
-                MISTRAL_AGENT_ID,
-                MISTRAL_AGENT_VERSION,
-                "https://api.mistral.ai");
-
         when(aiAnalysisRepository.save(any(AIAnalysisEntity.class)))
             .thenAnswer(inv -> inv.getArgument(0));
         when(parsedDataRepository.saveAll(any()))
@@ -123,14 +110,6 @@ class MistralServiceTest {
         interviewFile.setId(UUID.randomUUID());
 
         AIAnalysisEntity saved = mistralService.analyzeAndSaveInterview(interviewFile, SAMPLE_INTERVIEW);
-
-        System.out.println("--- AI_ANALYSIS_ENTITY FROM analyzeAndSaveInterview ---");
-        System.out.println("fileId: " + saved.getFile().getId());
-        System.out.println("fileName: " + saved.getFile().getName());
-        System.out.println("qualityScore: " + saved.getQualityScore());
-        System.out.println("summary: " + saved.getSummary());
-        System.out.println("issues: " + saved.getIssues());
-        System.out.println("suggestions: " + saved.getSuggestions());
 
         assertThat(saved).isNotNull();
         assertThat(saved.getFile()).isEqualTo(interviewFile);
@@ -143,23 +122,6 @@ class MistralServiceTest {
     @Test
     @DisplayName("Should save interview analysis fields in AIAnalysisEntity")
     void testSaveInterviewAnalysis() throws Exception {
-        EmbeddingModel embeddingModel = mock(EmbeddingModel.class);
-        AIAnalysisRepository aiAnalysisRepository = mock(AIAnalysisRepository.class);
-        ParsedDataRepository parsedDataRepository = mock(ParsedDataRepository.class);
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        MistralService mistralService = new MistralService(
-            embeddingModel,
-            objectMapper,
-            aiAnalysisRepository,
-            parsedDataRepository,
-            RestClient.builder(),
-            MISTRAL_API_TOKEN,
-            MISTRAL_AGENT_ID,
-            MISTRAL_AGENT_VERSION,
-            "https://api.mistral.ai"
-        );
-
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
 
         InterviewIssue issue = new InterviewIssue();
@@ -208,23 +170,6 @@ class MistralServiceTest {
     @Test
     @DisplayName("Should save ACTOR ACTION and US parsed data from interview analysis")
     void testSaveInterviewParsedData() {
-        EmbeddingModel embeddingModel = mock(EmbeddingModel.class);
-        AIAnalysisRepository aiAnalysisRepository = mock(AIAnalysisRepository.class);
-        ParsedDataRepository parsedDataRepository = mock(ParsedDataRepository.class);
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        MistralService mistralService = new MistralService(
-            embeddingModel,
-            objectMapper,
-            aiAnalysisRepository,
-            parsedDataRepository,
-            RestClient.builder(),
-            MISTRAL_API_TOKEN,
-            MISTRAL_AGENT_ID,
-            MISTRAL_AGENT_VERSION,
-            "https://api.mistral.ai"
-        );
-
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
 
         QqoqcpDimensionDetailed qui = new QqoqcpDimensionDetailed();
@@ -233,7 +178,7 @@ class MistralServiceTest {
         QqoqcpDimensionDetailed quoi = new QqoqcpDimensionDetailed();
         quoi.setElementsFound(List.of("remplir un formulaire", "valider la demande"));
 
-        QqoqcpAnalysis qqoqcpAnalysis = new QqoqcpAnalysis();
+        QqoqcpDetails qqoqcpAnalysis = new QqoqcpDetails();
         qqoqcpAnalysis.setQui(qui);
         qqoqcpAnalysis.setQuoi(quoi);
 
@@ -266,5 +211,38 @@ class MistralServiceTest {
             );
         assertThat(saved).allMatch(parsedData -> parsedData.getFile() == interviewFile);
         verify(parsedDataRepository).saveAll(any());
+    }
+
+    private static Properties loadTestProperties() {
+        Properties properties = new Properties();
+
+        try (InputStream inputStream = MistralServiceTest.class.getResourceAsStream("/application-test.properties")) {
+            if (inputStream == null) {
+                throw new IllegalStateException("application-test.properties not found");
+            }
+            properties.load(inputStream);
+            return properties;
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load application-test.properties", e);
+        }
+    }
+
+    private static String resolveTestProperty(String key) {
+        String value = TEST_PROPERTIES.getProperty(key);
+        if (value == null) {
+            throw new IllegalStateException("Missing test property: " + key);
+        }
+
+        if (!value.startsWith("${") || !value.endsWith("}")) {
+            return value;
+        }
+
+        String placeholder = value.substring(2, value.length() - 1);
+        String[] parts = placeholder.split(":", 2);
+        String envName = parts[0];
+        String defaultValue = parts.length > 1 ? parts[1] : "";
+
+        String envValue = System.getenv(envName);
+        return envValue == null || envValue.isBlank() ? defaultValue : envValue;
     }
 }
