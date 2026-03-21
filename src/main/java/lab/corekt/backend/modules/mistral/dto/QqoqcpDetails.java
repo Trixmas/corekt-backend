@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class QqoqcpAnalysis {
+public class QqoqcpDetails {
 
     private QqoqcpDimensionDetailed qui;
     private QqoqcpDimensionDetailed quoi;
