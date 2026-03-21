@@ -6,6 +6,7 @@ import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,10 +43,18 @@ class FileServiceTest {
     @InjectMocks
     private FileService fileService;
 
+    private VersionEntity version;
+
+    @BeforeEach
+    void setUp() {
+        version = new VersionEntity();
+        version.setId(java.util.UUID.randomUUID());
+    }
+
     @Test
     @DisplayName("uploadFile saves file content through save")
     void uploadFileSavesFileContent() throws Exception {
-        VersionEntity version = new VersionEntity("Version 1");
+
         MockMultipartFile multipartFile = new MockMultipartFile(
                 "file", "interview.pdf", "text/plain", "hello".getBytes()
         );
@@ -77,7 +86,7 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile wraps multipart read failures")
     void uploadFileWrapsIoFailure() throws Exception {
-        VersionEntity version = new VersionEntity("Version 1");
+
         MultipartFile multipartFile = org.mockito.Mockito.mock(MultipartFile.class);
         when(multipartFile.getOriginalFilename()).thenReturn("broken.mcd");
         when(multipartFile.isEmpty()).thenReturn(false);
@@ -95,7 +104,7 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile wraps duplicate file constraint violations")
     void uploadFileWrapsConstraintViolation() throws Exception {
-        VersionEntity version = new VersionEntity("Version 1");
+
         MockMultipartFile multipartFile = new MockMultipartFile(
                 "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
         );
@@ -118,7 +127,7 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile dispatches BPMN files to BPMN parser")
     void uploadFileDispatchesBpmnParser() throws Exception {
-        VersionEntity version = new VersionEntity("Version 1");
+
         MockMultipartFile multipartFile = new MockMultipartFile(
                 "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
         );
@@ -136,7 +145,7 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile dispatches MCD files to MCD parser")
     void uploadFileDispatchesMcdParser() throws Exception {
-        VersionEntity version = new VersionEntity("Version 1");
+
         MockMultipartFile multipartFile = new MockMultipartFile(
                 "file", "diagram.mcd", "application/octet-stream", "mcd".getBytes()
         );
@@ -154,7 +163,7 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile wraps BPMN parser failures and skips persistence")
     void uploadFileWrapsBpmnParserFailure() throws Exception {
-        VersionEntity version = new VersionEntity("Version 1");
+
         MockMultipartFile multipartFile = new MockMultipartFile(
                 "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
         );
@@ -175,7 +184,7 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile wraps MCD parser failures and skips persistence")
     void uploadFileWrapsMcdParserFailure() throws Exception {
-        VersionEntity version = new VersionEntity("Version 1");
+
         MockMultipartFile multipartFile = new MockMultipartFile(
                 "file", "diagram.mcd", "application/octet-stream", "mcd".getBytes()
         );
@@ -197,7 +206,7 @@ class FileServiceTest {
     @Test
     @DisplayName("getOrCreate returns existing file when one already exists")
     void getOrCreateReturnsExistingFile() {
-        VersionEntity version = new VersionEntity("Version 1");
+
         FileEntity existing = new FileEntity(FileType.US, "User Stories");
         existing.setVersion(version);
 
@@ -212,7 +221,7 @@ class FileServiceTest {
     @Test
     @DisplayName("getOrCreate creates and saves a new file when missing")
     void getOrCreateCreatesNewFile() {
-        VersionEntity version = new VersionEntity("Version 1");
+
 
         when(fileRepository.findByTypeAndVersion(FileType.US, version)).thenReturn(Optional.empty());
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -232,7 +241,7 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile rejects empty files")
     void uploadFileRejectsEmptyFile() {
-        VersionEntity version = new VersionEntity("Version 1");
+
         MockMultipartFile emptyFile = new MockMultipartFile(
                 "file", "empty.pdf", "application/pdf", new byte[0]
         );
@@ -248,10 +257,8 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile rejects files exceeding 10MB limit")
     void uploadFileRejectsOversizedFile() {
-        VersionEntity version = new VersionEntity("Version 1");
-        MultipartFile oversizedFile = mock(MultipartFile.class);
-        when(oversizedFile.isEmpty()).thenReturn(false);
-        when(oversizedFile.getSize()).thenReturn(11L * 1024 * 1024);
+
+        MultipartFile oversizedFile = new MockMultipartFile("file", "empty.pdf", "application/pdf", new byte[Math.toIntExact(11L * 1024 * 1024)]);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> fileService.uploadFile(version, oversizedFile, FileType.INTERVIEW));
@@ -264,7 +271,7 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile rejects invalid file type extension")
     void uploadFileRejectsInvalidFileExtension() {
-        VersionEntity version = new VersionEntity("Version 1");
+
         MockMultipartFile invalidFile = new MockMultipartFile(
                 "file", "wrong.txt", "text/plain", "content".getBytes()
         );
@@ -282,7 +289,7 @@ class FileServiceTest {
     @Test
     @DisplayName("uploadFile successfully processes valid PDF interview file")
     void uploadFileSavesValidPdfFile() throws Exception {
-        VersionEntity version = new VersionEntity("Version 1");
+
         byte[] pdfContent = "PDF mock content".getBytes();
         MockMultipartFile pdfFile = new MockMultipartFile(
                 "file", "interview.pdf", "application/pdf", pdfContent
