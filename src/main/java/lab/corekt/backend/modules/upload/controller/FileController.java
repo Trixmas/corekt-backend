@@ -3,6 +3,8 @@ package lab.corekt.backend.modules.upload.controller;
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
+import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
+import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
@@ -28,7 +30,7 @@ public class FileController {
     private final VersionRepository versionRepository;
     private final AuthContext authContext;
 
-    public FileController(FileService fileService, ProjectRepository projectRepository, VersionRepository versionRepository, AuthContext authContext) {
+    public FileController(FileService fileService, ProjectRepository projectRepository, VersionRepository versionRepository, AuthContext authContext, BpmnParserService bpmnParserService, McdParserService mcdParserService) {
         this.fileService = fileService;
         this.projectRepository = projectRepository;
         this.versionRepository = versionRepository;

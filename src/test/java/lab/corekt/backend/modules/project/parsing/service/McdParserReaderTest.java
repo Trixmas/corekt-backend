@@ -29,18 +29,21 @@ public class McdParserReaderTest {
 
     @Test
     @DisplayName("Should handle null file data gracefully")
-    void shouldHandleNullFileData() throws Exception {
+    void shouldHandleNullFileData() {
         when(mockFileEntity.getFile()).thenReturn(null);
         assertDoesNotThrow(() -> mcdParserReader.parseFile());
+        assertTrue(mcdParserReader.getEntities().isEmpty());
+        assertTrue(mcdParserReader.getRelations().isEmpty());
     }
 
     @Test
     @DisplayName("Should handle empty file data gracefully")
-    void shouldHandleEmptyFileData() throws Exception {
+    void shouldHandleEmptyFileData() {
         when(mockFileEntity.getFile()).thenReturn(new byte[0]);
         assertDoesNotThrow(() -> mcdParserReader.parseFile());
 
         assertTrue(mcdParserReader.getEntities().isEmpty());
+        assertTrue(mcdParserReader.getRelations().isEmpty());
     }
 
     @Test
@@ -67,7 +70,7 @@ public class McdParserReaderTest {
     @DisplayName("Should throw exception if data is not a valid Java serialization")
     void shouldThrowOnCorruptedData() {
         when(mockFileEntity.getFile()).thenReturn("Not A Serialized Object".getBytes());
-        assertThrows(Exception.class, () -> mcdParserReader.parseFile());
+        assertThrows(StreamCorruptedException.class, () -> mcdParserReader.parseFile());
     }
 
     // --- UTILS ---

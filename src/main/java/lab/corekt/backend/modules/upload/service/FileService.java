@@ -1,14 +1,19 @@
 package lab.corekt.backend.modules.upload.service;
 
+import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
+import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
+import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import lombok.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 
@@ -16,25 +21,66 @@ import java.io.IOException;
 public class FileService {
 
     private final FileRepository fileRepository;
+    private final BpmnParserService bpmnParserService;
+    private final McdParserService mcdParserService;
+    private final MistralService mistralService;
 
-    public FileService(FileRepository fileRepository) {
+    public FileService(FileRepository fileRepository, BpmnParserService bpmnParserService, McdParserService mcdParserService, MistralService mistralService) {
         this.fileRepository = fileRepository;
+        this.bpmnParserService = bpmnParserService;
+        this.mcdParserService = mcdParserService;
+        this.mistralService = mistralService;
     }
 
     @Transactional
-    public FileEntity uploadFile(VersionEntity version, MultipartFile file, @NonNull FileType fileType)
+    public FileEntity uploadFile(VersionEntity version, @NonNull MultipartFile file, @NonNull FileType fileType)
             throws IOException, DataIntegrityViolationException {
+
+//        check if file type is supported and the file has the correct extension
+        if (!fileType.isValidFile(file)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file type or extension for " + fileType);
+        }
+        if (file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty");
+        }
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File size exceeds 10MB limit");
+        }
+
 
         try {
             FileEntity fileEntity = new FileEntity(fileType, file.getOriginalFilename());
             fileEntity.setVersion(version);
             fileEntity.setFile(file.getBytes());
 
-            return fileRepository.saveAndFlush(fileEntity);
+            processFileByType(fileType, fileEntity);
+
+            return fileRepository.save(fileEntity);
+
+
         } catch (IOException e) {
             throw new IOException("Failed to read file content", e);
         } catch (DataIntegrityViolationException e) {
             throw new DataIntegrityViolationException("Failed to save file, a file of type " + fileType + " already exists for this version.", e);
+        }
+    }
+
+    private void processFileByType(@NonNull FileType fileType, FileEntity fileEntity) {
+        try {
+            switch (fileType) {
+                case BPMN -> {
+                    bpmnParserService.processFile(fileEntity);
+                }
+                case MCD -> {
+                    mcdParserService.processFile(fileEntity);
+                }
+                case INTERVIEW -> {
+                    mistralService.processInterview(fileEntity);
+                }
+            }
+
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse the uploaded file: " + e.getMessage());
         }
     }
 
@@ -57,5 +103,6 @@ public class FileService {
                     return fileRepository.save(newFile);
                 });
     }
+
 
 }

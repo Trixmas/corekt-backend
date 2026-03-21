@@ -72,7 +72,8 @@ class MistralServiceTest {
                 MISTRAL_API_TOKEN,
                 MISTRAL_AGENT_ID,
                 MISTRAL_AGENT_VERSION,
-                MISTRAL_BASE_URL);
+                MISTRAL_BASE_URL,
+                mock(InterviewPdfTextExtractor.class));
     }
 
     @Test
