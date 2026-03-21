@@ -33,6 +33,18 @@ public class FileService {
     public FileEntity uploadFile(VersionEntity version, MultipartFile file, @NonNull FileType fileType)
             throws IOException, DataIntegrityViolationException {
 
+        if (file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty");
+        }
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File size exceeds 10MB limit");
+        }
+
+//        check if file type is supported and the file has the correct extension
+        if (!fileType.isValidFile(file)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file type or extension for " + fileType);
+        }
+
         try {
             FileEntity fileEntity = new FileEntity(fileType, file.getOriginalFilename());
             fileEntity.setVersion(version);

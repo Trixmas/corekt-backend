@@ -34,7 +34,7 @@ public class ParsedDataEntity {
     private String content;
 
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "file_id", nullable = false)
     private FileEntity file;
 
