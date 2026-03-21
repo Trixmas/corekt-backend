@@ -62,7 +62,8 @@ class MistralServiceTest {
                 MISTRAL_API_TOKEN,
                 MISTRAL_AGENT_ID,
                 MISTRAL_AGENT_VERSION,
-                "https://api.mistral.ai");
+                "https://api.mistral.ai",
+                mock(InterviewPdfTextExtractor.class));
 
         when(aiAnalysisRepository.save(any(AIAnalysisEntity.class)))
             .thenAnswer(inv -> inv.getArgument(0));
@@ -112,7 +113,8 @@ class MistralServiceTest {
                 MISTRAL_API_TOKEN,
                 MISTRAL_AGENT_ID,
                 MISTRAL_AGENT_VERSION,
-                "https://api.mistral.ai");
+                "https://api.mistral.ai",
+                mock(InterviewPdfTextExtractor.class));
 
         when(aiAnalysisRepository.save(any(AIAnalysisEntity.class)))
             .thenAnswer(inv -> inv.getArgument(0));
@@ -157,7 +159,8 @@ class MistralServiceTest {
             MISTRAL_API_TOKEN,
             MISTRAL_AGENT_ID,
             MISTRAL_AGENT_VERSION,
-            "https://api.mistral.ai"
+            "https://api.mistral.ai",
+            mock(InterviewPdfTextExtractor.class)
         );
 
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
@@ -222,7 +225,8 @@ class MistralServiceTest {
             MISTRAL_API_TOKEN,
             MISTRAL_AGENT_ID,
             MISTRAL_AGENT_VERSION,
-            "https://api.mistral.ai"
+            "https://api.mistral.ai",
+            mock(InterviewPdfTextExtractor.class)
         );
 
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
