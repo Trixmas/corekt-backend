@@ -1,23 +1,32 @@
 package lab.corekt.backend.modules.upload.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-import static org.mockito.ArgumentMatchers.any;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import static org.mockito.Mockito.when;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockMultipartFile;
-
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FileServiceTest {
@@ -29,51 +38,140 @@ class FileServiceTest {
     private FileService fileService;
 
     @Test
-    void testUploadFile() throws Exception {
-        VersionEntity version = new VersionEntity();
-        MockMultipartFile file = new MockMultipartFile("file", "interview.pdf", "text/plain", "hello".getBytes());
+    @DisplayName("uploadFile saves file content through saveAndFlush")
+    void uploadFileSavesFileContent() throws Exception {
+        VersionEntity version = new VersionEntity("Version 1");
+        MockMultipartFile multipartFile = new MockMultipartFile(
+            "file", "interview.pdf", "text/plain", "hello".getBytes()
+        );
 
-        when(fileRepository.existsByVersionAndType(version, FileType.INTERVIEW)).thenReturn(false);
-        when(fileRepository.save(any(FileEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(fileRepository.saveAndFlush(any(FileEntity.class))).thenAnswer(invocation -> {
+            FileEntity entity = invocation.getArgument(0);
+            entity.setId(java.util.UUID.randomUUID());
+            return entity;
+        });
 
-        FileEntity result = fileService.uploadFile(version, file, FileType.INTERVIEW);
+        FileEntity result = fileService.uploadFile(version, multipartFile, FileType.INTERVIEW);
 
-        assertEquals("interview.pdf", result.getName());
-        assertEquals(FileType.INTERVIEW, result.getType());
+        ArgumentCaptor<FileEntity> captor = ArgumentCaptor.forClass(FileEntity.class);
+        verify(fileRepository).saveAndFlush(captor.capture());
+
+        FileEntity saved = captor.getValue();
+        assertEquals("interview.pdf", saved.getName());
+        assertEquals(FileType.INTERVIEW, saved.getType());
+        assertSame(version, saved.getVersion());
+        assertArrayEquals("hello".getBytes(), saved.getFile());
+
+        assertEquals(saved.getName(), result.getName());
+        assertEquals(saved.getType(), result.getType());
     }
 
     @Test
-    void testUploadFileDuplicateThrows() {
-        VersionEntity version = new VersionEntity();
-        MockMultipartFile file = new MockMultipartFile("file", "interview.pdf", "text/plain", "hello".getBytes());
+    @DisplayName("uploadFile wraps multipart read failures")
+    void uploadFileWrapsIoFailure() throws Exception {
+        VersionEntity version = new VersionEntity("Version 1");
+        MultipartFile multipartFile = new MultipartFile() {
+            @Override
+            public String getName() {
+                return "file";
+            }
 
-        when(fileRepository.existsByVersionAndType(version, FileType.INTERVIEW)).thenReturn(true);
+            @Override
+            public String getOriginalFilename() {
+                return "broken.txt";
+            }
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            fileService.uploadFile(version, file, FileType.INTERVIEW);
-        });
-    }
+            @Override
+            public String getContentType() {
+                return "text/plain";
+            }
 
-    @ParameterizedTest
-    @EnumSource(FileType.class)
-    void testUploadFileTypeIsInstanceOfFileType(FileType fileType) throws Exception {
-        VersionEntity version = new VersionEntity();
-        when(fileRepository.existsByVersionAndType(any(), any())).thenReturn(false);
-        when(fileRepository.save(any(FileEntity.class))).thenAnswer(i -> i.getArgument(0));
+            @Override
+            public boolean isEmpty() {
+                return false;
+            }
 
-        MockMultipartFile file = new MockMultipartFile("file", "test.pdf", "text/plain", "hello".getBytes());
-        FileEntity result = fileService.uploadFile(version, file, fileType);
-        assertInstanceOf(FileType.class, result.getType());
-        assertEquals(fileType, result.getType());
+            @Override
+            public long getSize() {
+                return 0;
+            }
+
+            @Override
+            public byte[] getBytes() throws IOException {
+                throw new IOException("disk read failed");
+            }
+
+            @Override
+            public InputStream getInputStream() throws IOException {
+                throw new IOException("disk read failed");
+            }
+
+            @Override
+            public void transferTo(java.io.File dest) {
+            }
+        };
+
+        IOException exception = assertThrows(IOException.class,
+            () -> fileService.uploadFile(version, multipartFile, FileType.MCD));
+
+        assertEquals("Failed to read file content", exception.getMessage());
+        assertEquals("disk read failed", exception.getCause().getMessage());
+        verify(fileRepository, never()).saveAndFlush(any());
     }
 
     @Test
-    void testUploadFileNullTypeThrows() {
-        VersionEntity version = new VersionEntity();
-        MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "hello".getBytes());
+    @DisplayName("uploadFile wraps duplicate file constraint violations")
+    void uploadFileWrapsConstraintViolation() throws Exception {
+        VersionEntity version = new VersionEntity("Version 1");
+        MockMultipartFile multipartFile = new MockMultipartFile(
+            "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
+        );
 
-        assertThrows(NullPointerException.class, () -> {
-            fileService.uploadFile(version, file, null);
-        });
+        when(fileRepository.saveAndFlush(any(FileEntity.class)))
+            .thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        DataIntegrityViolationException exception = assertThrows(DataIntegrityViolationException.class,
+            () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
+
+        assertEquals(
+            "Failed to save file, a file of type BPMN already exists for this version.",
+            exception.getMessage()
+        );
+        assertEquals("duplicate key", exception.getCause().getMessage());
+    }
+
+    @Test
+    @DisplayName("getOrCreate returns existing file when one already exists")
+    void getOrCreateReturnsExistingFile() {
+        VersionEntity version = new VersionEntity("Version 1");
+        FileEntity existing = new FileEntity(FileType.US, "User Stories");
+        existing.setVersion(version);
+
+        when(fileRepository.findByTypeAndVersion(FileType.US, version)).thenReturn(Optional.of(existing));
+
+        FileEntity result = fileService.getOrCreate(FileType.US, "User Stories", version);
+
+        assertSame(existing, result);
+        verify(fileRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("getOrCreate creates and saves a new file when missing")
+    void getOrCreateCreatesNewFile() {
+        VersionEntity version = new VersionEntity("Version 1");
+
+        when(fileRepository.findByTypeAndVersion(FileType.US, version)).thenReturn(Optional.empty());
+        when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FileEntity result = fileService.getOrCreate(FileType.US, "User Stories", version);
+
+        ArgumentCaptor<FileEntity> captor = ArgumentCaptor.forClass(FileEntity.class);
+        verify(fileRepository).save(captor.capture());
+
+        FileEntity saved = captor.getValue();
+        assertEquals(FileType.US, saved.getType());
+        assertEquals("User Stories", saved.getName());
+        assertSame(version, saved.getVersion());
+        assertSame(saved, result);
     }
 }

@@ -1,0 +1,80 @@
+package lab.corekt.backend.modules.project.parsing.service;
+
+import lab.corekt.backend.modules.upload.entity.FileEntity;
+import lombok.Getter;
+
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * This class handles the reading and extraction of data from .mcd files.
+ * The parsing logic relies on the JMerise library developed by M.Messouci
+ * Official website: http://www.jfreesoft.com/JMerise/
+ */
+@Getter
+public class McdParserReader {
+
+    public static final int ENTITY_RELATION_INDEX_OBJECT = 1;
+
+    private final List<String> entities;
+
+    private final List<String> relations;
+
+    private final FileEntity file;
+
+    public McdParserReader(FileEntity file) {
+        this.entities = new ArrayList<>();
+        this.relations = new ArrayList<>();
+        this.file = file;
+    }
+
+    public void parseFile() throws Exception {
+        byte[] fileData = this.file.getFile();
+        if (fileData == null || fileData.length == 0) return;
+
+        try (ByteArrayInputStream input = new ByteArrayInputStream(fileData)) {
+            ObjectInputStream oIn = new ObjectInputStream(input);
+
+            Object object = findObjectAtIndex(oIn, ENTITY_RELATION_INDEX_OBJECT);
+            if (object instanceof List) {
+                parseItems((List<?>) object);
+            }
+            oIn.close();
+        }
+    }
+
+    private void parseItems (List<?> list) throws Exception {
+        for (Object item : list) {
+            if (item == null) continue;
+
+            String className = item.getClass().getName();
+            if (className.endsWith("IhmEntite2") || className.endsWith("IhmEntite")) {
+                this.entities.add(extractName(item, "getEntite"));
+            }
+            if (className.endsWith("IhmRelation2") || className.endsWith("IhmRelation")) {
+                this.relations.add(extractName(item, "getRelation"));
+            }
+        }
+    }
+
+    private String extractName(Object ihmObject, String methodName) throws Exception {
+        Method methodGetObject = ihmObject.getClass().getMethod(methodName);
+        Object object = methodGetObject.invoke(ihmObject);
+
+        Method methodGetNom = object.getClass().getMethod("getNom");
+        return (String) methodGetNom.invoke(object);
+    }
+
+    private Object findObjectAtIndex(ObjectInputStream oIn, int index) throws Exception {
+        try {
+            for (int i = 0; i < index; i++) {
+                oIn.readObject();
+            }
+            return oIn.readObject();
+        } catch (EOFException e) {
+            return null;
+        }
+    }
+}
