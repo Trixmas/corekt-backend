@@ -1,5 +1,6 @@
 package lab.corekt.backend.modules.upload.service;
 
+import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
 import lab.corekt.backend.modules.project.parsing.service.McdParserService;
@@ -42,6 +43,9 @@ class FileServiceTest {
 
     @InjectMocks
     private FileService fileService;
+
+    @Mock
+    private MistralService mistralService;
 
     private VersionEntity version;
 
