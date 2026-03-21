@@ -1,5 +1,6 @@
 package lab.corekt.backend.modules.upload.service;
 
+import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
 import lab.corekt.backend.modules.project.parsing.service.McdParserService;
@@ -22,11 +23,13 @@ public class FileService {
     private final FileRepository fileRepository;
     private final BpmnParserService bpmnParserService;
     private final McdParserService mcdParserService;
+    private final MistralService mistralService;
 
-    public FileService(FileRepository fileRepository, BpmnParserService bpmnParserService, McdParserService mcdParserService) {
+    public FileService(FileRepository fileRepository, BpmnParserService bpmnParserService, McdParserService mcdParserService, MistralService mistralService) {
         this.fileRepository = fileRepository;
         this.bpmnParserService = bpmnParserService;
         this.mcdParserService = mcdParserService;
+        this.mistralService = mistralService;
     }
 
     @Transactional
@@ -72,7 +75,7 @@ public class FileService {
                     mcdParserService.processFile(fileEntity);
                 }
                 case INTERVIEW -> {
-                    //TODO: Wait for salim's PR
+                    mistralService.processInterview(fileEntity);
                 }
             }
 

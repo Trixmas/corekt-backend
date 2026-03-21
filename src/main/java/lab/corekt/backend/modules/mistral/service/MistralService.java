@@ -36,6 +36,7 @@ public class MistralService {
     private final Integer agentVersion;
     private final AIAnalysisRepository aiAnalysisRepository;
     private final ParsedDataRepository parsedDataRepository;
+    private final InterviewPdfTextExtractor interviewPdfTextExtractor;
 
     public MistralService(
             EmbeddingModel embeddingModel,
@@ -46,7 +47,7 @@ public class MistralService {
             @Value("${mistral.api.token}") String mistralApiToken,
             @Value("${mistral.agent.id}") String agentId,
             @Value("${mistral.agent.version}") Integer agentVersion,
-            @Value("${mistral.api.base-url:https://api.mistral.ai}") String mistralBaseUrl) {
+            @Value("${mistral.api.base-url:https://api.mistral.ai}") String mistralBaseUrl, InterviewPdfTextExtractor interviewPdfTextExtractor) {
         this.embeddingModel = embeddingModel;
         this.objectMapper = objectMapper;
         this.aiAnalysisRepository = aiAnalysisRepository;
@@ -62,6 +63,7 @@ public class MistralService {
                 .defaultHeader("Authorization", "Bearer " + mistralApiToken)
                 .requestFactory(new ReactorClientHttpRequestFactory(httpClient))
                 .build();
+        this.interviewPdfTextExtractor = interviewPdfTextExtractor;
     }
 
     public List<EmbeddingTuple> embedParsedData(List<ParsedDataEntity> parsedData) {
@@ -137,6 +139,12 @@ public class MistralService {
         saveInterviewParsedData(interviewFile, analysisResult);
 
         return savedAnalysis;
+    }
+
+    public void processInterview(FileEntity file){
+        String interviewText = interviewPdfTextExtractor.extractText(file);
+        analyzeAndSaveInterview(file, interviewText);
+
     }
 
     public List<ParsedDataEntity> saveInterviewParsedData(FileEntity interviewFile,
