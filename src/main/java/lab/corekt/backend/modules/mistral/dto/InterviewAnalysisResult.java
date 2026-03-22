@@ -12,7 +12,7 @@ public class InterviewAnalysisResult {
     private Integer qualityScore;
     private String summary;
     private List<DetectedUserStory> detectedUserStories;
-    private QqoqcpAnalysis qqoqcpAnalysis;
+    private QqoqcpDetails qqoqcpAnalysis;
     private DetectedIssues detectedIssues;
     private List<InterviewSuggestion> suggestions;
 }

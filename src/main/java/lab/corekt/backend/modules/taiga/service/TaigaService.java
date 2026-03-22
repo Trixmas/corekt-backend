@@ -24,6 +24,7 @@ import org.springframework.web.client.RestClient;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -51,61 +52,58 @@ public class TaigaService {
     }
 
     public TaigaCredentials authenticate(String username, String password) {
-        try {
-            JsonNode root = post("/auth", Map.of(
+        return executeTaigaCall(
+            () -> toCredentials(post("/auth", Map.of(
                 "username", username,
                 "password", password,
                 "type", "normal"
-            ));
-
-            JsonNode token = root.get("auth_token");
-            JsonNode userId = root.get("id");
-
-            if (token == null || userId == null) throw new TaigaAuthException("Invalid credentials");
-
-            return new TaigaCredentials(token.asText(), userId.asText());
-        } catch (TaigaAuthException e) {
-            throw e;
-        } catch (HttpClientErrorException.Unauthorized e) {
-            throw new TaigaAuthException("Invalid Taiga credentials");
-        } catch (Exception e) {
-            throw new TaigaException("Failed to reach Taiga API");
-        }
+            ))),
+            "Invalid Taiga credentials",
+            "Failed to reach Taiga API"
+        );
     }
 
     public Map<String, String> fetchProjects(String token, String userId) {
-        try {
-            JsonNode root = get("/projects?member={id}", token, userId);
-            Map<String, String> projects = new LinkedHashMap<>();
-
-            if (root.isArray()) {
-                for (JsonNode node : root) {
-                    projects.put(node.get("name").asText(), node.get("id").asText());
-                }
-            }
-
-            return projects;
-        } catch (HttpClientErrorException.Unauthorized e) {
-            throw new TaigaAuthException("Taiga token is invalid or expired");
-        } catch (Exception e) {
-            throw new TaigaException("Failed to fetch projects from Taiga");
-        }
+        return executeTaigaCall(
+            () -> toProjects(get("/projects?member={id}", token, userId)),
+            "Taiga token is invalid or expired",
+            "Failed to fetch projects from Taiga"
+        );
     }
 
     @Transactional
     public List<UserStory> fetchAndSaveUserStories(String taigaProjectId, String token, VersionEntity version) {
-        try {
+        return executeTaigaCall(() -> {
             List<UserStory> userStories = fetchUserStories(taigaProjectId, token);
-            if (userStories.isEmpty()) return List.of();
+            if (userStories.isEmpty()) {
+                return List.of();
+            }
             persistUserStories(userStories, version);
             return userStories;
-        } catch (HttpClientErrorException.Unauthorized e) {
-            throw new TaigaAuthException("Taiga token is invalid or expired");
-        } catch (TaigaAuthException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TaigaException("Failed to fetch user stories from Taiga");
+        }, "Taiga token is invalid or expired", "Failed to fetch user stories from Taiga");
+    }
+
+    private TaigaCredentials toCredentials(JsonNode root) {
+        JsonNode token = root.get("auth_token");
+        JsonNode userId = root.get("id");
+
+        if (token == null || userId == null) {
+            throw new TaigaAuthException("Invalid credentials");
         }
+
+        return new TaigaCredentials(token.asText(), userId.asText());
+    }
+
+    private Map<String, String> toProjects(JsonNode root) {
+        Map<String, String> projects = new LinkedHashMap<>();
+        if (!root.isArray()) {
+            return projects;
+        }
+
+        for (JsonNode node : root) {
+            projects.put(node.get("name").asText(), node.get("id").asText());
+        }
+        return projects;
     }
 
     private List<UserStory> fetchUserStories(String taigaProjectId, String token) {
@@ -151,7 +149,7 @@ public class TaigaService {
     }
 
     private JsonNode get(String uri, String token, Map<String, String> extraHeaders, Object... uriVars) {
-        try {
+        return executeRequest(() -> {
             var spec = restClient.get()
                 .uri(uri, uriVars)
                 .header(HttpHeaders.AUTHORIZATION, bearer(token));
@@ -159,11 +157,7 @@ public class TaigaService {
             extraHeaders.forEach(spec::header);
 
             return OBJECT_MAPPER.readTree(spec.retrieve().body(String.class));
-        } catch (HttpClientErrorException.Unauthorized e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TaigaException("Taiga GET request failed: " + uri);
-        }
+        }, "Taiga GET request failed: " + uri);
     }
 
     private JsonNode get(String uri, String token, Object... uriVars) {
@@ -171,18 +165,41 @@ public class TaigaService {
     }
 
     private JsonNode post(String uri, Object body) {
-        try {
+        return executeRequest(() -> {
             String response = restClient.post()
                 .uri(uri)
                 .body(OBJECT_MAPPER.writeValueAsString(body))
                 .retrieve()
                 .body(String.class);
             return OBJECT_MAPPER.readTree(response);
+        }, "Taiga POST request failed: " + uri);
+    }
+
+    private <T> T executeTaigaCall(Supplier<T> action, String unauthorizedMessage, String genericMessage) {
+        try {
+            return action.get();
+        } catch (TaigaAuthException e) {
+            throw e;
+        } catch (HttpClientErrorException.Unauthorized e) {
+            throw new TaigaAuthException(unauthorizedMessage);
+        } catch (Exception e) {
+            throw new TaigaException(genericMessage);
+        }
+    }
+
+    private JsonNode executeRequest(RequestSupplier request, String errorMessage) {
+        try {
+            return request.get();
         } catch (HttpClientErrorException.Unauthorized e) {
             throw e;
         } catch (Exception e) {
-            throw new TaigaException("Taiga POST request failed: " + uri);
+            throw new TaigaException(errorMessage);
         }
+    }
+
+    @FunctionalInterface
+    private interface RequestSupplier {
+        JsonNode get() throws Exception;
     }
 
     private ArrayNode toArray(JsonNode root) {
