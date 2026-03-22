@@ -7,7 +7,7 @@ import lab.corekt.backend.modules.upload.entity.FileEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,6 +28,9 @@ public class McdParserServiceTest {
     @InjectMocks
     private McdParserService mcdParserService;
 
+    @Captor
+    private org.mockito.ArgumentCaptor<List<ParsedDataEntity>> parsedDataCaptor;
+
     @Test
     @DisplayName("Should parse and save entities and relations from a valid file")
     void testShouldProcessValidFile() throws Exception {
@@ -43,10 +46,9 @@ public class McdParserServiceTest {
 
         mcdParserService.processFile(fileEntity);
 
-        ArgumentCaptor<List<ParsedDataEntity>> captor = ArgumentCaptor.forClass(List.class);
-        verify(parsedDataRepository).saveAll(captor.capture());
+        verify(parsedDataRepository).saveAll(parsedDataCaptor.capture());
 
-        List<ParsedDataEntity> saved = captor.getValue();
+        List<ParsedDataEntity> saved = parsedDataCaptor.getValue();
         assertEquals(3, saved.size());
         assertEquals(2, saved.stream().filter(e -> e.getDataType() == DataType.ENTITY).count());
         assertEquals(1, saved.stream().filter(e -> e.getDataType() == DataType.RELATION).count());
@@ -62,10 +64,9 @@ public class McdParserServiceTest {
 
         mcdParserService.processFile(fileEntity);
 
-        ArgumentCaptor<List<ParsedDataEntity>> captor = ArgumentCaptor.forClass(List.class);
-        verify(parsedDataRepository).saveAll(captor.capture());
+        verify(parsedDataRepository).saveAll(parsedDataCaptor.capture());
 
-        String savedContent = captor.getValue().get(0).getContent();
+        String savedContent = parsedDataCaptor.getValue().getFirst().getContent();
         assertEquals(500, savedContent.length());
         assertTrue(longName.startsWith(savedContent));
     }
@@ -78,8 +79,8 @@ public class McdParserServiceTest {
         fileEntity.setFile(null);
         mcdParserService.processFile(fileEntity);
 
-
-        verify(parsedDataRepository, times(1)).saveAll(anyList());
+        verify(parsedDataRepository, times(1)).saveAll(parsedDataCaptor.capture());
+        assertTrue(parsedDataCaptor.getValue().isEmpty());
     }
 
     @Test
@@ -90,7 +91,8 @@ public class McdParserServiceTest {
         fileEntity.setFile(new byte[0]);
         mcdParserService.processFile(fileEntity);
 
-        verify(parsedDataRepository, times(1)).saveAll(anyList());
+        verify(parsedDataRepository, times(1)).saveAll(parsedDataCaptor.capture());
+        assertTrue(parsedDataCaptor.getValue().isEmpty());
     }
 
     @Test
@@ -99,7 +101,8 @@ public class McdParserServiceTest {
         FileEntity fileEntity = new FileEntity();
         fileEntity.setFile("corrupted".getBytes());
 
-        assertThrows(Exception.class, () -> mcdParserService.processFile(fileEntity));
+        assertThrows(StreamCorruptedException.class, () -> mcdParserService.processFile(fileEntity));
+        verify(parsedDataRepository, never()).saveAll(anyList());
     }
 
     // --- UTILS ---

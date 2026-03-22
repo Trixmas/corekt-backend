@@ -29,23 +29,26 @@ public class McdParserReaderTest {
 
     @Test
     @DisplayName("Should handle null file data gracefully")
-    void testShouldHandleNullFileData() throws Exception {
+    void shouldHandleNullFileData() {
         when(mockFileEntity.getFile()).thenReturn(null);
         assertDoesNotThrow(() -> mcdParserReader.parseFile());
+        assertTrue(mcdParserReader.getEntities().isEmpty());
+        assertTrue(mcdParserReader.getRelations().isEmpty());
     }
 
     @Test
     @DisplayName("Should handle empty file data gracefully")
-    void testShouldHandleEmptyFileData() throws Exception {
+    void shouldHandleEmptyFileData() {
         when(mockFileEntity.getFile()).thenReturn(new byte[0]);
         assertDoesNotThrow(() -> mcdParserReader.parseFile());
 
         assertTrue(mcdParserReader.getEntities().isEmpty());
+        assertTrue(mcdParserReader.getRelations().isEmpty());
     }
 
     @Test
     @DisplayName("Should parse entities and relations from a valid serialized stream")
-    void testShouldParseValidMcdData() throws Exception {
+    void shouldParseValidMcdData() throws Exception {
         List<Object> mockItems = List.of(
                 new MockIhmEntite("Entity1"),
                 new MockIhmRelation("Relation1"),
@@ -65,9 +68,9 @@ public class McdParserReaderTest {
 
     @Test
     @DisplayName("Should throw exception if data is not a valid Java serialization")
-    void testShouldThrowOnCorruptedData() {
+    void shouldThrowOnCorruptedData() {
         when(mockFileEntity.getFile()).thenReturn("Not A Serialized Object".getBytes());
-        assertThrows(Exception.class, () -> mcdParserReader.parseFile());
+        assertThrows(StreamCorruptedException.class, () -> mcdParserReader.parseFile());
     }
 
     // --- UTILS ---
