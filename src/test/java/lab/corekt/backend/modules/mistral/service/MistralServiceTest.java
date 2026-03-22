@@ -83,7 +83,7 @@ class MistralServiceTest {
         when(aiAnalysisRepository.save(any(AIAnalysisEntity.class)))
             .thenAnswer(inv -> inv.getArgument(0));
 
-        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
+        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "files/interview.pdf");
         interviewFile.setId(UUID.randomUUID());
 
         InterviewAnalysisResult result = mistralService.analyzeInterview(SAMPLE_INTERVIEW);
@@ -107,7 +107,7 @@ class MistralServiceTest {
         when(parsedDataRepository.saveAll(any()))
             .thenAnswer(inv -> inv.getArgument(0));
 
-        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
+        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "files/interview.pdf");
         interviewFile.setId(UUID.randomUUID());
 
         AIAnalysisEntity saved = mistralService.analyzeAndSaveInterview(interviewFile, SAMPLE_INTERVIEW);
@@ -123,7 +123,7 @@ class MistralServiceTest {
     @Test
     @DisplayName("Should save interview analysis fields in AIAnalysisEntity")
     void testSaveInterviewAnalysis() throws Exception {
-        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
+        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "files/interview.pdf");
 
         InterviewIssue issue = new InterviewIssue();
         issue.setId("EVA-001");
@@ -171,7 +171,7 @@ class MistralServiceTest {
     @Test
     @DisplayName("Should save ACTOR ACTION and US parsed data from interview analysis")
     void testSaveInterviewParsedData() {
-        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
+        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "files/interview.pdf");
 
         QqoqcpDimensionDetailed qui = new QqoqcpDimensionDetailed();
         qui.setElementsFound(List.of("employe", "manager"));

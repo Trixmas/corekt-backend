@@ -45,11 +45,11 @@ class BpmnParserServiceTest {
 
   static {
     try {
-      SIMPLE_BPMN = loadResourceFile("test_bpmn.bpmn");
-      COLLABORATION_BPMN = loadResourceFile("collaboration_bpmn.bpmn");
-      NO_TASKS_BPMN = loadResourceFile("no_tasks_bpmn.bpmn");
-      COMPLEX_BPMN = loadResourceFile("complex_bpmn.bpmn");
-      EMPTY_BPMN = loadResourceFile("empty_bpmn.bpmn");
+      SIMPLE_BPMN = loadResourceFile("files/test_bpmn.bpmn");
+      COLLABORATION_BPMN = loadResourceFile("files/collaboration_bpmn.bpmn");
+      NO_TASKS_BPMN = loadResourceFile("files/no_tasks_bpmn.bpmn");
+      COMPLEX_BPMN = loadResourceFile("files/complex_bpmn.bpmn");
+      EMPTY_BPMN = loadResourceFile("files/empty_bpmn.bpmn");
     } catch (IOException e) {
       throw new RuntimeException("Failed to load test resources", e);
     }
