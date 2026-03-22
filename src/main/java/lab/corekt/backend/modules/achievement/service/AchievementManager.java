@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,28 +27,27 @@ public class AchievementManager {
     private final CriteriaEvaluator criteriaEvaluator;
 
     @Transactional
-    public List<AchievementEntity> evaluate(TriggerContext context) {
+    public List<String> evaluate(TriggerContext context) {
         UserEntity currentUser = authContext.getCurrentUser();
 
         return achievementRepository.findAll().stream()
             .filter(achievement -> !userAchievementRepository.existsByUserAndAchievementId(currentUser, achievement.getId()))
             .filter(achievement -> criteriaEvaluator.isSatisfied(achievement, context))
             .map(achievement -> grant(currentUser, achievement))
+            .map(AchievementEntity::getId)
             .toList();
-    }
-
-    private AchievementEntity grant(UserEntity user, AchievementEntity achievement) {
-        userAchievementRepository.save(new UserAchievementEntity(user, achievement));
-        return achievement;
     }
 
     @Transactional(readOnly = true)
     public List<AchievementResponse> getAllAchievements() {
         UserEntity currentUser = authContext.getCurrentUser();
 
+        Set<String> unlockedIds = userAchievementRepository.findByUser(currentUser).stream()
+            .map(userAchievement -> userAchievement.getAchievement().getId())
+            .collect(Collectors.toSet());
+
         return achievementRepository.findAll().stream()
-            .filter(achievement -> !achievement.isHidden() ||
-                userAchievementRepository.existsByUserAndAchievementId(currentUser, achievement.getId()))
+            .filter(achievement -> !achievement.isHidden() || unlockedIds.contains(achievement.getId()))
             .map(AchievementResponse::from)
             .toList();
     }
@@ -58,5 +59,10 @@ public class AchievementManager {
         return userAchievementRepository.findByUser(currentUser).stream()
             .map(UserAchievementResponse::from)
             .toList();
+    }
+
+    private AchievementEntity grant(UserEntity user, AchievementEntity achievement) {
+        userAchievementRepository.save(new UserAchievementEntity(user, achievement));
+        return achievement;
     }
 }
