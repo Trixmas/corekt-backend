@@ -1,12 +1,17 @@
 package lab.corekt.backend.modules.project.controller;
 
 import jakarta.validation.Valid;
+import lab.corekt.backend.modules.achievement.service.helper.AchievementResponseHelper;
+import lab.corekt.backend.modules.achievement.trigger.AchievementCondition;
+import lab.corekt.backend.modules.achievement.trigger.AchievementTrigger;
+import lab.corekt.backend.modules.achievement.trigger.TriggerContext;
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.project.dto.CreateProjectRequest;
 import lab.corekt.backend.modules.project.dto.ProjectResponse;
 import lab.corekt.backend.modules.project.dto.UpdateProjectRequest;
 import lab.corekt.backend.modules.project.service.ProjectService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,15 +21,12 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/projects")
+@AllArgsConstructor
 class ProjectController {
 
     private final ProjectService projectService;
     private final AuthContext authContext;
-
-    public ProjectController(ProjectService projectService, AuthContext authContext) {
-        this.projectService = projectService;
-        this.authContext = authContext;
-    }
+    private final AchievementResponseHelper achievementResponseHelper;
 
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getAllOwnersProjects() {
@@ -35,8 +37,16 @@ class ProjectController {
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody CreateProjectRequest request) {
         UserEntity user = authContext.getCurrentUser();
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectService.createProject(request, user));
+        ProjectResponse project = projectService.createProject(request, user);
+        int totalProjects = projectService.countByOwner(user);
+
+        return achievementResponseHelper.created(project,
+            TriggerContext.of(AchievementTrigger.PROJECT_CREATED,
+                AchievementCondition.totalProjectsCount(totalProjects)
+            )
+        );
     }
+
 
     @GetMapping("/{projectId}")
     public ResponseEntity<ProjectResponse> getProjectById(@PathVariable UUID projectId) {
