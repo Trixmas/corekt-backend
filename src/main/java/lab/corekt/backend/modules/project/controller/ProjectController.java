@@ -47,7 +47,6 @@ class ProjectController {
         );
     }
 
-
     @GetMapping("/{projectId}")
     public ResponseEntity<ProjectResponse> getProjectById(@PathVariable UUID projectId) {
         UserEntity user = authContext.getCurrentUser();
