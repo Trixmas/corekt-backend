@@ -13,7 +13,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "has_achievements")
+@Table(name = "user_achievements")
 @EntityListeners(AuditingEntityListener.class)
 @IdClass(UserAchievementEntity.UserAchievementId.class)
 public class UserAchievementEntity {
