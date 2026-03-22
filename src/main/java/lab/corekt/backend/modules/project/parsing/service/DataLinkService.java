@@ -13,6 +13,7 @@ import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepositor
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -167,18 +168,7 @@ public class DataLinkService {
             }
 
             if (bestTarget != null && bestConfidence >= MIN_SEMANTIC_CONFIDENCE) {
-                MatchType matchType = bestConfidence == 100 ? MatchType.EXACT : MatchType.SEMANTIC;
-                DataLinkEntity dataLink = new DataLinkEntity(matchType, Severity.LOW, source.parsedData(),
-                        bestTarget.parsedData());
-                dataLink.setConfidenceScore(bestConfidence);
-                dataLink.setScore(bestConfidence);
-                if (matchType == MatchType.EXACT) {
-                    dataLink.setJustification(String.format("Correspondance exacte entre la valeur %s du fichier %s et la valeur %s du fichier %s.",
-                            source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
-                } else {
-                    dataLink.setJustification(String.format("Similarité sémantique de %d%% entre la valeur %s du fichier %s et la valeur %s du fichier %s.",
-                            bestConfidence, source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
-                }
+                DataLinkEntity dataLink = createDataLink(source, bestConfidence, bestTarget);
                 dataLinks.add(dataLink);
             } else {
                 DataLinkEntity dataLink = new DataLinkEntity(MatchType.MISSING, Severity.HIGH, source.parsedData(),
@@ -191,6 +181,22 @@ public class DataLinkService {
         }
 
         return dataLinks;
+    }
+
+    private static @NonNull DataLinkEntity createDataLink(EmbeddingTuple source, int bestConfidence, EmbeddingTuple bestTarget) {
+        MatchType matchType = bestConfidence == 100 ? MatchType.EXACT : MatchType.SEMANTIC;
+        DataLinkEntity dataLink = new DataLinkEntity(matchType, Severity.LOW, source.parsedData(),
+                bestTarget.parsedData());
+        dataLink.setConfidenceScore(bestConfidence);
+        dataLink.setScore(bestConfidence);
+        if (matchType == MatchType.EXACT) {
+            dataLink.setJustification(String.format("Correspondance exacte entre la valeur %s du fichier %s et la valeur %s du fichier %s.",
+                    source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
+        } else {
+            dataLink.setJustification(String.format("Similarité sémantique de %d%% entre la valeur %s du fichier %s et la valeur %s du fichier %s.",
+                    bestConfidence, source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
+        }
+        return dataLink;
     }
 
     public List<DataLinkEntity> saveDataLinks(VersionEntity version) {
