@@ -1,5 +1,6 @@
 package lab.corekt.backend.modules.project.controller;
 
+import lab.corekt.backend.modules.achievement.service.helper.AchievementResponseHelper;
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.auth.service.JwtService;
 import lab.corekt.backend.modules.project.dto.ProjectResponse;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -42,6 +44,9 @@ class ProjectControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private AchievementResponseHelper achievementResponseHelper;
 
     private UserEntity buildUser() {
         return new UserEntity("user@test.com", "testuser");
@@ -81,12 +86,15 @@ class ProjectControllerTest extends BaseControllerTest {
 
         when(authContext.getCurrentUser()).thenReturn(user);
         when(projectService.createProject(any(), eq(user))).thenReturn(response);
+        when(projectService.countByOwner(user)).thenReturn(1);
+        when(achievementResponseHelper.created(eq(response), any()))
+            .thenReturn(ResponseEntity.status(HttpStatus.CREATED).body(response));
 
         mockMvc.perform(post("/projects")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                                    {"title": "New Project", "description": "A description"}
-                                """))
+                        {"title": "New Project", "description": "A description"}
+                    """))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.title").value("New Project"))
             .andExpect(jsonPath("$.description").value("A description"));
