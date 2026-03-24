@@ -12,6 +12,7 @@ import org.springframework.http.client.ReactorClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -81,31 +82,50 @@ public class MistralService {
             throw new IllegalArgumentException("Interview text must not be blank");
         }
 
-        /**
-         * request schema of the agent call
-         */
+        String output = null;
         try {
-            Map<String, Object> requestBody = Map.of(
-                    "agent_id", agentId,
-                    "agent_version", agentVersion,
-                    "inputs", List.of(
-                            Map.of(
-                                    "role", "user",
-                                    "content", interviewText)));
-
-            String responseBody = restClient.post()
-                    .uri("/v1/conversations")
-                    .body(requestBody)
-                    .retrieve()
-                    .body(String.class);
-
-            JsonNode root = objectMapper.readTree(responseBody);
-            String output = extractAssistantOutput(root);
-
+            output = requestInterviewAnalysis(interviewText);
             return objectMapper.readValue(output, InterviewAnalysisResult.class);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to analyze interview with Mistral: invalid JSON response. " +
+                    "Output tail: " + summarizeOutputTail(output), e);
         } catch (Exception e) {
+            System.err.println("Failed to analyze interview with Mistral: " + e.getMessage());
             throw new IllegalStateException("Failed to analyze interview with Mistral", e);
         }
+    }
+
+    private String requestInterviewAnalysis(String interviewText) throws JsonProcessingException {
+        Map<String, Object> requestBody = Map.of(
+                "agent_id", agentId,
+                "agent_version", agentVersion,
+                "inputs", List.of(
+                        Map.of(
+                                "role", "user",
+                                "content", interviewText)));
+
+        String responseBody = restClient.post()
+                .uri("/v1/conversations")
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
+
+        JsonNode root = objectMapper.readTree(responseBody);
+        return extractAssistantOutput(root);
+    }
+
+    private String summarizeOutputTail(String output) {
+        if (output == null) {
+            return "<empty output>";
+        }
+
+        int tailLength = 180;
+        String compact = output.replaceAll("\\s+", " ").trim();
+        if (compact.length() <= tailLength) {
+            return compact;
+        }
+
+        return "..." + compact.substring(compact.length() - tailLength);
     }
 
     public AIAnalysisEntity saveInterviewAnalysis(FileEntity interviewFile, InterviewAnalysisResult analysisResult) {
