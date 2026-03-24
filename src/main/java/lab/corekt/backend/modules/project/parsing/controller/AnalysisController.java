@@ -27,16 +27,12 @@ import java.util.UUID;
 class AnalysisController {
 
     private final ProjectUtils projectUtils;
-    private final ParsedDataRepository parsedDataRepository;
-    private final MistralService mistralService;
     private final VersionRepository versionRepository;
     private final DataLinkService dataLinkService;
 
     AnalysisController(ProjectUtils projectUtils, ParsedDataRepository parsedDataRepository, MistralService mistralService,
                        VersionRepository versionRepository, DataLinkService dataLinkService) {
         this.projectUtils = projectUtils;
-        this.parsedDataRepository = parsedDataRepository;
-        this.mistralService = mistralService;
         this.versionRepository = versionRepository;
         this.dataLinkService = dataLinkService;
     }
