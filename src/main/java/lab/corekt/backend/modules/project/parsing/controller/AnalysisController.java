@@ -54,7 +54,6 @@ class AnalysisController {
                         dataLink.getMatch(),
                         dataLink.getSeverity(),
                         dataLink.getConfidenceScore(),
-                        dataLink.getScore(),
                         dataLink.getJustification(),
                         dataLink.getSuggestion(),
                         new ParsedDataResponse(
@@ -81,7 +80,6 @@ class AnalysisController {
             MatchType match,
             Severity severity,
             Integer confidenceScore,
-            Integer score,
             String justification,
             String suggestion,
             ParsedDataResponse sourceParsedData,
