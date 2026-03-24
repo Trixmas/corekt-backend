@@ -45,7 +45,7 @@ class AnalysisController {
         VersionEntity version = versionRepository.findByProjectAndId(project, versionId).orElse(null);
         if (version == null) return ResponseEntity.notFound().build();
 
-        List<DataLinkEntity> dataLinks = dataLinkService.buildDataLinks(version);
+        List<DataLinkEntity> dataLinks = dataLinkService.saveDataLinks(version);
 
         List<DataLinkResponse> dataLinksResponse = dataLinks
                 .stream()
@@ -73,7 +73,6 @@ class AnalysisController {
                                 dataLink.getTargetParsedData().getFile().getType())))
                 .toList();
 
-        dataLinkService.saveDataLinks(version);
         return ResponseEntity.ok(dataLinksResponse);
     }
 
