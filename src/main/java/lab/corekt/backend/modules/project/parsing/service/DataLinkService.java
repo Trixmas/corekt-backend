@@ -20,7 +20,7 @@ import java.util.*;
 @Service
 public class DataLinkService {
 
-    private static final int MIN_SEMANTIC_CONFIDENCE = 70; // arbitraire pour le moment
+    private static final int MIN_SEMANTIC_CONFIDENCE = 75; // arbitraire pour le moment
     private static final Map<DataProfile, Set<DataProfile>> COMPATIBILITY_MATRIX = buildCompatibilityMatrix();
 
     private final FileRepository fileRepository;
@@ -167,34 +167,45 @@ public class DataLinkService {
                 }
             }
 
+            DataLinkEntity dataLink;
             if (bestTarget != null && bestConfidence >= MIN_SEMANTIC_CONFIDENCE) {
-                DataLinkEntity dataLink = createDataLink(source, bestConfidence, bestTarget);
-                dataLinks.add(dataLink);
+                dataLink = createDataLink(source, bestConfidence, bestTarget);
             } else {
-                DataLinkEntity dataLink = new DataLinkEntity(MatchType.MISSING, Severity.HIGH, source.parsedData(),
-                        source.parsedData());
-                dataLink.setConfidenceScore(0);
-                dataLink.setScore(0);
-                dataLink.setJustification(String.format("Aucune correspondance trouvée pour le type %s de valeur %s entre le fichier %s et %s.", source.parsedData().getDataType(), source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget == null ? "aucun fichier" : bestTarget.parsedData().getFile().getName()));
-                dataLinks.add(dataLink);
+                dataLink = createMissingDataLink(source, bestTarget);
             }
+            dataLinks.add(dataLink);
         }
 
         return dataLinks;
     }
 
+    private static @NonNull DataLinkEntity createMissingDataLink(EmbeddingTuple source, EmbeddingTuple bestTarget) {
+        DataLinkEntity dataLink = new DataLinkEntity(MatchType.MISSING, Severity.CRITICAL, source.parsedData(),
+                source.parsedData());
+        dataLink.setConfidenceScore(0);
+        dataLink.setScore(0);
+        dataLink.setJustification(String.format("Aucune correspondance trouvée pour le type \"%s\" de valeur \"%s\" entre le fichier \"%s\" et \"%s\".", source.parsedData().getDataType(), source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget == null ? "aucun fichier" : bestTarget.parsedData().getFile().getName()));
+        return dataLink;
+    }
+
     private static @NonNull DataLinkEntity createDataLink(EmbeddingTuple source, int bestConfidence, EmbeddingTuple bestTarget) {
         MatchType matchType = bestConfidence == 100 ? MatchType.EXACT : MatchType.SEMANTIC;
-        DataLinkEntity dataLink = new DataLinkEntity(matchType, Severity.LOW, source.parsedData(),
+        DataLinkEntity dataLink = new DataLinkEntity(matchType, Severity.MINOR, source.parsedData(),
                 bestTarget.parsedData());
         dataLink.setConfidenceScore(bestConfidence);
         dataLink.setScore(bestConfidence);
         if (matchType == MatchType.EXACT) {
-            dataLink.setJustification(String.format("Correspondance exacte entre la valeur %s du fichier %s et la valeur %s du fichier %s.",
-                    source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
+            dataLink.setSeverity(null);
+            dataLink.setJustification(String.format("Correspondance exacte entre la valeur \"%s\" du fichier \"%s\" et la valeur \"%s\" du fichier \"%s\".",
+                    source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
         } else {
-            dataLink.setJustification(String.format("Similarité sémantique de %d%% entre la valeur %s du fichier %s et la valeur %s du fichier %s.",
-                    bestConfidence, source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
+            if (bestConfidence >= 80) {
+            dataLink.setSeverity(Severity.MINOR);
+            }else if (bestConfidence >= 70) {
+                dataLink.setSeverity(Severity.MAJOR);
+            }
+            dataLink.setJustification(String.format("Similarité sémantique de %d%% entre la valeur \"%s\" du fichier \"%s\" et la valeur \"%s\" du fichier \"%s\".",
+                    bestConfidence, source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
         }
         return dataLink;
     }
