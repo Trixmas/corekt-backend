@@ -57,17 +57,9 @@ class AnalysisController {
                         dataLink.getJustification(),
                         dataLink.getSuggestion(),
                         new ParsedDataResponse(
-                                dataLink.getSourceParsedData().getId(),
-                                dataLink.getSourceParsedData().getDataType(),
-                                dataLink.getSourceParsedData().getContent(),
-                                dataLink.getSourceParsedData().getFile().getId(),
                                 dataLink.getSourceParsedData().getFile().getName(),
                                 dataLink.getSourceParsedData().getFile().getType()),
                         new ParsedDataResponse(
-                                dataLink.getTargetParsedData().getId(),
-                                dataLink.getTargetParsedData().getDataType(),
-                                dataLink.getTargetParsedData().getContent(),
-                                dataLink.getTargetParsedData().getFile().getId(),
                                 dataLink.getTargetParsedData().getFile().getName(),
                                 dataLink.getTargetParsedData().getFile().getType())))
                 .toList();
@@ -87,10 +79,6 @@ class AnalysisController {
     }
 
     record ParsedDataResponse(
-            UUID parsedDataId,
-            DataType dataType,
-            String content,
-            UUID fileId,
             String fileName,
             FileType fileType) {
     }
