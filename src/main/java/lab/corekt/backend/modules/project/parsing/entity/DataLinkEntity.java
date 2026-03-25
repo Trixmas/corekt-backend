@@ -48,7 +48,6 @@ public class DataLinkEntity {
     @JoinColumn(name = "target_parsed_data_id", nullable = false)
     private ParsedDataEntity targetParsedData;
 
-    // Constructeurs
     public DataLinkEntity() {
     }
 

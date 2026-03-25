@@ -58,8 +58,6 @@ class VersionServiceTest {
         return request;
     }
 
-    // ─── getAllByProject ───────────────────────────────────────────────────────
-
     @Test
     @DisplayName("Should return all versions mapped to responses for a given project")
     void testGetAllByProjectReturnsMappedResponses() {
@@ -86,8 +84,6 @@ class VersionServiceTest {
         assertThat(result).isEmpty();
         verify(versionRepository).findByProject(project);
     }
-
-    // ─── getOneVersion ────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("Should return version response when version exists")
@@ -117,12 +113,10 @@ class VersionServiceTest {
         when(versionRepository.findByProjectAndId(project, versionId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> versionService.getVersion(project, versionId))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("Version not found");
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("Version not found");
         verify(versionRepository).findByProjectAndId(project, versionId);
     }
-
-    // ─── createVersion ────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("Should create version with number 1 when no versions exist")
@@ -158,8 +152,6 @@ class VersionServiceTest {
         verify(versionRepository).findTopByProjectOrderByVersionNumberDesc(project);
         verify(versionRepository).save(any(VersionEntity.class));
     }
-
-    // ─── updateVersion ────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("Should update version title when title is provided")
@@ -204,12 +196,11 @@ class VersionServiceTest {
         when(versionRepository.findByProjectAndId(project, versionId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> versionService.updateVersion(project, versionId, request))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("Version not found");
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("Version not found");
         verify(versionRepository, never()).save(any());
     }
 
-    //    ─── deleteVersion ────────────────────────────────────────────────────────
     @Test
     @DisplayName("Should delete version when it exists")
     void testDeleteVersionDeletesWhenFound() {
@@ -229,8 +220,6 @@ class VersionServiceTest {
         assertThrows(ResponseStatusException.class, () -> versionService.deleteVersion(project, versionId));
         verify(versionRepository, never()).delete(any());
     }
-
-    // ─── toResponse (via public methods) ──────────────────────────────────────
 
     @Test
     @DisplayName("Should map all version fields correctly in response")
@@ -253,5 +242,3 @@ class VersionServiceTest {
         assertThat(response.getIssues().getResolved()).isEqualTo(0);
     }
 }
-
-

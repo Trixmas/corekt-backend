@@ -1,21 +1,8 @@
 package lab.corekt.backend.modules.mistral.service;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.client.ReactorClientHttpRequestFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import lab.corekt.backend.modules.mistral.dto.DetectedUserStory;
 import lab.corekt.backend.modules.mistral.dto.InterviewAnalysisResult;
 import lab.corekt.backend.modules.mistral.dto.QqoqcpDetails;
@@ -25,7 +12,15 @@ import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepositor
 import lab.corekt.backend.modules.project.report.entity.AIAnalysisEntity;
 import lab.corekt.backend.modules.project.report.repository.AIAnalysisRepository;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.ReactorClientHttpRequestFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 import reactor.netty.http.client.HttpClient;
+
+import java.time.Duration;
+import java.util.*;
 
 @Service
 public class MistralService {
@@ -57,7 +52,7 @@ public class MistralService {
         this.agentVersion = agentVersion;
         HttpClient httpClient = HttpClient.create()
                 .responseTimeout(Duration.ofSeconds(120)); // custom timeout :
-                                                           // https://www.baeldung.com/spring-webflux-timeout#1-response-timeout
+        // https://www.baeldung.com/spring-webflux-timeout#1-response-timeout
         this.restClient = restClientBuilder
                 .baseUrl(mistralBaseUrl)
                 .defaultHeader("Content-Type", "application/json")
@@ -158,14 +153,14 @@ public class MistralService {
         return savedAnalysis;
     }
 
-    public void processInterview(FileEntity file){
+    public void processInterview(FileEntity file) {
         String interviewText = interviewPdfTextExtractor.extractText(file);
         analyzeAndSaveInterview(file, interviewText);
 
     }
 
     public List<ParsedDataEntity> saveInterviewParsedData(FileEntity interviewFile,
-            InterviewAnalysisResult analysisResult) {
+                                                          InterviewAnalysisResult analysisResult) {
         if (interviewFile == null) {
             throw new IllegalArgumentException("Interview file must not be null");
         }
@@ -256,7 +251,7 @@ public class MistralService {
     }
 
     private void addParsedDataBatch(List<ParsedDataEntity> batch, FileEntity interviewFile, DataType dataType,
-            List<String> contents) {
+                                    List<String> contents) {
         if (contents == null) {
             return;
         }
@@ -295,5 +290,26 @@ public class MistralService {
     }
 
     public record EmbeddingTuple(ParsedDataEntity parsedData, float[] embedding) {
+        @Override
+        public String toString() {
+            return parsedData.getContent();
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(parsedData, Arrays.hashCode(embedding));
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            EmbeddingTuple other = (EmbeddingTuple) obj;
+            return Objects.equals(parsedData, other.parsedData) && Arrays.equals(embedding, other.embedding);
+        }
     }
 }

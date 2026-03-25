@@ -17,9 +17,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
 class AuthControllerTest extends BaseControllerTest {
@@ -45,8 +46,8 @@ class AuthControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"email": "user@test.com", "password": "password123"}
-                """))
+                        {"email": "user@test.com", "password": "password123"}
+                    """))
             .andExpect(status().isUnauthorized());
     }
 
@@ -71,8 +72,8 @@ class AuthControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"email": "user@test.com", "password": "password123"}
-                """))
+                        {"email": "user@test.com", "password": "password123"}
+                    """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").value("mocked-jwt-token"))
             .andExpect(jsonPath("$.expiresAt").value(9999999999L))
@@ -86,8 +87,8 @@ class AuthControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"email": "not-an-email", "password": "password123"}
-                """))
+                        {"email": "not-an-email", "password": "password123"}
+                    """))
             .andExpect(status().isBadRequest());
     }
 

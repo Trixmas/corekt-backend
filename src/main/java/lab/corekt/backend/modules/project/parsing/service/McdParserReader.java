@@ -3,7 +3,9 @@ package lab.corekt.backend.modules.project.parsing.service;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lombok.Getter;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.ObjectInputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,11 +19,8 @@ import java.util.List;
 public class McdParserReader {
 
     public static final int ENTITY_RELATION_INDEX_OBJECT = 1;
-
     private final List<String> entities;
-
     private final List<String> relations;
-
     private final FileEntity file;
 
     public McdParserReader(FileEntity file) {
@@ -45,7 +44,7 @@ public class McdParserReader {
         }
     }
 
-    private void parseItems (List<?> list) throws Exception {
+    private void parseItems(List<?> list) throws Exception {
         for (Object item : list) {
             if (item == null) continue;
 

@@ -7,6 +7,7 @@ import lab.corekt.backend.modules.project.versions.dto.VersionDetailsResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
 import lab.corekt.backend.modules.project.versions.service.VersionService;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,14 +16,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/projects/{projectId}/versions")
+@AllArgsConstructor
 public class VersionController {
     private final VersionService versionService;
     private final ProjectUtils projectUtils;
-
-    public VersionController(VersionService versionService, ProjectUtils projectUtils) {
-        this.versionService = versionService;
-        this.projectUtils = projectUtils;
-    }
 
     @GetMapping
     public ResponseEntity<List<VersionResponse>> getAllVersions(@PathVariable UUID projectId) {
@@ -40,11 +37,10 @@ public class VersionController {
         return ResponseEntity.ok(versionService.getVersion(project, versionId));
     }
 
-
     @PostMapping
     public ResponseEntity<VersionResponse> createVersion(
-            @PathVariable UUID projectId,
-            @Valid @RequestBody VersionRequest request
+        @PathVariable UUID projectId,
+        @Valid @RequestBody VersionRequest request
     ) {
         ProjectEntity project = projectUtils.resolveProject(projectId);
         if (project == null) return ResponseEntity.notFound().build();
@@ -54,9 +50,9 @@ public class VersionController {
 
     @PatchMapping("/{versionId}")
     public ResponseEntity<VersionResponse> updateVersion(
-            @PathVariable UUID projectId,
-            @PathVariable UUID versionId,
-            @RequestBody VersionRequest request
+        @PathVariable UUID projectId,
+        @PathVariable UUID versionId,
+        @RequestBody VersionRequest request
     ) {
         ProjectEntity project = projectUtils.resolveProject(projectId);
         if (project == null) return ResponseEntity.notFound().build();
@@ -72,5 +68,4 @@ public class VersionController {
         versionService.deleteVersion(project, versionId);
         return ResponseEntity.noContent().build();
     }
-
 }

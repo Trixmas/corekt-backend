@@ -13,11 +13,14 @@ import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepositor
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
+import lombok.AllArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+
 @Service
+@AllArgsConstructor
 public class DataLinkService {
 
     private static final int MIN_SEMANTIC_CONFIDENCE = 75; // arbitraire pour le moment
@@ -28,37 +31,34 @@ public class DataLinkService {
     private final ParsedDataRepository parsedDataRepository;
     private final MistralService mistralService;
 
-    public DataLinkService(FileRepository fileRepository, DataLinkRepository dataLinkRepository,
-            ParsedDataRepository parsedDataRepository,
-            MistralService mistralService) {
-        this.fileRepository = fileRepository;
-        this.dataLinkRepository = dataLinkRepository;
-        this.parsedDataRepository = parsedDataRepository;
-        this.mistralService = mistralService;
-    }
-
     private static Map<DataProfile, Set<DataProfile>> buildCompatibilityMatrix() {
         Map<DataProfile, Set<DataProfile>> matrix = new HashMap<>();
 
-        registerCompatible(matrix,
-                new DataProfile(FileType.BPMN, DataType.ACTOR),
-                new DataProfile(FileType.INTERVIEW, DataType.ACTOR));
-
-        registerCompatible(matrix,
-                new DataProfile(FileType.BPMN, DataType.ACTION),
-                new DataProfile(FileType.INTERVIEW, DataType.ACTION));
-
-        registerCompatible(matrix,
-                new DataProfile(FileType.BPMN, DataType.FLOW),
-                new DataProfile(FileType.INTERVIEW, DataType.FLOW));
-
-        registerCompatible(matrix,
-                new DataProfile(FileType.MCD, DataType.ENTITY),
-                new DataProfile(FileType.INTERVIEW, DataType.ENTITY));
-
-        registerCompatible(matrix,
-                new DataProfile(FileType.US, DataType.US),
-                new DataProfile(FileType.INTERVIEW, DataType.ACTION));
+        registerCompatible(
+            matrix,
+            new DataProfile(FileType.BPMN, DataType.ACTOR),
+            new DataProfile(FileType.INTERVIEW, DataType.ACTOR)
+        );
+        registerCompatible(
+            matrix,
+            new DataProfile(FileType.BPMN, DataType.ACTION),
+            new DataProfile(FileType.INTERVIEW, DataType.ACTION)
+        );
+        registerCompatible(
+            matrix,
+            new DataProfile(FileType.BPMN, DataType.FLOW),
+            new DataProfile(FileType.INTERVIEW, DataType.FLOW)
+        );
+        registerCompatible(
+            matrix,
+            new DataProfile(FileType.MCD, DataType.ENTITY),
+            new DataProfile(FileType.INTERVIEW, DataType.ENTITY)
+        );
+        registerCompatible(
+            matrix,
+            new DataProfile(FileType.US, DataType.US),
+            new DataProfile(FileType.INTERVIEW, DataType.ACTION)
+        );
 
         return matrix;
     }
@@ -68,6 +68,35 @@ public class DataLinkService {
                                            DataProfile right) {
         matrix.computeIfAbsent(left, ignored -> new HashSet<>()).add(right);
         matrix.computeIfAbsent(right, ignored -> new HashSet<>()).add(left);
+    }
+
+    private static @NonNull DataLinkEntity createMissingDataLink(EmbeddingTuple source, EmbeddingTuple bestTarget) {
+        DataLinkEntity dataLink = new DataLinkEntity(MatchType.MISSING, Severity.CRITICAL, source.parsedData(),
+            source.parsedData());
+        dataLink.setConfidenceScore(0);
+        dataLink.setJustification(String.format("Aucune correspondance trouvée pour le type '%s' de valeur '%s' entre le fichier '%s' et '%s'.", source.parsedData().getDataType(), source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget == null ? "aucun fichier" : bestTarget.parsedData().getFile().getName()));
+        return dataLink;
+    }
+
+    private static @NonNull DataLinkEntity createDataLink(EmbeddingTuple source, int bestConfidence, EmbeddingTuple bestTarget) {
+        MatchType matchType = bestConfidence == 100 ? MatchType.EXACT : MatchType.SEMANTIC;
+        DataLinkEntity dataLink = new DataLinkEntity(matchType, Severity.MINOR, source.parsedData(),
+            bestTarget.parsedData());
+        dataLink.setConfidenceScore(bestConfidence);
+        if (matchType == MatchType.EXACT) {
+            dataLink.setSeverity(null);
+            dataLink.setJustification(String.format("Correspondance exacte entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
+                source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
+        } else {
+            if (bestConfidence >= 80) {
+                dataLink.setSeverity(Severity.MINOR);
+            } else if (bestConfidence >= 70) {
+                dataLink.setSeverity(Severity.MAJOR);
+            }
+            dataLink.setJustification(String.format("Similarité sémantique de %d%% entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
+                bestConfidence, source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
+        }
+        return dataLink;
     }
 
     public Map<FileType, FileEntity> getRequiredFiles(VersionEntity version) {
@@ -91,7 +120,7 @@ public class DataLinkService {
 
         if (!missingTypes.isEmpty()) {
             String missingFiles = String.join(", ",
-                    missingTypes.stream().map(FileType::name).toList());
+                missingTypes.stream().map(FileType::name).toList());
 
             throw new IllegalStateException("Missing required files for version: " + missingFiles);
         }
@@ -100,30 +129,16 @@ public class DataLinkService {
     }
 
     public Map<FileType, List<ParsedDataEntity>> getParsedDataByFileType(VersionEntity version) {
-       getRequiredFiles(version); // ici c surtout pour la validation, autant ne pas refaire une émthode pr ça
+        getRequiredFiles(version); // ici c surtout pour la validation, autant ne pas refaire une émthode pr ça
 
         List<ParsedDataEntity> parsedData = parsedDataRepository.findByVersion(version);
         Map<FileType, List<ParsedDataEntity>> parsedDataByFileType = new HashMap<>();
 
         for (ParsedDataEntity data : parsedData) {
-            FileType fileType = data.getFile().getType(); //
-            List<ParsedDataEntity> dataList = parsedDataByFileType.get(fileType); // on récupère le type de fichier dans la map
-
-            if (dataList == null) { // si y'a aucune liste pour ce fileType dans la map
-                dataList = new ArrayList<>();
-                parsedDataByFileType.put(fileType, dataList);
-            }
-
+            FileType fileType = data.getFile().getType();
+            List<ParsedDataEntity> dataList = parsedDataByFileType.computeIfAbsent(fileType, _ -> new ArrayList<>());
             dataList.add(data);
-
         }
-
-        // for (Map.Entry<FileType, FileEntity> entry : requiredFiles.entrySet()) {
-        // List<ParsedDataEntity> parsedData =
-        // parsedDataRepository.findByFile(entry.getValue());
-        // parsedDataByFileType.put(entry.getKey(), parsedData);
-        // }
-
         return parsedDataByFileType;
     }
 
@@ -135,7 +150,6 @@ public class DataLinkService {
             List<EmbeddingTuple> embeddings = mistralService.embedParsedData(entry.getValue());
             embeddingsByFileType.put(entry.getKey(), embeddings);
         }
-
         return embeddingsByFileType;
     }
 
@@ -179,35 +193,6 @@ public class DataLinkService {
         return dataLinks;
     }
 
-    private static @NonNull DataLinkEntity createMissingDataLink(EmbeddingTuple source, EmbeddingTuple bestTarget) {
-        DataLinkEntity dataLink = new DataLinkEntity(MatchType.MISSING, Severity.CRITICAL, source.parsedData(),
-                source.parsedData());
-        dataLink.setConfidenceScore(0);
-        dataLink.setJustification(String.format("Aucune correspondance trouvée pour le type '%s' de valeur '%s' entre le fichier '%s' et '%s'.", source.parsedData().getDataType(), source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget == null ? "aucun fichier" : bestTarget.parsedData().getFile().getName()));
-        return dataLink;
-    }
-
-    private static @NonNull DataLinkEntity createDataLink(EmbeddingTuple source, int bestConfidence, EmbeddingTuple bestTarget) {
-        MatchType matchType = bestConfidence == 100 ? MatchType.EXACT : MatchType.SEMANTIC;
-        DataLinkEntity dataLink = new DataLinkEntity(matchType, Severity.MINOR, source.parsedData(),
-                bestTarget.parsedData());
-        dataLink.setConfidenceScore(bestConfidence);
-        if (matchType == MatchType.EXACT) {
-            dataLink.setSeverity(null);
-            dataLink.setJustification(String.format("Correspondance exacte entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
-                    source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
-        } else {
-            if (bestConfidence >= 80) {
-            dataLink.setSeverity(Severity.MINOR);
-            }else if (bestConfidence >= 70) {
-                dataLink.setSeverity(Severity.MAJOR);
-            }
-            dataLink.setJustification(String.format("Similarité sémantique de %d%% entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
-                    bestConfidence, source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
-        }
-        return dataLink;
-    }
-
     public List<DataLinkEntity> saveDataLinks(VersionEntity version) {
         return dataLinkRepository.saveAll(buildDataLinks(version));
     }
@@ -228,8 +213,8 @@ public class DataLinkService {
         }
 
         return COMPATIBILITY_MATRIX
-                .getOrDefault(sourceProfile, Set.of())
-                .contains(candidateProfile);
+            .getOrDefault(sourceProfile, Set.of())
+            .contains(candidateProfile);
     }
 
     private Map<DataProfile, List<EmbeddingTuple>> indexByProfile(List<EmbeddingTuple> embeddings) {
@@ -303,7 +288,7 @@ public class DataLinkService {
     private record DataProfile(FileType fileType, DataType dataType) {
         private static DataProfile from(ParsedDataEntity parsedData) {
             if (parsedData == null || parsedData.getFile() == null || parsedData.getFile().getType() == null
-                    || parsedData.getDataType() == null) {
+                || parsedData.getDataType() == null) {
                 return null;
             }
 

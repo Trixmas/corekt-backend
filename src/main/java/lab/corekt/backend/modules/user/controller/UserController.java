@@ -6,6 +6,7 @@ import lab.corekt.backend.modules.user.dto.ApiKeyRequest;
 import lab.corekt.backend.modules.user.dto.UserDetails;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.service.UserService;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,15 +14,11 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/user")
+@AllArgsConstructor
 public class UserController {
 
     private final UserService userService;
     private final AuthContext authContext;
-
-    public UserController(UserService userService, AuthContext authContext) {
-        this.userService = userService;
-        this.authContext = authContext;
-    }
 
     @GetMapping("/me")
     public ResponseEntity<UserDetails> getAuthenticatedUser() {
