@@ -3,6 +3,7 @@ package lab.corekt.backend.modules.project.versions.service;
 import jakarta.transaction.Transactional;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
+import lab.corekt.backend.modules.project.parsing.enums.VersionStatus;
 import lab.corekt.backend.modules.project.parsing.repository.DataLinkRepository;
 import lab.corekt.backend.modules.project.versions.dto.VersionDetailsResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
@@ -77,5 +78,10 @@ public class VersionService {
 
     private List<DataLinkEntity> getDataLinks(VersionEntity version) {
         return dataLinkRepository.findByVersionId(version.getId());
+    }
+
+    public void setVersionStatus(VersionEntity version, VersionStatus status) {
+        version.setStatus(status);
+        versionRepository.save(version);
     }
 }
