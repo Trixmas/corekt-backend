@@ -29,7 +29,7 @@ public class FileService {
 
     @Transactional
     public FileEntity uploadFile(VersionEntity version, @NonNull MultipartFile file, @NonNull FileType fileType)
-        throws IOException, DataIntegrityViolationException {
+            throws IOException, DataIntegrityViolationException {
 
         if (!fileType.isValidFile(file)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file type or extension for " + fileType);
@@ -61,6 +61,8 @@ public class FileService {
                 case BPMN -> bpmnParserService.processFile(fileEntity);
                 case MCD -> mcdParserService.processFile(fileEntity);
                 case INTERVIEW -> mistralService.processInterview(fileEntity);
+                default ->
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported file type: " + fileType);
             }
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse the uploaded file: " + e.getMessage());
@@ -80,10 +82,10 @@ public class FileService {
     @Transactional
     public FileEntity getOrCreate(FileType fileType, String fileName, VersionEntity version) {
         return fileRepository.findByTypeAndVersion(fileType, version)
-            .orElseGet(() -> {
-                FileEntity newFile = new FileEntity(fileType, fileName);
-                newFile.setVersion(version);
-                return fileRepository.save(newFile);
-            });
+                .orElseGet(() -> {
+                    FileEntity newFile = new FileEntity(fileType, fileName);
+                    newFile.setVersion(version);
+                    return fileRepository.save(newFile);
+                });
     }
 }
