@@ -6,20 +6,17 @@ import lab.corekt.backend.modules.taiga.dto.ProjectsResponse;
 import lab.corekt.backend.modules.taiga.dto.TaigaCredentials;
 import lab.corekt.backend.modules.taiga.service.TaigaService;
 import lab.corekt.backend.modules.taiga.service.TaigaTokenService;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/taiga")
+@AllArgsConstructor
 class TaigaAuthController {
 
     private final TaigaTokenService taigaTokenService;
     private final TaigaService taigaService;
-
-    TaigaAuthController(TaigaTokenService taigaTokenService, TaigaService taigaService) {
-        this.taigaTokenService = taigaTokenService;
-        this.taigaService = taigaService;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest request) {

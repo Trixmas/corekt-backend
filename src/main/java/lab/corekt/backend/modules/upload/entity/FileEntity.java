@@ -18,11 +18,10 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "file", uniqueConstraints = {
-        @UniqueConstraint(name = "UniqueFileTypeForVersion", columnNames = {"version_id", "file_type"})
+    @UniqueConstraint(name = "UniqueFileTypeForVersion", columnNames = {"version_id", "file_type"})
 })
 @EntityListeners(AuditingEntityListener.class)
 public class FileEntity {
-
 
     @Id
     @GeneratedValue
@@ -50,7 +49,6 @@ public class FileEntity {
     @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ParsedDataEntity> parsedData = new ArrayList<>();
 
-    // Constructeurs
     public FileEntity() {
     }
 
@@ -59,4 +57,3 @@ public class FileEntity {
         this.name = fileName;
     }
 }
-

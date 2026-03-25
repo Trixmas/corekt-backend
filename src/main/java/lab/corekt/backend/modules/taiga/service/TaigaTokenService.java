@@ -43,5 +43,6 @@ public class TaigaTokenService {
         return authentication.getName();
     }
 
-    private record TaigaTokenData(String token, String userId) {}
+    private record TaigaTokenData(String token, String userId) {
+    }
 }
