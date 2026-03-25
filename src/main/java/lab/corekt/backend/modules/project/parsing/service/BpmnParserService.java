@@ -10,6 +10,7 @@ import org.camunda.bpm.model.bpmn.instance.BpmnModelElementInstance;
 import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.bpmn.instance.Task;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -24,6 +25,23 @@ public class BpmnParserService {
 
     public BpmnParserService(ParsedDataRepository parsedDataRepository) {
         this.parsedDataRepository = parsedDataRepository;
+    }
+
+    @NonNull
+    static ParsedDataEntity getParsedDataEntity(String content, DataType dataType, FileEntity fileEntity) {
+        ParsedDataEntity parsedDataEntity = new ParsedDataEntity();
+
+        if (content.length() > ParsedDataEntity.MAX_CONTENT_LENGTH) {
+            String newContent = content.substring(0, ParsedDataEntity.MAX_CONTENT_LENGTH);
+            parsedDataEntity.setContent(newContent);
+        } else {
+            parsedDataEntity.setContent(content);
+        }
+
+        parsedDataEntity.setDataType(dataType);
+        parsedDataEntity.setFile(fileEntity);
+
+        return parsedDataEntity;
     }
 
     public void processFile(FileEntity fileEntity) throws Exception {
@@ -42,19 +60,7 @@ public class BpmnParserService {
     }
 
     private ParsedDataEntity createParsedDataEntity(String content, DataType dataType, FileEntity fileEntity) {
-        ParsedDataEntity parsedDataEntity = new ParsedDataEntity();
-
-        if (content.length() > ParsedDataEntity.MAX_CONTENT_LENGTH) {
-            String newContent = content.substring(0, ParsedDataEntity.MAX_CONTENT_LENGTH);
-            parsedDataEntity.setContent(newContent);
-        } else {
-            parsedDataEntity.setContent(content);
-        }
-
-        parsedDataEntity.setDataType(dataType);
-        parsedDataEntity.setFile(fileEntity);
-
-        return parsedDataEntity;
+        return getParsedDataEntity(content, dataType, fileEntity);
     }
 
     private BpmnModelInstance readModel(byte[] bpmnFile) {

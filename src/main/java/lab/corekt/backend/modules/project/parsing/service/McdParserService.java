@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+import static lab.corekt.backend.modules.project.parsing.service.BpmnParserService.getParsedDataEntity;
+
 @Service
 @AllArgsConstructor
 public class McdParserService {
@@ -32,18 +34,6 @@ public class McdParserService {
     }
 
     private ParsedDataEntity createParsedDataEntity(String content, DataType dataType, FileEntity fileEntity) {
-        ParsedDataEntity parsedDataEntity = new ParsedDataEntity();
-
-        if (content.length() > ParsedDataEntity.MAX_CONTENT_LENGTH) {
-            String newContent = content.substring(0, ParsedDataEntity.MAX_CONTENT_LENGTH);
-            parsedDataEntity.setContent(newContent);
-        } else {
-            parsedDataEntity.setContent(content);
-        }
-
-        parsedDataEntity.setDataType(dataType);
-        parsedDataEntity.setFile(fileEntity);
-
-        return parsedDataEntity;
+        return getParsedDataEntity(content, dataType, fileEntity);
     }
 }
