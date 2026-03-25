@@ -11,6 +11,7 @@ import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
 import lombok.AllArgsConstructor;
+import lab.corekt.backend.modules.user.entity.UserEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -68,6 +69,15 @@ public class VersionService {
         versionRepository.delete(entity);
     }
 
+    public void setVersionStatus(VersionEntity version, VersionStatus status) {
+        version.setStatus(status);
+        versionRepository.save(version);
+    }
+
+    public int countByProjectOwnerAndStatus(UserEntity user, VersionStatus status) {
+        return (int) versionRepository.countByProjectOwnerAndStatus(user, status);
+    }
+
     private VersionEntity getVersionEntity(ProjectEntity project, UUID versionId) {
         return versionRepository
             .findByProjectAndId(project, versionId)
@@ -77,10 +87,5 @@ public class VersionService {
 
     private List<DataLinkEntity> getDataLinks(VersionEntity version) {
         return dataLinkRepository.findByVersionId(version.getId());
-    }
-
-    public void setVersionStatus(VersionEntity version, VersionStatus status) {
-        version.setStatus(status);
-        versionRepository.save(version);
     }
 }

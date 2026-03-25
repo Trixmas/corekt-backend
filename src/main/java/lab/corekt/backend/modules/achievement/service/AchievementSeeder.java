@@ -125,6 +125,25 @@ public class AchievementSeeder implements ApplicationRunner {
                       "requirements": [["created_one_hundred_projects"]]
                     }
                     """
+            ),
+            new AchievementEntity(
+                    "first_analysis",
+                    "First Insight",
+                    "Complete your very first functional analysis.",
+                    false,
+                    """
+                        {
+                          "criteria": {
+                            "completed_first_analysis": {
+                              "trigger": "ANALYSIS_COMPLETED",
+                              "conditions": {
+                                "total_analyses_count": { "min": 1 }
+                              }
+                            }
+                          },
+                          "requirements": [["completed_first_analysis"]]
+                        }
+                        """
             )
         );
     }
