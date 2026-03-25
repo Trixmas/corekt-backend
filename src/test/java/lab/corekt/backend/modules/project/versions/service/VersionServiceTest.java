@@ -1,7 +1,6 @@
 package lab.corekt.backend.modules.project.versions.service;
 
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
-import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
 import lab.corekt.backend.modules.project.parsing.enums.VersionStatus;
 import lab.corekt.backend.modules.project.parsing.repository.DataLinkRepository;
 import lab.corekt.backend.modules.project.versions.dto.VersionDetailsResponse;
@@ -92,14 +91,14 @@ class VersionServiceTest {
 
     @Test
     @DisplayName("Should return version response when version exists")
-    void testGetOneVersionReturnsResponseWhenFound() {
+    void testGetVersionReturnsResponseWhenFound() {
         UUID versionId = UUID.randomUUID();
         VersionEntity entity = buildVersion("Release 1", 1);
 
         when(versionRepository.findByProjectAndId(project, versionId)).thenReturn(Optional.of(entity));
         when(dataLinkRepository.findByVersionId(entity.getId())).thenReturn(List.of());
 
-        VersionDetailsResponse result = versionService.getOneVersion(project, versionId);
+        VersionDetailsResponse result = versionService.getVersion(project, versionId);
 
         assertThat(result.getTitle()).isEqualTo("Release 1");
         assertThat(result.getVersion()).isEqualTo(1);
@@ -112,12 +111,12 @@ class VersionServiceTest {
 
     @Test
     @DisplayName("Should throw 404 when version is not found")
-    void testGetOneVersionThrows404WhenNotFound() {
+    void testGetVersionThrows404WhenNotFound() {
         UUID versionId = UUID.randomUUID();
 
         when(versionRepository.findByProjectAndId(project, versionId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> versionService.getOneVersion(project, versionId))
+        assertThatThrownBy(() -> versionService.getVersion(project, versionId))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Version not found");
         verify(versionRepository).findByProjectAndId(project, versionId);
@@ -243,7 +242,7 @@ class VersionServiceTest {
         when(versionRepository.findByProjectAndId(project, versionId)).thenReturn(Optional.of(entity));
         when(dataLinkRepository.findByVersionId(entity.getId())).thenReturn(List.of());
 
-        VersionResponse response = versionService.getOneVersion(project, versionId);
+        VersionResponse response = versionService.getVersion(project, versionId);
 
         assertThat(response.getTitle()).isEqualTo("v1.0");
         assertThat(response.getVersion()).isEqualTo(5);

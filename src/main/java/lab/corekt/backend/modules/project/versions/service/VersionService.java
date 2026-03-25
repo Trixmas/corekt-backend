@@ -35,7 +35,7 @@ public class VersionService {
     }
 
     @Transactional
-    public VersionDetailsResponse getOneVersion(ProjectEntity project, UUID versionId) {
+    public VersionDetailsResponse getVersion(ProjectEntity project, UUID versionId) {
         VersionEntity version = getVersionEntity(project, versionId);
         return new VersionDetailsResponse(version, getDataLinks(version));
     }

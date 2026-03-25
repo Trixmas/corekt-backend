@@ -37,7 +37,7 @@ public class VersionController {
         ProjectEntity project = projectUtils.resolveProject(projectId);
         if (project == null) return ResponseEntity.notFound().build();
 
-        return ResponseEntity.ok(versionService.getOneVersion(project, versionId));
+        return ResponseEntity.ok(versionService.getVersion(project, versionId));
     }
 
 

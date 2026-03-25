@@ -128,7 +128,7 @@ class VersionControllerTest extends BaseControllerTest {
         UUID versionId = UUID.randomUUID();
         VersionDetailsResponse v1 = buildVersionDetailsResponse(versionId, 1, "Initial version");
 
-        when(versionService.getOneVersion(eq(project), eq(versionId)))
+        when(versionService.getVersion(eq(project), eq(versionId)))
                 .thenReturn(v1);
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}", projectId, versionId))
@@ -147,7 +147,7 @@ class VersionControllerTest extends BaseControllerTest {
     void testGetProjectVersionReturns404WhenVersionNotFound() throws Exception {
         UUID versionId = UUID.randomUUID();
 
-        when(versionService.getOneVersion(eq(project), eq(versionId)))
+        when(versionService.getVersion(eq(project), eq(versionId)))
                 .thenThrow(new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"));
 
