@@ -3,6 +3,7 @@ package lab.corekt.backend.utils.error;
 import jakarta.validation.ConstraintViolationException;
 import lab.corekt.backend.modules.taiga.exception.TaigaAuthException;
 import lab.corekt.backend.modules.taiga.exception.TaigaException;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.util.HtmlUtils;
@@ -110,6 +112,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException e, WebRequest request) {
         String message = e.getReason() != null ? e.getReason() : e.getMessage();
         return build(HttpStatus.valueOf(e.getStatusCode().value()), message, request);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<@NonNull ErrorResponse> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e, WebRequest request) {
+        return build(HttpStatus.CONTENT_TOO_LARGE, "File size exceeds the maximum allowed limit", request);
     }
 
     @ExceptionHandler(Exception.class)
