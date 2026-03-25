@@ -1,32 +1,22 @@
 package lab.corekt.backend.modules.project.parsing.dto;
 
 import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
+import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.enums.MatchType;
 import lab.corekt.backend.modules.project.parsing.enums.Severity;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.UUID;
 
-@Getter
-@Setter
-public class DataLinkResponse {
-
-    private UUID id;
-    private MatchType match;
-    private Severity severity;
-    private Integer confidenceScore;
-    private Integer score;
-    private String justification;
-    private String suggestion;
-
-    public DataLinkResponse(DataLinkEntity dataLinkEntity) {
-        this.id = dataLinkEntity.getId();
-        this.match = dataLinkEntity.getMatch();
-        this.severity = dataLinkEntity.getSeverity();
-        this.confidenceScore = dataLinkEntity.getConfidenceScore();
-        this.score = dataLinkEntity.getScore();
-        this.justification = dataLinkEntity.getJustification();
-        this.suggestion = dataLinkEntity.getSuggestion();
+public record DataLinkResponse(
+        UUID id,
+        MatchType match,
+        Severity severity,
+        Integer confidenceScore,
+        String justification,
+        String suggestion,
+        ParsedDataResponse sourceParsedData,
+        ParsedDataResponse targetParsedData) {
+    public DataLinkResponse(DataLinkEntity dataLink) {
+        this(dataLink.getId(), dataLink.getMatch(), dataLink.getSeverity(), dataLink.getConfidenceScore(), dataLink.getJustification(), dataLink.getSuggestion(), new ParsedDataResponse(dataLink.getSourceParsedData()), new ParsedDataResponse(dataLink.getTargetParsedData()));
     }
 }

@@ -2,6 +2,8 @@ package lab.corekt.backend.modules.project.parsing.controller;
 
 import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.parsing.dto.DataLinkResponse;
+import lab.corekt.backend.modules.project.parsing.dto.ParsedDataResponse;
 import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
 import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
 import lab.corekt.backend.modules.project.parsing.enums.DataType;
@@ -49,37 +51,9 @@ class AnalysisController {
 
         List<DataLinkResponse> dataLinksResponse = dataLinks
                 .stream()
-                .map(dataLink -> new DataLinkResponse(
-                        dataLink.getId(),
-                        dataLink.getMatch(),
-                        dataLink.getSeverity(),
-                        dataLink.getConfidenceScore(),
-                        dataLink.getJustification(),
-                        dataLink.getSuggestion(),
-                        new ParsedDataResponse(
-                                dataLink.getSourceParsedData().getFile().getName(),
-                                dataLink.getSourceParsedData().getFile().getType()),
-                        new ParsedDataResponse(
-                                dataLink.getTargetParsedData().getFile().getName(),
-                                dataLink.getTargetParsedData().getFile().getType())))
+                .map(DataLinkResponse::new)
                 .toList();
 
         return ResponseEntity.ok(dataLinksResponse);
-    }
-
-    record DataLinkResponse(
-            UUID id,
-            MatchType match,
-            Severity severity,
-            Integer confidenceScore,
-            String justification,
-            String suggestion,
-            ParsedDataResponse sourceParsedData,
-            ParsedDataResponse targetParsedData) {
-    }
-
-    record ParsedDataResponse(
-            String fileName,
-            FileType fileType) {
     }
 }
