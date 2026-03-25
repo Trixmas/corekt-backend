@@ -60,4 +60,9 @@ public class ProjectService {
 
         projectRepository.delete(project);
     }
+
+    @Transactional(readOnly = true)
+    public int countByOwner(UserEntity owner) {
+        return (int) projectRepository.countByOwner(owner);
+    }
 }

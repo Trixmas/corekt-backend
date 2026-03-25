@@ -60,7 +60,7 @@ class FileServiceTest {
     void uploadFileSavesFileContent() throws Exception {
 
         MockMultipartFile multipartFile = new MockMultipartFile(
-                "file", "interview.pdf", "text/plain", "hello".getBytes()
+                "file", "files/interview.pdf", "text/plain", "hello".getBytes()
         );
 
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> {
@@ -75,7 +75,7 @@ class FileServiceTest {
         verify(fileRepository).save(captor.capture());
 
         FileEntity saved = captor.getValue();
-        assertEquals("interview.pdf", saved.getName());
+        assertEquals("files/interview.pdf", saved.getName());
         assertEquals(FileType.INTERVIEW, saved.getType());
         assertSame(version, saved.getVersion());
         assertArrayEquals("hello".getBytes(), saved.getFile());
@@ -296,14 +296,14 @@ class FileServiceTest {
 
         byte[] pdfContent = "PDF mock content".getBytes();
         MockMultipartFile pdfFile = new MockMultipartFile(
-                "file", "interview.pdf", "application/pdf", pdfContent
+                "file", "files/interview.pdf", "application/pdf", pdfContent
         );
 
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         FileEntity result = fileService.uploadFile(version, pdfFile, FileType.INTERVIEW);
 
-        assertEquals("interview.pdf", result.getName());
+        assertEquals("files/interview.pdf", result.getName());
         assertEquals(FileType.INTERVIEW, result.getType());
         assertArrayEquals(pdfContent, result.getFile());
         verify(fileRepository).save(any(FileEntity.class));

@@ -26,6 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
             .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
             .allowedHeaders("*")
             .allowCredentials(true)
+            .exposedHeaders("X-Unlocked-Achievements")
             .maxAge(3600);
     }
 

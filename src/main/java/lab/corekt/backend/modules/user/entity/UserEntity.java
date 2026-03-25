@@ -1,7 +1,7 @@
 package lab.corekt.backend.modules.user.entity;
 
 import jakarta.persistence.*;
-import lab.corekt.backend.modules.achievement.entity.HasAchievementsEntity;
+import lab.corekt.backend.modules.achievement.entity.UserAchievementEntity;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,7 +40,7 @@ public class UserEntity {
     private List<ProjectEntity> projects;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<HasAchievementsEntity> achievements;
+    private List<UserAchievementEntity> achievements;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
