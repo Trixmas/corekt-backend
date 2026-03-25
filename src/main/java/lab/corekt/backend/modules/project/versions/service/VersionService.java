@@ -2,7 +2,10 @@ package lab.corekt.backend.modules.project.versions.service;
 
 import jakarta.transaction.Transactional;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
-import lab.corekt.backend.modules.project.versions.dto.VersionIssuesResponse;
+import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
+import lab.corekt.backend.modules.project.parsing.enums.VersionStatus;
+import lab.corekt.backend.modules.project.parsing.repository.DataLinkRepository;
+import lab.corekt.backend.modules.project.versions.dto.VersionDetailsResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
@@ -17,22 +20,25 @@ import java.util.UUID;
 @Service
 public class VersionService {
     private final VersionRepository versionRepository;
+    private final DataLinkRepository dataLinkRepository;
 
-    public VersionService(VersionRepository versionRepository) {
+    public VersionService(VersionRepository versionRepository, DataLinkRepository dataLinkRepository) {
         this.versionRepository = versionRepository;
+        this.dataLinkRepository = dataLinkRepository;
     }
 
     @Transactional
     public List<VersionResponse> getAllByProject(ProjectEntity project) {
         return versionRepository.findByProject(project)
                 .stream()
-                .map(this::toResponse)
+                .map(VersionResponse::new)
                 .toList();
     }
 
     @Transactional
-    public VersionResponse getOneVersion(ProjectEntity project, UUID versionId) {
-        return toResponse(getVersionEntity(project, versionId));
+    public VersionDetailsResponse getVersion(ProjectEntity project, UUID versionId) {
+        VersionEntity version = getVersionEntity(project, versionId);
+        return new VersionDetailsResponse(version, getDataLinks(version));
     }
 
     @Transactional
@@ -44,7 +50,7 @@ public class VersionService {
         VersionEntity entity = new VersionEntity(project, request.getTitle());
         entity.setVersionNumber(nextVersionNumber);
 
-        return toResponse(versionRepository.save(entity));
+        return new VersionResponse(versionRepository.save(entity));
     }
 
     @Transactional
@@ -55,7 +61,7 @@ public class VersionService {
             entity.setTitle(request.getTitle());
         }
 
-        return toResponse(versionRepository.save(entity));
+        return new VersionResponse(versionRepository.save(entity));
     }
 
     @Transactional
@@ -69,15 +75,13 @@ public class VersionService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
     }
 
-    private VersionResponse toResponse(VersionEntity entity) {
-        VersionResponse response = new VersionResponse();
-        response.setId(entity.getId());
-        response.setTitle(entity.getTitle());
-        response.setVersion(entity.getVersionNumber());
-        response.setStatus(entity.getStatus());
-        response.setCreatedAt(entity.getCreatedAt());
-        response.setUpdatedAt(entity.getUpdatedAt());
-        response.setIssues(new VersionIssuesResponse(0, 0, 0, 0));
-        return response;
+
+    private List<DataLinkEntity> getDataLinks(VersionEntity version) {
+        return dataLinkRepository.findByVersionId(version.getId());
+    }
+
+    public void setVersionStatus(VersionEntity version, VersionStatus status) {
+        version.setStatus(status);
+        versionRepository.save(version);
     }
 }
