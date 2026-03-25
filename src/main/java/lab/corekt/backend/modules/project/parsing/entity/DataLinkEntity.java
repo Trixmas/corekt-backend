@@ -28,7 +28,7 @@ public class DataLinkEntity {
     private MatchType match;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column()
     private Severity severity;
 
     @Column
@@ -48,12 +48,11 @@ public class DataLinkEntity {
     @JoinColumn(name = "target_parsed_data_id", nullable = false)
     private ParsedDataEntity targetParsedData;
 
-    // Constructeurs
     public DataLinkEntity() {
     }
 
     public DataLinkEntity(MatchType match, Severity severity, ParsedDataEntity sourceParsedData,
-            ParsedDataEntity targetParsedData) {
+                          ParsedDataEntity targetParsedData) {
         this.match = match;
         this.severity = severity;
         this.sourceParsedData = sourceParsedData;

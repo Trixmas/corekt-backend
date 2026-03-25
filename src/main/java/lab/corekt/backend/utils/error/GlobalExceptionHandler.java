@@ -60,10 +60,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException e, WebRequest request) {
         Map<String, String> errors = new HashMap<>();
         e.getConstraintViolations().forEach(violation ->
-                errors.put(
-                        HtmlUtils.htmlEscape(violation.getPropertyPath().toString()),
-                        HtmlUtils.htmlEscape(violation.getMessage())
-                )
+            errors.put(
+                HtmlUtils.htmlEscape(violation.getPropertyPath().toString()),
+                HtmlUtils.htmlEscape(violation.getMessage())
+            )
         );
         return build(HttpStatus.BAD_REQUEST, "Constraint violation", errors, request);
     }
@@ -94,9 +94,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e, WebRequest request) {
         String message = "Invalid value '%s' for parameter '%s': expected %s".formatted(
-                e.getValue(),
-                e.getName(),
-                e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown type"
+            e.getValue(),
+            e.getName(),
+            e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown type"
         );
         return build(HttpStatus.BAD_REQUEST, message, request);
     }
@@ -124,11 +124,11 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, Map<String, String> errors, WebRequest request) {
         return ResponseEntity.status(status).body(new ErrorResponse(
-                status.value(),
-                message,
-                errors,
-                sanitizePath(request.getDescription(false)),
-                Instant.now()
+            status.value(),
+            message,
+            errors,
+            sanitizePath(request.getDescription(false)),
+            Instant.now()
         ));
     }
 

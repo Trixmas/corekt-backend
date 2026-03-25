@@ -7,6 +7,7 @@ import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
 import lab.corekt.backend.modules.taiga.dto.UserStoriesResponse;
 import lab.corekt.backend.modules.taiga.service.TaigaService;
 import lab.corekt.backend.modules.taiga.service.TaigaTokenService;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,20 +17,13 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/projects/{projectId}/versions/{versionId}/taiga")
+@AllArgsConstructor
 class TaigaController {
 
     private final TaigaTokenService taigaTokenService;
     private final TaigaService taigaService;
     private final VersionRepository versionRepository;
     private final ProjectUtils projectUtils;
-
-    TaigaController(TaigaTokenService taigaTokenService, TaigaService taigaService,
-                    VersionRepository versionRepository, ProjectUtils projectUtils) {
-        this.taigaTokenService = taigaTokenService;
-        this.taigaService = taigaService;
-        this.versionRepository = versionRepository;
-        this.projectUtils = projectUtils;
-    }
 
     @GetMapping("/user-stories")
     public ResponseEntity<UserStoriesResponse> getUserStories(

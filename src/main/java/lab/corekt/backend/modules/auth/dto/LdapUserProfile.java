@@ -6,6 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LdapUserProfile {
+
     private String email;
     private String username;
 }

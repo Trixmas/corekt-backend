@@ -50,9 +50,9 @@ public class McdParserReaderTest {
     @DisplayName("Should parse entities and relations from a valid serialized stream")
     void shouldParseValidMcdData() throws Exception {
         List<Object> mockItems = List.of(
-                new MockIhmEntite("Entity1"),
-                new MockIhmRelation("Relation1"),
-                new MockIhmEntite("Entity2")
+            new MockIhmEntite("Entity1"),
+            new MockIhmRelation("Relation1"),
+            new MockIhmEntite("Entity2")
         );
         byte[] serializedData = serializeTestData(mockItems);
         when(mockFileEntity.getFile()).thenReturn(serializedData);
@@ -73,18 +73,15 @@ public class McdParserReaderTest {
         assertThrows(StreamCorruptedException.class, () -> mcdParserReader.parseFile());
     }
 
-    // --- UTILS ---
-
     private byte[] serializeTestData(List<Object> items) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject("dummy_index_0");
-        oos.writeObject(items);
-        oos.close();
-        return baos.toByteArray();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+        objectOutputStream.writeObject("dummy_index_0");
+        objectOutputStream.writeObject(items);
+        objectOutputStream.close();
+        return byteArrayOutputStream.toByteArray();
     }
 
-    // --- Mock ---
     private record MockIhmEntite(String name) implements Serializable {
         public MockEntite getEntite() {
             return new MockEntite(name);

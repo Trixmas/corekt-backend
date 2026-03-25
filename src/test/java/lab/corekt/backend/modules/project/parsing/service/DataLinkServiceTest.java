@@ -1,22 +1,5 @@
 package lab.corekt.backend.modules.project.parsing.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
 import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
@@ -28,6 +11,20 @@ import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepositor
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DataLinkServiceTest {
@@ -65,9 +62,9 @@ class DataLinkServiceTest {
     void testGetRequiredFilesMissingDocumentThrows() {
         VersionEntity version = new VersionEntity();
         List<FileEntity> files = List.of(
-                new FileEntity(FileType.INTERVIEW, "interview.pdf"),
-                new FileEntity(FileType.BPMN, "process.bpmn"),
-                new FileEntity(FileType.US, "user-stories"));
+            new FileEntity(FileType.INTERVIEW, "interview.pdf"),
+            new FileEntity(FileType.BPMN, "process.bpmn"),
+            new FileEntity(FileType.US, "user-stories"));
 
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
         FileEntity bpmnFile = new FileEntity(FileType.BPMN, "process.bpmn");
@@ -75,7 +72,7 @@ class DataLinkServiceTest {
         when(fileRepository.findByVersion(version)).thenReturn(List.of(interviewFile, bpmnFile, usFile));
 
         IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> dataLinkService.getRequiredFiles(version));
+            () -> dataLinkService.getRequiredFiles(version));
 
         assertEquals("Missing required files for version: MCD", exception.getMessage());
     }
@@ -115,14 +112,14 @@ class DataLinkServiceTest {
             parsedDataForVersion.add(parsedData);
 
             MistralService.EmbeddingTuple embeddingTuple = new MistralService.EmbeddingTuple(parsedData,
-                    new float[] { 1.0f });
+                new float[]{1.0f});
             when(mistralService.embedParsedData(List.of(parsedData))).thenReturn(List.of(embeddingTuple));
         }
 
         when(parsedDataRepository.findByVersion(version)).thenReturn(parsedDataForVersion);
 
         Map<FileType, List<MistralService.EmbeddingTuple>> embeddingsByFileType = dataLinkService
-                .getEmbeddingsByFileType(version);
+            .getEmbeddingsByFileType(version);
 
         assertEquals(FileType.values().length, embeddingsByFileType.size());
         assertEquals("interview", embeddingsByFileType.get(FileType.INTERVIEW).getFirst().parsedData().getContent());
@@ -131,13 +128,13 @@ class DataLinkServiceTest {
         assertEquals("mcd", embeddingsByFileType.get(FileType.MCD).getFirst().parsedData().getContent());
 
         verify(mistralService).embedParsedData(embeddingsByFileType.get(FileType.INTERVIEW).stream()
-                .map(MistralService.EmbeddingTuple::parsedData).toList());
+            .map(MistralService.EmbeddingTuple::parsedData).toList());
         verify(mistralService).embedParsedData(embeddingsByFileType.get(FileType.BPMN).stream()
-                .map(MistralService.EmbeddingTuple::parsedData).toList());
+            .map(MistralService.EmbeddingTuple::parsedData).toList());
         verify(mistralService).embedParsedData(embeddingsByFileType.get(FileType.US).stream()
-                .map(MistralService.EmbeddingTuple::parsedData).toList());
+            .map(MistralService.EmbeddingTuple::parsedData).toList());
         verify(mistralService).embedParsedData(embeddingsByFileType.get(FileType.MCD).stream()
-                .map(MistralService.EmbeddingTuple::parsedData).toList());
+            .map(MistralService.EmbeddingTuple::parsedData).toList());
     }
 
     @Test
@@ -147,38 +144,38 @@ class DataLinkServiceTest {
 
         ParsedDataEntity interviewActor = parsedData(filesByType.get(FileType.INTERVIEW), DataType.ACTOR, "manager");
         ParsedDataEntity interviewAction = parsedData(filesByType.get(FileType.INTERVIEW), DataType.ACTION,
-                "valider une demande");
+            "valider une demande");
         ParsedDataEntity interviewEntity = parsedData(filesByType.get(FileType.INTERVIEW), DataType.ENTITY,
-                "absence");
+            "absence");
 
         ParsedDataEntity bpmnActor = parsedData(filesByType.get(FileType.BPMN), DataType.ACTOR, "manager");
         ParsedDataEntity bpmnAction = parsedData(filesByType.get(FileType.BPMN), DataType.ACTION,
-                "valider une demande");
+            "valider une demande");
         ParsedDataEntity bpmnFlow = parsedData(filesByType.get(FileType.BPMN), DataType.FLOW, "debut -> fin");
 
         ParsedDataEntity userStory = parsedData(filesByType.get(FileType.US), DataType.US, "valider une demande");
         ParsedDataEntity mcdEntity = parsedData(filesByType.get(FileType.MCD), DataType.ENTITY, "absence");
 
         when(parsedDataRepository.findByVersion(version)).thenReturn(List.of(
-                interviewActor, interviewAction, interviewEntity,
-                bpmnActor, bpmnAction, bpmnFlow,
-                userStory,
-                mcdEntity));
+            interviewActor, interviewAction, interviewEntity,
+            bpmnActor, bpmnAction, bpmnFlow,
+            userStory,
+            mcdEntity));
 
         when(mistralService.embedParsedData(List.of(interviewActor, interviewAction, interviewEntity)))
-                .thenReturn(List.of(
-                        tuple(interviewActor, 1.0f, 0.0f),
-                        tuple(interviewAction, 0.0f, 1.0f),
-                        tuple(interviewEntity, 0.5f, 0.5f)));
+            .thenReturn(List.of(
+                tuple(interviewActor, 1.0f, 0.0f),
+                tuple(interviewAction, 0.0f, 1.0f),
+                tuple(interviewEntity, 0.5f, 0.5f)));
         when(mistralService.embedParsedData(List.of(bpmnActor, bpmnAction, bpmnFlow)))
-                .thenReturn(List.of(
-                        tuple(bpmnActor, 1.0f, 0.0f),
-                        tuple(bpmnAction, 0.0f, 1.0f),
-                        tuple(bpmnFlow, 0.3f, 0.7f)));
+            .thenReturn(List.of(
+                tuple(bpmnActor, 1.0f, 0.0f),
+                tuple(bpmnAction, 0.0f, 1.0f),
+                tuple(bpmnFlow, 0.3f, 0.7f)));
         when(mistralService.embedParsedData(List.of(userStory)))
-                .thenReturn(List.of(tuple(userStory, 0.0f, 1.0f)));
+            .thenReturn(List.of(tuple(userStory, 0.0f, 1.0f)));
         when(mistralService.embedParsedData(List.of(mcdEntity)))
-                .thenReturn(List.of(tuple(mcdEntity, 0.5f, 0.5f)));
+            .thenReturn(List.of(tuple(mcdEntity, 0.5f, 0.5f)));
 
         List<DataLinkEntity> dataLinks = dataLinkService.buildDataLinks(version);
 
@@ -190,12 +187,12 @@ class DataLinkServiceTest {
         assertTrue(hasExactLink(dataLinks, mcdEntity, interviewEntity));
 
         assertTrue(dataLinks.stream().anyMatch(link -> link.getSourceParsedData() == bpmnFlow
-                && link.getMatch() == MatchType.MISSING));
+            && link.getMatch() == MatchType.MISSING));
 
         // ACTOR(BPMN) cannot target ACTION(Interview) even with a perfect embedding match.
         assertTrue(dataLinks.stream().noneMatch(link -> link.getSourceParsedData() == bpmnActor
-                && link.getTargetParsedData() == interviewAction
-                && link.getMatch() != MatchType.MISSING));
+            && link.getTargetParsedData() == interviewAction
+            && link.getMatch() != MatchType.MISSING));
     }
 
     @Test
@@ -211,13 +208,13 @@ class DataLinkServiceTest {
         when(parsedDataRepository.findByVersion(version)).thenReturn(List.of(interviewActor, bpmnActor, userStory, entity));
 
         when(mistralService.embedParsedData(List.of(interviewActor)))
-                .thenReturn(List.of(tuple(interviewActor, 1.0f, 0.0f)));
+            .thenReturn(List.of(tuple(interviewActor, 1.0f, 0.0f)));
         when(mistralService.embedParsedData(List.of(bpmnActor)))
-                .thenReturn(List.of(tuple(bpmnActor, 1.0f, 0.0f)));
+            .thenReturn(List.of(tuple(bpmnActor, 1.0f, 0.0f)));
         when(mistralService.embedParsedData(List.of(userStory)))
-                .thenReturn(List.of(tuple(userStory, 0.0f, 1.0f)));
+            .thenReturn(List.of(tuple(userStory, 0.0f, 1.0f)));
         when(mistralService.embedParsedData(List.of(entity)))
-                .thenReturn(List.of(tuple(entity, 0.5f, 0.5f)));
+            .thenReturn(List.of(tuple(entity, 0.5f, 0.5f)));
 
         when(dataLinkRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -244,12 +241,12 @@ class DataLinkServiceTest {
     }
 
     private MistralService.EmbeddingTuple tuple(ParsedDataEntity parsedData, float left, float right) {
-        return new MistralService.EmbeddingTuple(parsedData, new float[] { left, right });
+        return new MistralService.EmbeddingTuple(parsedData, new float[]{left, right});
     }
 
     private boolean hasExactLink(List<DataLinkEntity> links, ParsedDataEntity source, ParsedDataEntity target) {
         return links.stream().anyMatch(link -> link.getSourceParsedData() == source
-                && link.getTargetParsedData() == target
-                && link.getMatch() == MatchType.EXACT);
+            && link.getTargetParsedData() == target
+            && link.getMatch() == MatchType.EXACT);
     }
 }

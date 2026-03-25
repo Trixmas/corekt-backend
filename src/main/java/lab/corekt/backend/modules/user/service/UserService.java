@@ -3,6 +3,7 @@ package lab.corekt.backend.modules.user.service;
 import lab.corekt.backend.modules.user.dto.ApiKeyRequest;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.repository.UserRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,14 +11,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@AllArgsConstructor
 public class UserService {
     private final UserRepository repository;
     private final EncryptionService encryptionService;
-
-    public UserService(UserRepository repository, EncryptionService encryptionService) {
-        this.repository = repository;
-        this.encryptionService = encryptionService;
-    }
 
     @Transactional
     public UserEntity createOrUpdateUser(String email, String username) {
@@ -39,9 +36,9 @@ public class UserService {
     @Transactional
     public void saveApiKey(UserEntity user, ApiKeyRequest request) throws Exception {
         String encryptedToken = encryptionService.decryptAndReEncryptApiKey(
-                request.getEncryptedApiKey(),
-                request.getEncryptedDataKey(),
-                request.getInitializationVector()
+            request.getEncryptedApiKey(),
+            request.getEncryptedDataKey(),
+            request.getInitializationVector()
         );
         user.setMistralToken(encryptedToken);
         repository.save(user);
