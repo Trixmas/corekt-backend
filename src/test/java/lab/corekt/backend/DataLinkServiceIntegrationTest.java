@@ -17,25 +17,32 @@ import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @ActiveProfiles("test")
-@SpringBootTest
+@Transactional
+@SpringBootTest(properties = "spring.testcontainers.enabled=true")
 class DataLinkServiceIntegrationTest {
 
     @Autowired
     private DataLinkService dataLinkService;
+
+    @MockitoBean
+    private MistralService mistralService;
 
     @Autowired
     private UserRepository userRepository;
@@ -55,9 +62,20 @@ class DataLinkServiceIntegrationTest {
     @Autowired
     private DataLinkRepository dataLinkRepository;
 
+    @BeforeEach
+    void setUp() {
+        when(mistralService.embedParsedData(org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                List<ParsedDataEntity> parsedData = invocation.getArgument(0, List.class);
+                return parsedData.stream()
+                    .map(data -> new MistralService.EmbeddingTuple(data, embeddingFor(data.getContent())))
+                    .toList();
+            });
+    }
+
     @Test
-    @DisplayName("Should load parsed data and get real embeddings by file type")
-    @EnabledIfSystemProperty(named = "runMistralEmbeddingIntegrationTest", matches = "true")
+    @DisplayName("Should load parsed data and get embeddings by file type from persisted data")
     void testGetEmbeddingsByFileType() {
         VersionEntity version = createVersionWithParsedData();
         Map<FileType, List<MistralService.EmbeddingTuple>> embeddingsByFileType = dataLinkService.getEmbeddingsByFileType(version);
@@ -76,14 +94,13 @@ class DataLinkServiceIntegrationTest {
 
         for (List<MistralService.EmbeddingTuple> embeddings : embeddingsByFileType.values()) {
             for (MistralService.EmbeddingTuple embedding : embeddings) {
-                assertThat(embedding.embedding().length).isGreaterThan(0);
+                assertThat(embedding.embedding()).containsExactly(embeddingFor(embedding.parsedData().getContent()));
             }
         }
     }
 
     @Test
-    @DisplayName("Should save real data links in database")
-    @EnabledIfSystemProperty(named = "runMistralEmbeddingIntegrationTest", matches = "true")
+    @DisplayName("Should save data links in database from persisted parsed data")
     void testSaveDataLinks() {
         VersionEntity version = createVersionWithParsedData();
 
@@ -103,13 +120,20 @@ class DataLinkServiceIntegrationTest {
         assertThat(exactLinks).isEqualTo(2);
         assertThat(missingLinks).isEqualTo(2);
 
-        List<DataLinkEntity> persistedLinks = dataLinkRepository.findAll();
+        List<DataLinkEntity> persistedLinks = dataLinkRepository.findByVersionId(version.getId());
 
         assertThat(persistedLinks).hasSize(4);
         assertThat(persistedLinks)
             .filteredOn(link -> link.getMatch() == MatchType.EXACT)
-            .allMatch(link -> "manager".equals(link.getSourceParsedData().getContent()))
-            .allMatch(link -> "manager".equals(link.getTargetParsedData().getContent()));
+            .anyMatch(link -> "manager".equals(link.getSourceParsedData().getContent())
+                && "manager".equals(link.getTargetParsedData().getContent()));
+        assertThat(persistedLinks)
+            .filteredOn(link -> link.getMatch() == MatchType.MISSING)
+            .extracting(link -> link.getSourceParsedData().getContent())
+            .containsExactlyInAnyOrder(
+                "En tant que manager, je veux valider une demande, afin de gerer les absences",
+                "absence"
+            );
     }
 
     private VersionEntity createVersionWithParsedData() {
@@ -146,5 +170,15 @@ class DataLinkServiceIntegrationTest {
 
     private String randomEmail() {
         return "salim+" + UUID.randomUUID() + "@corekt.test";
+    }
+
+    private float[] embeddingFor(String content) {
+        return switch (content) {
+            case "manager" -> new float[] {1.0f, 0.0f};
+            case "En tant que manager, je veux valider une demande, afin de gerer les absences" ->
+                new float[] {0.0f, 1.0f};
+            case "absence" -> new float[] {0.5f, 0.5f};
+            default -> throw new IllegalArgumentException("Unexpected parsed data content: " + content);
+        };
     }
 }
