@@ -59,9 +59,14 @@ class AnalysisController {
             versionService.setVersionStatus(version, VersionStatus.COMPLETED);
 
             int totalAnalysesCompleteCount = versionService.countByProjectOwnerAndStatus(user, VersionStatus.COMPLETED);
+            int totalProjectsWithPerfectAnalysis = versionService.countProjectsWithPerfectAnalysis(user);
+            int totalProjectWithPerfectAnalysisAtFirst = versionService.countProjectsWithPerfectAnalysisAtFirst(user);
+
             return achievementResponseHelper.ok(dataLinksResponse,
                     TriggerContext.of(AchievementTrigger.ANALYSIS_COMPLETED,
-                            AchievementCondition.totalAnalysesCount(totalAnalysesCompleteCount)
+                            AchievementCondition.totalAnalysesCount(totalAnalysesCompleteCount),
+                            AchievementCondition.totalProjectsWithPerfectAnalysis(totalProjectsWithPerfectAnalysis),
+                            AchievementCondition.totalProjectWithPerfectAnalysisAtFirst(totalProjectWithPerfectAnalysisAtFirst)
                     )
             );
         } catch (Exception e) {
