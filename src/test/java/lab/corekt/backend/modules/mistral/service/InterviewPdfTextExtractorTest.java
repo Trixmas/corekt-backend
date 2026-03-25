@@ -29,7 +29,7 @@ class InterviewPdfTextExtractorTest {
     @Test
     @DisplayName("Should extract text from interview FileEntity")
     void testExtractTextFromFileEntity() throws IOException {
-        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
+        FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "files/interview.pdf");
         interviewFile.setFile(readTestPdf());
 
         String text = extractor.extractText(interviewFile);
@@ -54,7 +54,7 @@ class InterviewPdfTextExtractorTest {
     }
 
     private byte[] readTestPdf() throws IOException {
-        Path path = Path.of("src/test/resources/interview.pdf");
+        Path path = Path.of("src/test/resources/files/interview.pdf");
         return Files.readAllBytes(path);
     }
 }

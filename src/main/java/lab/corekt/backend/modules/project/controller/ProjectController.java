@@ -1,6 +1,10 @@
 package lab.corekt.backend.modules.project.controller;
 
 import jakarta.validation.Valid;
+import lab.corekt.backend.modules.achievement.service.helper.AchievementResponseHelper;
+import lab.corekt.backend.modules.achievement.trigger.AchievementCondition;
+import lab.corekt.backend.modules.achievement.trigger.AchievementTrigger;
+import lab.corekt.backend.modules.achievement.trigger.TriggerContext;
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.project.dto.CreateProjectRequest;
 import lab.corekt.backend.modules.project.dto.ProjectResponse;
@@ -22,6 +26,7 @@ class ProjectController {
 
     private final ProjectService projectService;
     private final AuthContext authContext;
+    private final AchievementResponseHelper achievementResponseHelper;
 
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getAllOwnersProjects() {
@@ -32,7 +37,14 @@ class ProjectController {
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody CreateProjectRequest request) {
         UserEntity user = authContext.getCurrentUser();
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectService.createProject(request, user));
+        ProjectResponse project = projectService.createProject(request, user);
+        int totalProjects = projectService.countByOwner(user);
+
+        return achievementResponseHelper.created(project,
+            TriggerContext.of(AchievementTrigger.PROJECT_CREATED,
+                AchievementCondition.totalProjectsCount(totalProjects)
+            )
+        );
     }
 
     @GetMapping("/{projectId}")
