@@ -1,10 +1,8 @@
 package lab.corekt.backend.modules.project.parsing.controller;
 
-import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.dto.DataLinkResponse;
 import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
-import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepository;
 import lab.corekt.backend.modules.project.parsing.service.DataLinkService;
 import lab.corekt.backend.modules.project.utils.ProjectUtils;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
@@ -26,7 +24,7 @@ class AnalysisController {
     private final VersionRepository versionRepository;
     private final DataLinkService dataLinkService;
 
-    AnalysisController(ProjectUtils projectUtils, ParsedDataRepository parsedDataRepository, MistralService mistralService,
+    AnalysisController(ProjectUtils projectUtils,
                        VersionRepository versionRepository, DataLinkService dataLinkService) {
         this.projectUtils = projectUtils;
         this.versionRepository = versionRepository;
