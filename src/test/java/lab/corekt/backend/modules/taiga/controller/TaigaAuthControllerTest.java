@@ -1,4 +1,5 @@
 package lab.corekt.backend.modules.taiga.controller;
+
 import lab.corekt.backend.modules.auth.service.JwtService;
 import lab.corekt.backend.modules.taiga.dto.TaigaCredentials;
 import lab.corekt.backend.modules.taiga.exception.TaigaAuthException;

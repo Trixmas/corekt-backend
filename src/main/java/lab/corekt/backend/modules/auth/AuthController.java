@@ -10,6 +10,7 @@ import lab.corekt.backend.modules.auth.service.JwtService;
 import lab.corekt.backend.modules.user.dto.UserDetails;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.service.UserService;
+import lombok.AllArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,20 +26,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/auth")
 @Validated
+@AllArgsConstructor
 public class AuthController {
 
     private final JumpCloudService jumpCloudService;
     private final JwtService jwtService;
     private final UserService userService;
-
-    public AuthController(
-            JumpCloudService jumpCloudService,
-            JwtService jwtService,
-            UserService userService) {
-        this.jumpCloudService = jumpCloudService;
-        this.jwtService = jwtService;
-        this.userService = userService;
-    }
 
     private static @NonNull LoginResponse createLoginResponse(String token, Long expiresAt, UserDetails userDetails) {
         LoginResponse response = new LoginResponse();

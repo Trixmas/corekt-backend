@@ -8,11 +8,11 @@ import lab.corekt.backend.modules.project.parsing.enums.DataType;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
-import lab.corekt.backend.modules.upload.service.FileService;
 import lab.corekt.backend.modules.taiga.dto.TaigaCredentials;
 import lab.corekt.backend.modules.taiga.dto.UserStory;
 import lab.corekt.backend.modules.taiga.exception.TaigaAuthException;
 import lab.corekt.backend.modules.taiga.exception.TaigaException;
+import lab.corekt.backend.modules.upload.service.FileService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -49,6 +49,10 @@ public class TaigaService {
             .build();
         this.fileService = fileService;
         this.parsedDataRepository = parsedDataRepository;
+    }
+
+    private static String bearer(String token) {
+        return "Bearer " + token;
     }
 
     public TaigaCredentials authenticate(String username, String password) {
@@ -197,11 +201,6 @@ public class TaigaService {
         }
     }
 
-    @FunctionalInterface
-    private interface RequestSupplier {
-        JsonNode get() throws Exception;
-    }
-
     private ArrayNode toArray(JsonNode root) {
         if (root == null) return null;
         if (root.isArray()) return (ArrayNode) root;
@@ -209,7 +208,8 @@ public class TaigaService {
         return (results != null && results.isArray()) ? (ArrayNode) results : null;
     }
 
-    private static String bearer(String token) {
-        return "Bearer " + token;
+    @FunctionalInterface
+    private interface RequestSupplier {
+        JsonNode get() throws Exception;
     }
 }

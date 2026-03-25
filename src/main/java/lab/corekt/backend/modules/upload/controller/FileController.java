@@ -3,8 +3,6 @@ package lab.corekt.backend.modules.upload.controller;
 import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
-import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
-import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
@@ -12,6 +10,7 @@ import lab.corekt.backend.modules.upload.dto.FileUploadResponse;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.service.FileService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +22,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/projects/{projectId}/versions/{versionId}/files")
+@AllArgsConstructor
 public class FileController {
 
     private final FileService fileService;
@@ -30,26 +30,19 @@ public class FileController {
     private final VersionRepository versionRepository;
     private final AuthContext authContext;
 
-    public FileController(FileService fileService, ProjectRepository projectRepository, VersionRepository versionRepository, AuthContext authContext, BpmnParserService bpmnParserService, McdParserService mcdParserService) {
-        this.fileService = fileService;
-        this.projectRepository = projectRepository;
-        this.versionRepository = versionRepository;
-        this.authContext = authContext;
-    }
-
     @PostMapping
     public ResponseEntity<FileUploadResponse> uploadFile(
-            @PathVariable UUID projectId,
-            @PathVariable UUID versionId,
-            @RequestParam MultipartFile file,
-            @RequestParam FileType fileType) throws IOException {
+        @PathVariable UUID projectId,
+        @PathVariable UUID versionId,
+        @RequestParam MultipartFile file,
+        @RequestParam FileType fileType) throws IOException {
 
         UserEntity user = authContext.getCurrentUser();
         ProjectEntity project = projectRepository.findByIdAndOwner(projectId, user)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
 
         VersionEntity version = versionRepository.findByProjectAndId(project, versionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
 
         FileEntity saved = fileService.uploadFile(version, file, fileType);
 

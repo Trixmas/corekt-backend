@@ -7,6 +7,7 @@ import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 
 @Service
+@AllArgsConstructor
 public class FileService {
 
     private final FileRepository fileRepository;
@@ -25,18 +27,10 @@ public class FileService {
     private final McdParserService mcdParserService;
     private final MistralService mistralService;
 
-    public FileService(FileRepository fileRepository, BpmnParserService bpmnParserService, McdParserService mcdParserService, MistralService mistralService) {
-        this.fileRepository = fileRepository;
-        this.bpmnParserService = bpmnParserService;
-        this.mcdParserService = mcdParserService;
-        this.mistralService = mistralService;
-    }
-
     @Transactional
     public FileEntity uploadFile(VersionEntity version, @NonNull MultipartFile file, @NonNull FileType fileType)
             throws IOException, DataIntegrityViolationException {
 
-//        check if file type is supported and the file has the correct extension
         if (!fileType.isValidFile(file)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file type or extension for " + fileType);
         }
@@ -47,17 +41,13 @@ public class FileService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File size exceeds 10MB limit");
         }
 
-
         try {
             FileEntity fileEntity = new FileEntity(fileType, file.getOriginalFilename());
             fileEntity.setVersion(version);
             fileEntity.setFile(file.getBytes());
 
             processFileByType(fileType, fileEntity);
-
             return fileRepository.save(fileEntity);
-
-
         } catch (IOException e) {
             throw new IOException("Failed to read file content", e);
         } catch (DataIntegrityViolationException e) {
@@ -68,17 +58,12 @@ public class FileService {
     private void processFileByType(@NonNull FileType fileType, FileEntity fileEntity) {
         try {
             switch (fileType) {
-                case BPMN -> {
-                    bpmnParserService.processFile(fileEntity);
-                }
-                case MCD -> {
-                    mcdParserService.processFile(fileEntity);
-                }
-                case INTERVIEW -> {
-                    mistralService.processInterview(fileEntity);
-                }
+                case BPMN -> bpmnParserService.processFile(fileEntity);
+                case MCD -> mcdParserService.processFile(fileEntity);
+                case INTERVIEW -> mistralService.processInterview(fileEntity);
+                default ->
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported file type: " + fileType);
             }
-
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse the uploaded file: " + e.getMessage());
         }
@@ -103,6 +88,4 @@ public class FileService {
                     return fileRepository.save(newFile);
                 });
     }
-
-
 }

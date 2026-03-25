@@ -107,8 +107,8 @@ class ProjectControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/projects")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                                    {"description": "A description"}
-                                """))
+                        {"description": "A description"}
+                    """))
             .andExpect(status().isBadRequest());
     }
 
@@ -156,8 +156,8 @@ class ProjectControllerTest extends BaseControllerTest {
         mockMvc.perform(patch("/projects/{projectId}", projectId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                                    {"title": "Updated Title", "description": "Updated Description"}
-                                """))
+                        {"title": "Updated Title", "description": "Updated Description"}
+                    """))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.title").value("Updated Title"))
             .andExpect(jsonPath("$.description").value("Updated Description"));
@@ -177,8 +177,8 @@ class ProjectControllerTest extends BaseControllerTest {
         mockMvc.perform(patch("/projects/{projectId}", projectId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                                    {"title": "Updated Title", "description": "Updated Description"}
-                                """))
+                        {"title": "Updated Title", "description": "Updated Description"}
+                    """))
             .andExpect(status().isNotFound());
     }
 

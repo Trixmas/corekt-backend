@@ -33,7 +33,6 @@ public class ParsedDataEntity {
     @Column(nullable = false, length = MAX_CONTENT_LENGTH)
     private String content;
 
-
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "file_id", nullable = false)
     private FileEntity file;
@@ -44,14 +43,12 @@ public class ParsedDataEntity {
     @OneToMany(mappedBy = "targetParsedData", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DataLinkEntity> incomingLinks;
 
-    // Constructeurs
     public ParsedDataEntity() {
     }
 
     public ParsedDataEntity(DataType dataType, String content) {
         this.dataType = dataType;
         this.content = content;
-
     }
 
     public ParsedDataEntity(DataType dataType, String actor, FileEntity relatedFile) {
@@ -60,4 +57,3 @@ public class ParsedDataEntity {
         this.file = relatedFile;
     }
 }
-

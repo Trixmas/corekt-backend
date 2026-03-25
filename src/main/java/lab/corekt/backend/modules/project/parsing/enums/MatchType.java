@@ -5,4 +5,3 @@ public enum MatchType {
     SEMANTIC,
     MISSING
 }
-
