@@ -1,14 +1,8 @@
 package lab.corekt.backend.modules.project.parsing.controller;
 
-import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.parsing.dto.DataLinkResponse;
 import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
-import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
-import lab.corekt.backend.modules.project.parsing.enums.DataType;
-import lab.corekt.backend.modules.project.parsing.enums.FileType;
-import lab.corekt.backend.modules.project.parsing.enums.MatchType;
-import lab.corekt.backend.modules.project.parsing.enums.Severity;
-import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepository;
 import lab.corekt.backend.modules.project.parsing.service.DataLinkService;
 import lab.corekt.backend.modules.project.utils.ProjectUtils;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
@@ -16,8 +10,8 @@ import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +24,7 @@ class AnalysisController {
     private final VersionRepository versionRepository;
     private final DataLinkService dataLinkService;
 
-    AnalysisController(ProjectUtils projectUtils, ParsedDataRepository parsedDataRepository, MistralService mistralService,
+    AnalysisController(ProjectUtils projectUtils,
                        VersionRepository versionRepository, DataLinkService dataLinkService) {
         this.projectUtils = projectUtils;
         this.versionRepository = versionRepository;
@@ -38,7 +32,7 @@ class AnalysisController {
     }
 
     @GetMapping("/start")
-    public ResponseEntity<List<DataLinkResponse>> buildAnalysis(@PathVariable UUID projectId, @PathVariable UUID versionId){
+    public ResponseEntity<List<DataLinkResponse>> buildAnalysis(@PathVariable UUID projectId, @PathVariable UUID versionId) {
         ProjectEntity project = projectUtils.resolveProject(projectId);
         if (project == null) return ResponseEntity.notFound().build();
 
@@ -49,37 +43,9 @@ class AnalysisController {
 
         List<DataLinkResponse> dataLinksResponse = dataLinks
                 .stream()
-                .map(dataLink -> new DataLinkResponse(
-                        dataLink.getId(),
-                        dataLink.getMatch(),
-                        dataLink.getSeverity(),
-                        dataLink.getConfidenceScore(),
-                        dataLink.getJustification(),
-                        dataLink.getSuggestion(),
-                        new ParsedDataResponse(
-                                dataLink.getSourceParsedData().getFile().getName(),
-                                dataLink.getSourceParsedData().getFile().getType()),
-                        new ParsedDataResponse(
-                                dataLink.getTargetParsedData().getFile().getName(),
-                                dataLink.getTargetParsedData().getFile().getType())))
+                .map(DataLinkResponse::new)
                 .toList();
 
         return ResponseEntity.ok(dataLinksResponse);
-    }
-
-    record DataLinkResponse(
-            UUID id,
-            MatchType match,
-            Severity severity,
-            Integer confidenceScore,
-            String justification,
-            String suggestion,
-            ParsedDataResponse sourceParsedData,
-            ParsedDataResponse targetParsedData) {
-    }
-
-    record ParsedDataResponse(
-            String fileName,
-            FileType fileType) {
     }
 }
