@@ -1,7 +1,6 @@
 package lab.corekt.backend.modules.project.parsing.dto;
 
 import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
-import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.enums.MatchType;
 import lab.corekt.backend.modules.project.parsing.enums.Severity;
 
