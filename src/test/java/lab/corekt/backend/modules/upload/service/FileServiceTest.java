@@ -1,6 +1,5 @@
 package lab.corekt.backend.modules.upload.service;
 
-import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
 import lab.corekt.backend.modules.project.parsing.service.McdParserService;
@@ -44,9 +43,6 @@ class FileServiceTest {
     @InjectMocks
     private FileService fileService;
 
-    @Mock
-    private MistralService mistralService;
-
     private VersionEntity version;
 
     @BeforeEach
@@ -60,7 +56,7 @@ class FileServiceTest {
     void uploadFileSavesFileContent() throws Exception {
 
         MockMultipartFile multipartFile = new MockMultipartFile(
-                "file", "interview.pdf", "text/plain", "hello".getBytes()
+            "file", "interview.pdf", "text/plain", "hello".getBytes()
         );
 
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> {
@@ -98,7 +94,7 @@ class FileServiceTest {
         when(multipartFile.getBytes()).thenThrow(new IOException("disk read failed"));
 
         IOException exception = assertThrows(IOException.class,
-                () -> fileService.uploadFile(version, multipartFile, FileType.MCD));
+            () -> fileService.uploadFile(version, multipartFile, FileType.MCD));
 
         assertEquals("Failed to read file content", exception.getMessage());
         assertEquals("disk read failed", exception.getCause().getMessage());
@@ -110,18 +106,18 @@ class FileServiceTest {
     void uploadFileWrapsConstraintViolation() throws Exception {
 
         MockMultipartFile multipartFile = new MockMultipartFile(
-                "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
+            "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
         );
 
         when(fileRepository.save(any(FileEntity.class)))
-                .thenThrow(new DataIntegrityViolationException("duplicate key"));
+            .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         DataIntegrityViolationException exception = assertThrows(DataIntegrityViolationException.class,
-                () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
+            () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
 
         assertEquals(
-                "Failed to save file, a file of type BPMN already exists for this version.",
-                exception.getMessage()
+            "Failed to save file, a file of type BPMN already exists for this version.",
+            exception.getMessage()
         );
         assertEquals("duplicate key", exception.getCause().getMessage());
         verify(bpmnParserService).processFile(any(FileEntity.class));
@@ -133,7 +129,7 @@ class FileServiceTest {
     void uploadFileDispatchesBpmnParser() throws Exception {
 
         MockMultipartFile multipartFile = new MockMultipartFile(
-                "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
+            "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
         );
 
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -151,7 +147,7 @@ class FileServiceTest {
     void uploadFileDispatchesMcdParser() throws Exception {
 
         MockMultipartFile multipartFile = new MockMultipartFile(
-                "file", "diagram.mcd", "application/octet-stream", "mcd".getBytes()
+            "file", "diagram.mcd", "application/octet-stream", "mcd".getBytes()
         );
 
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -169,14 +165,14 @@ class FileServiceTest {
     void uploadFileWrapsBpmnParserFailure() throws Exception {
 
         MockMultipartFile multipartFile = new MockMultipartFile(
-                "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
+            "file", "diagram.bpmn", "application/xml", "<bpmn />".getBytes()
         );
 
         doThrow(new IllegalStateException("invalid bpmn"))
-                .when(bpmnParserService).processFile(any(FileEntity.class));
+            .when(bpmnParserService).processFile(any(FileEntity.class));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
+            () -> fileService.uploadFile(version, multipartFile, FileType.BPMN));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
         String reason = exception.getReason();
@@ -190,14 +186,14 @@ class FileServiceTest {
     void uploadFileWrapsMcdParserFailure() throws Exception {
 
         MockMultipartFile multipartFile = new MockMultipartFile(
-                "file", "diagram.mcd", "application/octet-stream", "mcd".getBytes()
+            "file", "diagram.mcd", "application/octet-stream", "mcd".getBytes()
         );
 
         doThrow(new IllegalArgumentException("invalid mcd"))
-                .when(mcdParserService).processFile(any(FileEntity.class));
+            .when(mcdParserService).processFile(any(FileEntity.class));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> fileService.uploadFile(version, multipartFile, FileType.MCD));
+            () -> fileService.uploadFile(version, multipartFile, FileType.MCD));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
         String reason = exception.getReason();
@@ -247,11 +243,11 @@ class FileServiceTest {
     void uploadFileRejectsEmptyFile() {
 
         MockMultipartFile emptyFile = new MockMultipartFile(
-                "file", "empty.pdf", "application/pdf", new byte[0]
+            "file", "empty.pdf", "application/pdf", new byte[0]
         );
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> fileService.uploadFile(version, emptyFile, FileType.INTERVIEW));
+            () -> fileService.uploadFile(version, emptyFile, FileType.INTERVIEW));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("File is empty", exception.getReason());
@@ -265,7 +261,7 @@ class FileServiceTest {
         MultipartFile oversizedFile = new MockMultipartFile("file", "empty.pdf", "application/pdf", new byte[Math.toIntExact(11L * 1024 * 1024)]);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> fileService.uploadFile(version, oversizedFile, FileType.INTERVIEW));
+            () -> fileService.uploadFile(version, oversizedFile, FileType.INTERVIEW));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("File size exceeds 10MB limit", exception.getReason());
@@ -277,11 +273,11 @@ class FileServiceTest {
     void uploadFileRejectsInvalidFileExtension() {
 
         MockMultipartFile invalidFile = new MockMultipartFile(
-                "file", "wrong.txt", "text/plain", "content".getBytes()
+            "file", "wrong.txt", "text/plain", "content".getBytes()
         );
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> fileService.uploadFile(version, invalidFile, FileType.INTERVIEW));
+            () -> fileService.uploadFile(version, invalidFile, FileType.INTERVIEW));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         String reason = exception.getReason();
@@ -296,7 +292,7 @@ class FileServiceTest {
 
         byte[] pdfContent = "PDF mock content".getBytes();
         MockMultipartFile pdfFile = new MockMultipartFile(
-                "file", "interview.pdf", "application/pdf", pdfContent
+            "file", "interview.pdf", "application/pdf", pdfContent
         );
 
         when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));

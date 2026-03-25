@@ -15,6 +15,4 @@ public interface FileRepository extends JpaRepository<FileEntity, UUID> {
     Optional<FileEntity> findByTypeAndVersion(FileType type, VersionEntity version);
 
     List<FileEntity> findByVersion(VersionEntity version);
-
-    boolean existsByVersionAndType(VersionEntity version, FileType type);
 }

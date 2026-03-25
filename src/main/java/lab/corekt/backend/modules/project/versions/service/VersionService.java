@@ -10,6 +10,7 @@ import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,21 +19,17 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@AllArgsConstructor
 public class VersionService {
     private final VersionRepository versionRepository;
     private final DataLinkRepository dataLinkRepository;
 
-    public VersionService(VersionRepository versionRepository, DataLinkRepository dataLinkRepository) {
-        this.versionRepository = versionRepository;
-        this.dataLinkRepository = dataLinkRepository;
-    }
-
     @Transactional
     public List<VersionResponse> getAllByProject(ProjectEntity project) {
         return versionRepository.findByProject(project)
-                .stream()
-                .map(VersionResponse::new)
-                .toList();
+            .stream()
+            .map(VersionResponse::new)
+            .toList();
     }
 
     @Transactional
@@ -43,9 +40,10 @@ public class VersionService {
 
     @Transactional
     public VersionResponse createVersion(ProjectEntity project, VersionRequest request) {
-        int nextVersionNumber = versionRepository.findTopByProjectOrderByVersionNumberDesc(project)
-                .map(v -> v.getVersionNumber() + 1)
-                .orElse(1);
+        int nextVersionNumber = versionRepository
+            .findTopByProjectOrderByVersionNumberDesc(project)
+            .map(version -> version.getVersionNumber() + 1)
+            .orElse(1);
 
         VersionEntity entity = new VersionEntity(project, request.getTitle());
         entity.setVersionNumber(nextVersionNumber);
@@ -71,8 +69,9 @@ public class VersionService {
     }
 
     private VersionEntity getVersionEntity(ProjectEntity project, UUID versionId) {
-        return versionRepository.findByProjectAndId(project, versionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
+        return versionRepository
+            .findByProjectAndId(project, versionId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
     }
 
 

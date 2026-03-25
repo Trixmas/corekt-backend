@@ -95,7 +95,6 @@ public class BpmnParserService {
         }
     }
 
-
     private String nameOrType(BpmnModelElementInstance element) {
         String name = element.getAttributeValue("name");
         return (name != null && !name.isBlank()) ? name : element.getElementType().getTypeName();

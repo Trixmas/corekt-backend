@@ -10,9 +10,9 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI corektOpenAPI() {
         return new OpenAPI().info(new Info()
-                .title("Corekt API")
-                .version("1.0")
-                .description("Corekt Backend API Documentation")
+            .title("Corekt API")
+            .version("1.0")
+            .description("Corekt Backend API Documentation")
         );
     }
 }

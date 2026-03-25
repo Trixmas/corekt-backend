@@ -1,20 +1,12 @@
 package lab.corekt.backend.modules.project.report.entity;
 
-import java.util.UUID;
-
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -38,7 +30,7 @@ public class AIAnalysisEntity {
     @Column
     private Integer qualityScore;
 
-    @Column(columnDefinition = "TEXT") // replaced by text because could be too short [https://stackoverflow.com/a/22650941]
+    @Column(columnDefinition = "TEXT")
     private String summary;
 
     @Column(columnDefinition = "TEXT")

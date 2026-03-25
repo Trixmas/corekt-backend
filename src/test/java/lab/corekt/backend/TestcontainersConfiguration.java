@@ -8,7 +8,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
-@ConditionalOnProperty(name= "spring.testcontainers.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "spring.testcontainers.enabled", havingValue = "true", matchIfMissing = true)
 class TestcontainersConfiguration {
 
     @Bean

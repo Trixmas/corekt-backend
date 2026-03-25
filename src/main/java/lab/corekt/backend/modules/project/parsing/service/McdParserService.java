@@ -4,21 +4,19 @@ import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
 import lab.corekt.backend.modules.project.parsing.enums.DataType;
 import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepository;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class McdParserService {
 
     private final ParsedDataRepository parsedDataRepository;
 
-    public McdParserService(ParsedDataRepository parsedDataRepository) {
-        this.parsedDataRepository = parsedDataRepository;
-    }
-
-    public void processFile(FileEntity fileEntity) throws Exception{
+    public void processFile(FileEntity fileEntity) throws Exception {
         McdParserReader reader = new McdParserReader(fileEntity);
         reader.parseFile();
 
@@ -39,7 +37,7 @@ public class McdParserService {
         if (content.length() > ParsedDataEntity.MAX_CONTENT_LENGTH) {
             String newContent = content.substring(0, ParsedDataEntity.MAX_CONTENT_LENGTH);
             parsedDataEntity.setContent(newContent);
-        }  else {
+        } else {
             parsedDataEntity.setContent(content);
         }
 

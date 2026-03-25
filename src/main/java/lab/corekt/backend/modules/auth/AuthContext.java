@@ -2,18 +2,16 @@ package lab.corekt.backend.modules.auth;
 
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.service.UserService;
+import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Component
+@AllArgsConstructor
 public final class AuthContext {
 
     private final UserService userService;
-
-    public AuthContext(UserService userService) {
-        this.userService = userService;
-    }
 
     /**
      * Resolves the {@link UserEntity} associated with the JWT in the current request's

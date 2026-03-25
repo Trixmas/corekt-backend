@@ -28,8 +28,8 @@ public class EncryptionService {
     private final RSAPrivateKey rsaPrivateKey;
 
     public EncryptionService(
-            @Value("${encryption.master-key}") String base64MasterKey,
-            @Value("${encryption.rsa-private-key}") String base64RsaPrivateKey
+        @Value("${encryption.master-key}") String base64MasterKey,
+        @Value("${encryption.rsa-private-key}") String base64RsaPrivateKey
     ) {
         byte[] keyBytes = Base64.getDecoder().decode(base64MasterKey);
         if (keyBytes.length != 32) {
@@ -41,7 +41,7 @@ public class EncryptionService {
 
     private byte[] unwrapDataKey(String base64EncryptedDataKey) throws Exception {
         OAEPParameterSpec oaepParams = new OAEPParameterSpec(
-                "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT
+            "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT
         );
         Cipher rsaCipher = Cipher.getInstance(RSA_ALGORITHM);
         rsaCipher.init(Cipher.DECRYPT_MODE, rsaPrivateKey, oaepParams);
@@ -67,8 +67,8 @@ public class EncryptionService {
         byte[] ciphertext = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
 
         return Base64.getEncoder().encodeToString(iv)
-                + ":"
-                + Base64.getEncoder().encodeToString(ciphertext);
+            + ":"
+            + Base64.getEncoder().encodeToString(ciphertext);
     }
 
     public String decryptFromStorage(String storedValue) throws Exception {
@@ -86,9 +86,9 @@ public class EncryptionService {
     }
 
     public String decryptAndReEncryptApiKey(
-            String base64EncryptedApiKey,
-            String base64EncryptedDataKey,
-            String base64Iv
+        String base64EncryptedApiKey,
+        String base64EncryptedDataKey,
+        String base64Iv
     ) throws Exception {
         byte[] dataKeyBytes = unwrapDataKey(base64EncryptedDataKey);
         String plaintextApiKey = decryptWithDataKey(base64EncryptedApiKey, base64Iv, dataKeyBytes);

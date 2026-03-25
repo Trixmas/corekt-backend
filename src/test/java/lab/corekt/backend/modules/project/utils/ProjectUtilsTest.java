@@ -50,7 +50,7 @@ class ProjectUtilsTest {
     @DisplayName("resolveProject uses the authenticated user to look up the project")
     void testResolveProjectUsesAuthenticatedUser() {
         when(projectRepository.findByIdAndOwner(projectId, currentUser))
-                .thenReturn(Optional.of(project));
+            .thenReturn(Optional.of(project));
 
         ProjectEntity result = projectUtils.resolveProject(projectId);
 
@@ -64,9 +64,9 @@ class ProjectUtilsTest {
     void testResolveProjectPassesCorrectProjectId() {
         UUID otherId = UUID.randomUUID();
         when(projectRepository.findByIdAndOwner(projectId, currentUser))
-                .thenReturn(Optional.of(project));
+            .thenReturn(Optional.of(project));
         when(projectRepository.findByIdAndOwner(otherId, currentUser))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
 
         assertThat(projectUtils.resolveProject(projectId)).isEqualTo(project);
         assertThat(projectUtils.resolveProject(otherId)).isNull();
@@ -79,7 +79,7 @@ class ProjectUtilsTest {
     @DisplayName("resolveProject returns null when the project belongs to a different user")
     void testResolveProjectReturnsNullWhenProjectBelongsToDifferentUser() {
         when(projectRepository.findByIdAndOwner(projectId, currentUser))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
 
         ProjectEntity result = projectUtils.resolveProject(projectId);
 
@@ -91,7 +91,7 @@ class ProjectUtilsTest {
     @DisplayName("resolveProject returns null when project does not exist")
     void testResolveProjectReturnsNullWhenProjectNotFound() {
         when(projectRepository.findByIdAndOwner(any(), eq(currentUser)))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
 
         ProjectEntity result = projectUtils.resolveProject(projectId);
 

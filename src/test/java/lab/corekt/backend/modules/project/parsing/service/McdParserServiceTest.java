@@ -13,7 +13,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.*;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -38,9 +39,9 @@ public class McdParserServiceTest {
         fileEntity.setId(UUID.randomUUID());
 
         List<Object> mockItems = List.of(
-                new MockIhmEntite("Entity1"),
-                new MockIhmRelation("Relation1"),
-                new MockIhmEntite("Entity2")
+            new MockIhmEntite("Entity1"),
+            new MockIhmRelation("Relation1"),
+            new MockIhmEntite("Entity2")
         );
         fileEntity.setFile(serializeTestData(mockItems));
 
@@ -105,18 +106,15 @@ public class McdParserServiceTest {
         verify(parsedDataRepository, never()).saveAll(anyList());
     }
 
-    // --- UTILS ---
-
     private byte[] serializeTestData(List<Object> items) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject("dummy_index_0");
-        oos.writeObject(items);
-        oos.close();
-        return baos.toByteArray();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+        objectOutputStream.writeObject("dummy_index_0");
+        objectOutputStream.writeObject(items);
+        objectOutputStream.close();
+        return byteArrayOutputStream.toByteArray();
     }
 
-    // --- Mock ---
     private record MockIhmEntite(String name) implements Serializable {
         public McdParserServiceTest.MockEntite getEntite() {
             return new McdParserServiceTest.MockEntite(name);

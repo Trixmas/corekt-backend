@@ -7,6 +7,7 @@ import lab.corekt.backend.modules.project.dto.ProjectResponse;
 import lab.corekt.backend.modules.project.dto.UpdateProjectRequest;
 import lab.corekt.backend.modules.project.service.ProjectService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,15 +17,11 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/projects")
+@AllArgsConstructor
 class ProjectController {
 
     private final ProjectService projectService;
     private final AuthContext authContext;
-
-    public ProjectController(ProjectService projectService, AuthContext authContext) {
-        this.projectService = projectService;
-        this.authContext = authContext;
-    }
 
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getAllOwnersProjects() {
