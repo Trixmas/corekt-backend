@@ -20,10 +20,7 @@ import org.springframework.web.client.RestClient;
 import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class MistralService {
@@ -38,15 +35,15 @@ public class MistralService {
     private final InterviewPdfTextExtractor interviewPdfTextExtractor;
 
     public MistralService(
-        EmbeddingModel embeddingModel,
-        ObjectMapper objectMapper,
-        AIAnalysisRepository aiAnalysisRepository,
-        ParsedDataRepository parsedDataRepository,
-        RestClient.Builder restClientBuilder,
-        @Value("${mistral.api.token}") String mistralApiToken,
-        @Value("${mistral.agent.id}") String agentId,
-        @Value("${mistral.agent.version}") Integer agentVersion,
-        @Value("${mistral.api.base-url:https://api.mistral.ai}") String mistralBaseUrl, InterviewPdfTextExtractor interviewPdfTextExtractor) {
+            EmbeddingModel embeddingModel,
+            ObjectMapper objectMapper,
+            AIAnalysisRepository aiAnalysisRepository,
+            ParsedDataRepository parsedDataRepository,
+            RestClient.Builder restClientBuilder,
+            @Value("${mistral.api.token}") String mistralApiToken,
+            @Value("${mistral.agent.id}") String agentId,
+            @Value("${mistral.agent.version}") Integer agentVersion,
+            @Value("${mistral.api.base-url:https://api.mistral.ai}") String mistralBaseUrl, InterviewPdfTextExtractor interviewPdfTextExtractor) {
         this.embeddingModel = embeddingModel;
         this.objectMapper = objectMapper;
         this.aiAnalysisRepository = aiAnalysisRepository;
@@ -54,14 +51,14 @@ public class MistralService {
         this.agentId = agentId;
         this.agentVersion = agentVersion;
         HttpClient httpClient = HttpClient.create()
-            .responseTimeout(Duration.ofSeconds(120)); // custom timeout :
+                .responseTimeout(Duration.ofSeconds(120)); // custom timeout :
         // https://www.baeldung.com/spring-webflux-timeout#1-response-timeout
         this.restClient = restClientBuilder
-            .baseUrl(mistralBaseUrl)
-            .defaultHeader("Content-Type", "application/json")
-            .defaultHeader("Authorization", "Bearer " + mistralApiToken)
-            .requestFactory(new ReactorClientHttpRequestFactory(httpClient))
-            .build();
+                .baseUrl(mistralBaseUrl)
+                .defaultHeader("Content-Type", "application/json")
+                .defaultHeader("Authorization", "Bearer " + mistralApiToken)
+                .requestFactory(new ReactorClientHttpRequestFactory(httpClient))
+                .build();
         this.interviewPdfTextExtractor = interviewPdfTextExtractor;
     }
 
@@ -86,7 +83,7 @@ public class MistralService {
             return objectMapper.readValue(output, InterviewAnalysisResult.class);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to analyze interview with Mistral: invalid JSON response. " +
-                "Output tail: " + summarizeOutputTail(output), e);
+                    "Output tail: " + summarizeOutputTail(output), e);
         } catch (Exception e) {
             System.err.println("Failed to analyze interview with Mistral: " + e.getMessage());
             throw new IllegalStateException("Failed to analyze interview with Mistral", e);
@@ -95,18 +92,18 @@ public class MistralService {
 
     private String requestInterviewAnalysis(String interviewText) throws JsonProcessingException {
         Map<String, Object> requestBody = Map.of(
-            "agent_id", agentId,
-            "agent_version", agentVersion,
-            "inputs", List.of(
-                Map.of(
-                    "role", "user",
-                    "content", interviewText)));
+                "agent_id", agentId,
+                "agent_version", agentVersion,
+                "inputs", List.of(
+                        Map.of(
+                                "role", "user",
+                                "content", interviewText)));
 
         String responseBody = restClient.post()
-            .uri("/v1/conversations")
-            .body(requestBody)
-            .retrieve()
-            .body(String.class);
+                .uri("/v1/conversations")
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
 
         JsonNode root = objectMapper.readTree(responseBody);
         return extractAssistantOutput(root);
@@ -176,18 +173,18 @@ public class MistralService {
         QqoqcpDetails qqoqcpAnalysis = analysisResult.getQqoqcpAnalysis();
         if (qqoqcpAnalysis != null) {
             addParsedDataBatch(batch, interviewFile, DataType.ACTOR,
-                qqoqcpAnalysis.getQui() == null ? null : qqoqcpAnalysis.getQui().getElementsFound());
+                    qqoqcpAnalysis.getQui() == null ? null : qqoqcpAnalysis.getQui().getElementsFound());
             addParsedDataBatch(batch, interviewFile, DataType.ACTION,
-                qqoqcpAnalysis.getQuoi() == null ? null : qqoqcpAnalysis.getQuoi().getElementsFound());
+                    qqoqcpAnalysis.getQuoi() == null ? null : qqoqcpAnalysis.getQuoi().getElementsFound());
         }
 
         List<DetectedUserStory> detectedUserStories = analysisResult.getDetectedUserStories();
         if (detectedUserStories != null) {
             detectedUserStories.stream()
-                .map(this::formatUserStory)
-                .filter(Objects::nonNull)
-                .map(content -> buildParsedData(interviewFile, DataType.US, content))
-                .forEach(batch::add);
+                    .map(this::formatUserStory)
+                    .filter(Objects::nonNull)
+                    .map(content -> buildParsedData(interviewFile, DataType.US, content))
+                    .forEach(batch::add);
         }
 
         if (batch.isEmpty()) {
@@ -260,11 +257,11 @@ public class MistralService {
         }
 
         contents.stream()
-            .filter(Objects::nonNull)
-            .map(String::trim)
-            .filter(content -> !content.isBlank())
-            .distinct()
-            .forEach(content -> batch.add(buildParsedData(interviewFile, dataType, content)));
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(content -> !content.isBlank())
+                .distinct()
+                .forEach(content -> batch.add(buildParsedData(interviewFile, dataType, content)));
     }
 
     private String formatUserStory(DetectedUserStory userStory) {
@@ -293,5 +290,26 @@ public class MistralService {
     }
 
     public record EmbeddingTuple(ParsedDataEntity parsedData, float[] embedding) {
+        @Override
+        public String toString() {
+            return parsedData.getContent();
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(parsedData, Arrays.hashCode(embedding));
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            EmbeddingTuple other = (EmbeddingTuple) obj;
+            return Objects.equals(parsedData, other.parsedData) && Arrays.equals(embedding, other.embedding);
+        }
     }
 }
