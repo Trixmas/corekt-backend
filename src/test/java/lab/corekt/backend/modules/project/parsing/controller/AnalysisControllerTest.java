@@ -14,6 +14,7 @@ import lab.corekt.backend.modules.project.parsing.service.DataLinkService;
 import lab.corekt.backend.modules.project.utils.ProjectUtils;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
+import lab.corekt.backend.modules.project.versions.service.VersionService;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.utils.BaseControllerTest;
@@ -56,6 +57,9 @@ class AnalysisControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private VersionRepository versionRepository;
+
+    @MockitoBean
+    private VersionService versionService;
 
     @MockitoBean
     private DataLinkService dataLinkService;
