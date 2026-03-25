@@ -31,27 +31,16 @@ class BpmnParserServiceTest {
     private static final String COMPLEX_BPMN;
     private static final String EMPTY_BPMN;
 
-  @InjectMocks
-  private BpmnParserService parser;
-
-  @Captor
-  private org.mockito.ArgumentCaptor<List<ParsedDataEntity>> parsedDataCaptor;
-
-  private static final String SIMPLE_BPMN;
-  private static final String COLLABORATION_BPMN;
-  private static final String NO_TASKS_BPMN;
-  private static final String COMPLEX_BPMN;
-  private static final String EMPTY_BPMN;
-
-  static {
-    try {
-      SIMPLE_BPMN = loadResourceFile("files/test_bpmn.bpmn");
-      COLLABORATION_BPMN = loadResourceFile("files/collaboration_bpmn.bpmn");
-      NO_TASKS_BPMN = loadResourceFile("files/no_tasks_bpmn.bpmn");
-      COMPLEX_BPMN = loadResourceFile("files/complex_bpmn.bpmn");
-      EMPTY_BPMN = loadResourceFile("files/empty_bpmn.bpmn");
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to load test resources", e);
+    static {
+        try {
+            SIMPLE_BPMN = loadResourceFile("files/test_bpmn.bpmn");
+            COLLABORATION_BPMN = loadResourceFile("files/collaboration_bpmn.bpmn");
+            NO_TASKS_BPMN = loadResourceFile("files/no_tasks_bpmn.bpmn");
+            COMPLEX_BPMN = loadResourceFile("files/complex_bpmn.bpmn");
+            EMPTY_BPMN = loadResourceFile("files/empty_bpmn.bpmn");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load test resources", e);
+        }
     }
 
     @Mock
