@@ -4,6 +4,8 @@ import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.auth.service.JwtService;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
+import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
+import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
@@ -51,6 +53,12 @@ class FileControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private AuthContext authContext;
+
+    @MockitoBean
+    private BpmnParserService bpmnParserService;
+
+    @MockitoBean
+    private McdParserService mcdParserService;
 
     private UUID projectId;
     private UUID versionId;

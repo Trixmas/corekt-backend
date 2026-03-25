@@ -34,9 +34,6 @@ public class DataLinkEntity {
     @Column
     private Integer confidenceScore;
 
-    @Column
-    private Integer score;
-
     @Column(columnDefinition = "TEXT")
     private String justification;
 
