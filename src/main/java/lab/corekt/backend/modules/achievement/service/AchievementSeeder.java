@@ -239,6 +239,25 @@ public class AchievementSeeder implements ApplicationRunner {
                           "requirements": [["perfect_analysis_on_first_version"]]
                         }
                         """
+            ),
+            new AchievementEntity(
+                    "perfect_on_last_version",
+                    "Talk About Suspense!",
+                    "Hit the perfect score on your very last attempt.",
+                    false,
+                    """
+                        {
+                          "criteria": {
+                            "perfect_analysis_on_last_version": {
+                              "trigger": "ANALYSIS_COMPLETED",
+                              "conditions": {
+                                "total_perfect_projects_last": { "min": 1 }
+                              }
+                            }
+                          },
+                          "requirements": [["perfect_analysis_on_last_version"]]
+                        }
+                        """
             )
         );
     }

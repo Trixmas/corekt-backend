@@ -23,6 +23,9 @@ import java.util.UUID;
 @Service
 @AllArgsConstructor
 public class VersionService {
+
+    private static final int MAX_NUMBER_VERSION = 10;
+
     private final VersionRepository versionRepository;
     private final ProjectRepository projectRepository;
     private final DataLinkRepository dataLinkRepository;
@@ -117,6 +120,20 @@ public class VersionService {
                 .stream()
                 .map(project -> {
                     if (getProjectScore(project) >= 90 && project.getVersions().size() == 1) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                })
+                .reduce(0, Integer::sum);
+    }
+
+    @Transactional(readOnly = true)
+    public int countProjectsWithPerfectAnalysisAtLastVersion(UserEntity user) {
+        return projectRepository.findByOwner(user)
+                .stream()
+                .map(project -> {
+                    if (getProjectScore(project) >= 90 && project.getVersions().size() == MAX_NUMBER_VERSION) {
                         return 1;
                     } else {
                         return 0;

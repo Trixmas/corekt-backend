@@ -21,4 +21,8 @@ public record AchievementCondition(String key, int value) {
     public static AchievementCondition totalProjectWithPerfectAnalysisAtFirst(int value) {
         return new AchievementCondition("total_perfect_projects_first", value);
     }
+
+    public static AchievementCondition totalProjectWithPerfectAnalysisAtLast(int value) {
+        return new AchievementCondition("total_perfect_projects_last", value);
+    }
 }
