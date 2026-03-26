@@ -2,7 +2,6 @@ package lab.corekt.backend.modules.project.parsing.controller;
 
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.dto.DataLinkResponse;
-import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
 import lab.corekt.backend.modules.project.parsing.enums.VersionStatus;
 import lab.corekt.backend.modules.project.parsing.service.AnalysisService;
 import lab.corekt.backend.modules.project.parsing.service.DataLinkService;
@@ -44,7 +43,7 @@ public class AnalysisController {
      * @return list of generated data links
      * @throws ResponseStatusException if project or version not found
      */
-    @PostMapping("/start")
+    @GetMapping("/start")
     public ResponseEntity<List<DataLinkResponse>> buildAnalysis(
             @PathVariable UUID projectId,
             @PathVariable UUID versionId
@@ -69,8 +68,8 @@ public class AnalysisController {
     /**
      * Deletes a specific data link from a project version.
      *
-     * @param projectId the UUID of the project
-     * @param versionId the UUID of the version
+     * @param projectId  the UUID of the project
+     * @param versionId  the UUID of the version
      * @param datalinkId the UUID of the data link to delete
      * @return no content response on success
      * @throws ResponseStatusException if project, version, or data link not found
