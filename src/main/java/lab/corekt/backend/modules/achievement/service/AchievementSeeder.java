@@ -29,6 +29,10 @@ public class AchievementSeeder implements ApplicationRunner {
             });
     }
 
+    /**
+     * Initializes the comprehensive list of application achievements.
+     * @return A List of AchievementEntity to be persisted during the database seeding process.
+     */
     private List<AchievementEntity> buildAchievements() {
         return List.of(
             new AchievementEntity(

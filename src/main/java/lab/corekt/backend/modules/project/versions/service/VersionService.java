@@ -75,14 +75,17 @@ public class VersionService {
         versionRepository.delete(entity);
     }
 
+    @Transactional
     public void setVersionStatus(VersionEntity version, VersionStatus status) {
         version.setStatus(status);
         versionRepository.save(version);
     }
 
+    @Transactional
     public int countByProjectOwnerAndStatus(UserEntity user, VersionStatus status) {
         return (int) versionRepository.countByProjectOwnerAndStatus(user, status);
     }
+
 
     public float getVersionScore(VersionEntity version) {
         List<DataLinkEntity> dataLinks = dataLinkRepository.findByVersionId(version.getId());
@@ -93,9 +96,11 @@ public class VersionService {
         return sumConfidenceScore / dataLinks.size();
     }
 
+
     public VersionEntity getLatestVersion(ProjectEntity project) {
         return versionRepository.findTopByProjectOrderByVersionNumberDesc(project).orElse(null);
     }
+
 
     public float getProjectScore(ProjectEntity project) {
         return getVersionScore(getLatestVersion(project));
