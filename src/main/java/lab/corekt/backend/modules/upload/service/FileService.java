@@ -45,9 +45,8 @@ public class FileService {
             FileEntity fileEntity = new FileEntity(fileType, file.getOriginalFilename());
             fileEntity.setVersion(version);
             fileEntity.setFile(file.getBytes());
-
+            processFileByType(fileType, fileEntity);
             FileEntity savedFile = fileRepository.save(fileEntity);
-            processFileByType(fileType, savedFile);
             return savedFile;
         } catch (IOException e) {
             throw new IOException("Failed to read file content", e);
