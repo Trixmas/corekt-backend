@@ -25,6 +25,7 @@ import java.util.UUID;
 public class VersionService {
 
     private static final int MAX_NUMBER_VERSION = 10;
+    private static final int PERFECT_ANALYSIS_RATE = 90;
 
     private final VersionRepository versionRepository;
     private final ProjectRepository projectRepository;
@@ -102,44 +103,26 @@ public class VersionService {
 
     @Transactional(readOnly = true)
     public int countProjectsWithPerfectAnalysis(UserEntity user) {
-        return projectRepository.findByOwner(user)
+        return (int) projectRepository.findByOwner(user)
                 .stream()
-                .map(project -> {
-                    if (getProjectScore(project) >= 90) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                })
-                .reduce(0, Integer::sum);
+                .filter(project -> getProjectScore(project) >= PERFECT_ANALYSIS_RATE)
+                .count();
     }
 
     @Transactional(readOnly = true)
     public int countProjectsWithPerfectAnalysisAtFirst(UserEntity user) {
-        return projectRepository.findByOwner(user)
+        return (int) projectRepository.findByOwner(user)
                 .stream()
-                .map(project -> {
-                    if (getProjectScore(project) >= 90 && project.getVersions().size() == 1) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                })
-                .reduce(0, Integer::sum);
+                .filter(project -> project.getVersions().size() == 1 && getProjectScore(project) >= PERFECT_ANALYSIS_RATE)
+                .count();
     }
 
     @Transactional(readOnly = true)
     public int countProjectsWithPerfectAnalysisAtLastVersion(UserEntity user) {
-        return projectRepository.findByOwner(user)
+        return (int) projectRepository.findByOwner(user)
                 .stream()
-                .map(project -> {
-                    if (getProjectScore(project) >= 90 && project.getVersions().size() == MAX_NUMBER_VERSION) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                })
-                .reduce(0, Integer::sum);
+                .filter(project -> project.getVersions().size() == MAX_NUMBER_VERSION && getProjectScore(project) >= PERFECT_ANALYSIS_RATE)
+                .count();
     }
 
     private VersionEntity getVersionEntity(ProjectEntity project, UUID versionId) {
