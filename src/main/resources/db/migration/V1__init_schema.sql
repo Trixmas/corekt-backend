@@ -61,11 +61,12 @@ CREATE TABLE version
 
 CREATE TABLE file
 (
-    file_id    UUID        NOT NULL,
-    file_type  VARCHAR(50) NOT NULL,
-    file_name  VARCHAR(50) NOT NULL,
-    file       BYTEA,
-    version_id UUID,
+    file_id           UUID        NOT NULL,
+    file_type         VARCHAR(50) NOT NULL,
+    file_name         VARCHAR(50) NOT NULL,
+    file              BYTEA,
+    processing_status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    version_id        UUID,
     PRIMARY KEY (file_id),
     UNIQUE (version_id, file_type),
     FOREIGN KEY (version_id) REFERENCES version (version_id)
