@@ -1,54 +1,92 @@
 # Corekt Backend
 
-- Swagger: http://localhost:8080/api/v1/swagger-ui/index.html (API Documentation)
+Corekt is a coherence tool.
+
+- Swagger: http://localhost:8080/api/v1/swagger-ui/index.html (dev only)
 - Allowed origins (CORS): http://localhost:3000
 - Contributing guidelines: [Guidelines](CONTRIBUTING.md)
 
-This project uses a containerized PostgreSQL database for developement and testing. Make sure to have Docker installed.
+## Prerequisites
 
-# Getting Started
+- Java 25 with Maven
+- Docker Desktop. Download it from [here](https://www.docker.com/products/docker-desktop/)
+- IDE, preferably IntelliJ IDEA. Download it from [here](https://www.jetbrains.com/idea/)
 
-### Reference Documentation
+## Environments
 
-For further reference, please consider the following sections:
+### Development
 
-* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)
-* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/4.0.3/maven-plugin)
-* [Create an OCI image](https://docs.spring.io/spring-boot/4.0.3/maven-plugin/build-image.html)
-* [Spring Boot Testcontainers support](https://docs.spring.io/spring-boot/4.0.3/reference/testing/testcontainers.html#testing.testcontainers)
-* [Testcontainers Postgres Module Reference Guide](https://java.testcontainers.org/modules/databases/postgres/)
+### 1. Environment Variables
+
+Update the `application.properties` file with your environment variables. The create the database container witl the following command: 
+
+```bash
+docker compose up -d postgres
+```
+
+Once your database is up and running, you can run the application with the following command:
+```bash
+mvn spring-boot:run
+```
+
+### Production
+
+### 1. Environment Variables
+
+Create a file named `.env` in the root directory of the project.
+
+```env
+# Database
+SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/corekt
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=yourpassword
+
+# JWT
+JWT_SECRET=your_secret_minimum_256_bits
+JWT_EXPIRATION=3600000
+JWT_REFRESH_EXPIRATION=604800000
+
+# Encryption
+ENCRYPTION_MASTER_KEY=your_master_key
+ENCRYPTION_RSA_PRIVATE_KEY=your_rsa_private_key
+
+# Mistral AI
+MISTRAL_API_TOKEN=your_mistral_token
+MISTRAL_AGENT_ID=your_agent_id
+MISTRAL_AGENT_VERSION=1
+SPRING_AI_MISTRALAI_API_KEY=your_mistral_api_key
+
+# LDAP (JumpCloud)
+JUMPCLOUD_LDAP_URL=ldaps://ldap.jumpcloud.com:636
+JUMPCLOUD_LDAP_BASE=your_ldap_base
+JUMPCLOUD_LDAP_USERDN=your_ldap_userdn
+JUMPCLOUD_LDAP_PASSWORD=your_ldap_password
+
+# CORS
+CORS_ALLOWED_ORIGINS=https://yourdomain.com
+
+# Rate Limiting
+RATELIMIT_REQUESTS=50
+RATELIMIT_DURATION_MINUTES=1
+
+# Taiga
+TAIGA_API_BASE_URL=https://api.taiga.io/api/v1
+```
+
+### 2. Build and run
+
+Run the following to build and run the application. The database will be created automatically.
+
+```bash
+docker compose up -d
+```
+
+## Reference Documentation
+
+* [Apache Maven](https://maven.apache.org/guides/index.html)
+* [Spring Boot Maven Plugin](https://docs.spring.io/spring-boot/4.0.3/maven-plugin)
 * [Spring Data JPA](https://docs.spring.io/spring-boot/4.0.3/reference/data/sql.html#data.sql.jpa-and-spring-data)
-* [HTTP Client](https://docs.spring.io/spring-boot/4.0.3/reference/io/rest-client.html#io.rest-client.restclient)
-* [Testcontainers](https://java.testcontainers.org/)
-* [Validation](https://docs.spring.io/spring-boot/4.0.3/reference/io/validation.html)
 * [Spring Web](https://docs.spring.io/spring-boot/4.0.3/reference/web/servlet.html)
-
-### Guides
-
-The following guides illustrate how to use some features concretely:
-
-* [Accessing Data with JPA](https://spring.io/guides/gs/accessing-data-jpa/)
-* [Validation](https://spring.io/guides/gs/validating-form-input/)
-* [Building a RESTful Web Service](https://spring.io/guides/gs/rest-service/)
-* [Serving Web Content with Spring MVC](https://spring.io/guides/gs/serving-web-content/)
-* [Building REST services with Spring](https://spring.io/guides/tutorials/rest/)
-
-### Testcontainers support
-
-This project
-uses [Testcontainers at development time](https://docs.spring.io/spring-boot/4.0.3/reference/features/dev-services.html#features.dev-services.testcontainers).
-
-Testcontainers has been configured to use the following Docker images:
-
-* [`postgres:latest`](https://hub.docker.com/_/postgres)
-
-Please review the tags of the used images and set them to the same as you're running in production.
-
-### Maven Parent overrides
-
-Due to Maven's design, elements are inherited from the parent POM to the project POM.
-While most of the inheritance is fine, it also inherits unwanted elements like `<license>` and `<developers>` from the
-parent.
-To prevent this, the project POM contains empty overrides for these elements.
-If you manually switch to a different parent and actually want the inheritance, you need to remove those overrides.
-
+* [Testcontainers](https://java.testcontainers.org/)
+* [Testcontainers Postgres](https://java.testcontainers.org/modules/databases/postgres/)
+* [Validation](https://docs.spring.io/spring-boot/4.0.3/reference/io/validation.html)

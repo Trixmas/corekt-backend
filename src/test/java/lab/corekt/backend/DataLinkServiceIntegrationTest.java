@@ -14,6 +14,7 @@ import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
+import lab.corekt.backend.modules.upload.enums.ProcessingStatus;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.modules.user.repository.UserRepository;
@@ -22,8 +23,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -65,13 +66,13 @@ class DataLinkServiceIntegrationTest {
     @BeforeEach
     void setUp() {
         when(mistralService.embedParsedData(org.mockito.ArgumentMatchers.anyList()))
-            .thenAnswer(invocation -> {
-                @SuppressWarnings("unchecked")
-                List<ParsedDataEntity> parsedData = invocation.getArgument(0, List.class);
-                return parsedData.stream()
-                    .map(data -> new MistralService.EmbeddingTuple(data, embeddingFor(data.getContent())))
-                    .toList();
-            });
+                .thenAnswer(invocation -> {
+                    @SuppressWarnings("unchecked")
+                    List<ParsedDataEntity> parsedData = invocation.getArgument(0, List.class);
+                    return parsedData.stream()
+                            .map(data -> new MistralService.EmbeddingTuple(data, embeddingFor(data.getContent())))
+                            .toList();
+                });
     }
 
     @Test
@@ -89,7 +90,7 @@ class DataLinkServiceIntegrationTest {
         assertThat(embeddingsByFileType.get(FileType.INTERVIEW).getFirst().parsedData().getContent()).isEqualTo("manager");
         assertThat(embeddingsByFileType.get(FileType.BPMN).getFirst().parsedData().getContent()).isEqualTo("manager");
         assertThat(embeddingsByFileType.get(FileType.US).getFirst().parsedData().getContent())
-            .contains("En tant que manager");
+                .contains("En tant que manager");
         assertThat(embeddingsByFileType.get(FileType.MCD).getFirst().parsedData().getContent()).isEqualTo("absence");
 
         for (List<MistralService.EmbeddingTuple> embeddings : embeddingsByFileType.values()) {
@@ -110,12 +111,12 @@ class DataLinkServiceIntegrationTest {
         assertThat(savedLinks).allMatch(link -> link.getId() != null);
 
         long exactLinks = savedLinks.stream()
-            .filter(link -> link.getMatch() == MatchType.EXACT)
-            .count();
+                .filter(link -> link.getMatch() == MatchType.EXACT)
+                .count();
 
         long missingLinks = savedLinks.stream()
-            .filter(link -> link.getMatch() == MatchType.MISSING)
-            .count();
+                .filter(link -> link.getMatch() == MatchType.MISSING)
+                .count();
 
         assertThat(exactLinks).isEqualTo(2);
         assertThat(missingLinks).isEqualTo(2);
@@ -124,16 +125,16 @@ class DataLinkServiceIntegrationTest {
 
         assertThat(persistedLinks).hasSize(4);
         assertThat(persistedLinks)
-            .filteredOn(link -> link.getMatch() == MatchType.EXACT)
-            .anyMatch(link -> "manager".equals(link.getSourceParsedData().getContent())
-                && "manager".equals(link.getTargetParsedData().getContent()));
+                .filteredOn(link -> link.getMatch() == MatchType.EXACT)
+                .anyMatch(link -> "manager".equals(link.getSourceParsedData().getContent())
+                        && "manager".equals(link.getTargetParsedData().getContent()));
         assertThat(persistedLinks)
-            .filteredOn(link -> link.getMatch() == MatchType.MISSING)
-            .extracting(link -> link.getSourceParsedData().getContent())
-            .containsExactlyInAnyOrder(
-                "En tant que manager, je veux valider une demande, afin de gerer les absences",
-                "absence"
-            );
+                .filteredOn(link -> link.getMatch() == MatchType.MISSING)
+                .extracting(link -> link.getSourceParsedData().getContent())
+                .containsExactlyInAnyOrder(
+                        "En tant que manager, je veux valider une demande, afin de gerer les absences",
+                        "absence"
+                );
     }
 
     private VersionEntity createVersionWithParsedData() {
@@ -147,10 +148,10 @@ class DataLinkServiceIntegrationTest {
         FileEntity mcdFile = saveFile(version, FileType.MCD, "mcd");
 
         parsedDataRepository.saveAll(List.of(
-            parsedData(interviewFile, DataType.ACTOR, "manager"),
-            parsedData(bpmnFile, DataType.ACTOR, "manager"),
-            parsedData(usFile, DataType.US, "En tant que manager, je veux valider une demande, afin de gerer les absences"),
-            parsedData(mcdFile, DataType.ENTITY, "absence")
+                parsedData(interviewFile, DataType.ACTOR, "manager"),
+                parsedData(bpmnFile, DataType.ACTOR, "manager"),
+                parsedData(usFile, DataType.US, "En tant que manager, je veux valider une demande, afin de gerer les absences"),
+                parsedData(mcdFile, DataType.ENTITY, "absence")
         ));
 
         return version;
@@ -159,6 +160,7 @@ class DataLinkServiceIntegrationTest {
     private FileEntity saveFile(VersionEntity version, FileType fileType, String fileName) {
         FileEntity file = new FileEntity(fileType, fileName);
         file.setVersion(version);
+        file.setProcessingStatus(ProcessingStatus.PROCESSED);
         return fileRepository.save(file);
     }
 
@@ -174,10 +176,10 @@ class DataLinkServiceIntegrationTest {
 
     private float[] embeddingFor(String content) {
         return switch (content) {
-            case "manager" -> new float[] {1.0f, 0.0f};
+            case "manager" -> new float[]{1.0f, 0.0f};
             case "En tant que manager, je veux valider une demande, afin de gerer les absences" ->
-                new float[] {0.0f, 1.0f};
-            case "absence" -> new float[] {0.5f, 0.5f};
+                    new float[]{0.0f, 1.0f};
+            case "absence" -> new float[]{0.5f, 0.5f};
             default -> throw new IllegalArgumentException("Unexpected parsed data content: " + content);
         };
     }

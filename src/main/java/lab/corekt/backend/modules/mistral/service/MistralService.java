@@ -12,10 +12,12 @@ import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepositor
 import lab.corekt.backend.modules.project.report.entity.AIAnalysisEntity;
 import lab.corekt.backend.modules.project.report.repository.AIAnalysisRepository;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
+import lab.corekt.backend.modules.upload.repository.FileRepository;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.ReactorClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 import reactor.netty.http.client.HttpClient;
 
@@ -39,20 +41,22 @@ public class MistralService {
             ObjectMapper objectMapper,
             AIAnalysisRepository aiAnalysisRepository,
             ParsedDataRepository parsedDataRepository,
-            RestClient.Builder restClientBuilder,
+            FileRepository fileRepository, RestClient.Builder restClientBuilder,
             @Value("${mistral.api.token}") String mistralApiToken,
             @Value("${mistral.agent.id}") String agentId,
             @Value("${mistral.agent.version}") Integer agentVersion,
-            @Value("${mistral.api.base-url:https://api.mistral.ai}") String mistralBaseUrl, InterviewPdfTextExtractor interviewPdfTextExtractor) {
+            @Value("${mistral.api.base-url:https://api.mistral.ai}")
+            String mistralBaseUrl,
+            InterviewPdfTextExtractor interviewPdfTextExtractor
+    ) {
         this.embeddingModel = embeddingModel;
         this.objectMapper = objectMapper;
         this.aiAnalysisRepository = aiAnalysisRepository;
         this.parsedDataRepository = parsedDataRepository;
         this.agentId = agentId;
         this.agentVersion = agentVersion;
-        HttpClient httpClient = HttpClient.create()
-                .responseTimeout(Duration.ofSeconds(120)); // custom timeout :
-        // https://www.baeldung.com/spring-webflux-timeout#1-response-timeout
+        HttpClient httpClient = HttpClient.create().responseTimeout(Duration.ofSeconds(120));
+
         this.restClient = restClientBuilder
                 .baseUrl(mistralBaseUrl)
                 .defaultHeader("Content-Type", "application/json")
@@ -149,18 +153,19 @@ public class MistralService {
         AIAnalysisEntity savedAnalysis = saveInterviewAnalysis(interviewFile, analysisResult);
 
         saveInterviewParsedData(interviewFile, analysisResult);
-
         return savedAnalysis;
     }
 
+    @Transactional
     public void processInterview(FileEntity file) {
         String interviewText = interviewPdfTextExtractor.extractText(file);
         analyzeAndSaveInterview(file, interviewText);
-
     }
 
-    public List<ParsedDataEntity> saveInterviewParsedData(FileEntity interviewFile,
-                                                          InterviewAnalysisResult analysisResult) {
+    public List<ParsedDataEntity> saveInterviewParsedData(
+            FileEntity interviewFile,
+            InterviewAnalysisResult analysisResult
+    ) {
         if (interviewFile == null) {
             throw new IllegalArgumentException("Interview file must not be null");
         }
