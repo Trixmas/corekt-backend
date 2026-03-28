@@ -30,9 +30,6 @@ import lab.corekt.backend.modules.project.parsing.enums.Severity;
 import lab.corekt.backend.modules.project.versions.dto.VersionDetailsResponse;
 
 
-/**
- * La génération du pdf étant complexe à stylisée, nous nous sommes aidé d'un LLM
- */
 @Service
 public class VersionPdfExportService {
 
