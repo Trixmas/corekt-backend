@@ -1,13 +1,16 @@
 package lab.corekt.backend.modules.project.versions.service;
 
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
+import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
 import lab.corekt.backend.modules.project.parsing.enums.VersionStatus;
 import lab.corekt.backend.modules.project.parsing.repository.DataLinkRepository;
+import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.dto.VersionDetailsResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
+import lab.corekt.backend.modules.user.entity.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +38,9 @@ class VersionServiceTest {
 
     @Mock
     private DataLinkRepository dataLinkRepository;
+
+    @Mock
+    private ProjectRepository projectRepository;
 
     @InjectMocks
     private VersionService versionService;
@@ -239,5 +245,129 @@ class VersionServiceTest {
         assertThat(response.getIssues().getMinor()).isEqualTo(0);
         assertThat(response.getIssues().getMajor()).isEqualTo(0);
         assertThat(response.getIssues().getCritical()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("Should calculate version score correctly based on data links")
+    void testGetVersionScoreCalculatesAverage() {
+        VersionEntity version = mock(VersionEntity.class);
+        DataLinkEntity link1 = mock(DataLinkEntity.class);
+        DataLinkEntity link2 = mock(DataLinkEntity.class);
+
+        when(version.getId()).thenReturn(UUID.randomUUID());
+        when(link1.getConfidenceScore()).thenReturn(80);
+        when(link2.getConfidenceScore()).thenReturn(40);
+        when(dataLinkRepository.findByVersionId(version.getId())).thenReturn(List.of(link1, link2));
+
+        float score = versionService.getVersionScore(version);
+
+        assertThat(score).isEqualTo(60);
+    }
+
+    @Test
+    @DisplayName("Should return the latest version of a project")
+    void testGetLatestVersionReturnsTopByNumber() {
+        VersionEntity vLatest = buildVersion("Latest", 10);
+        when(versionRepository.findTopByProjectOrderByVersionNumberDesc(project))
+                .thenReturn(Optional.of(vLatest));
+
+        VersionEntity result = versionService.getLatestVersion(project);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getVersionNumber()).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("Should count one projects with perfect analysis correctly")
+    void testCountProjectsWithOnePerfectAnalysis() {
+        UserEntity user = mock(UserEntity.class);
+        ProjectEntity p1 = mock(ProjectEntity.class);
+        ProjectEntity p2 = mock(ProjectEntity.class);
+
+        VersionEntity v1p1 = mock(VersionEntity.class);
+        VersionEntity v1p2 = mock(VersionEntity.class);
+        UUID v1p1Id = UUID.randomUUID();
+        UUID v1p2Id = UUID.randomUUID();
+
+        when(projectRepository.findByOwner(user)).thenReturn(List.of(p1, p2));
+        when(versionRepository.findTopByProjectOrderByVersionNumberDesc(p1))
+                .thenReturn(Optional.of(v1p1));
+        when(v1p1.getId()).thenReturn(v1p1Id);
+
+        when(versionRepository.findTopByProjectOrderByVersionNumberDesc(p2))
+                .thenReturn(Optional.of(v1p2));
+        when(v1p2.getId()).thenReturn(v1p2Id);
+
+        DataLinkEntity perfectLink = mock(DataLinkEntity.class);
+        when(perfectLink.getConfidenceScore()).thenReturn(100);
+        when(dataLinkRepository.findByVersionId(v1p1Id))
+                .thenReturn(List.of(perfectLink));
+
+        DataLinkEntity dataLink = mock(DataLinkEntity.class);
+        when(dataLink.getConfidenceScore()).thenReturn(60);
+        when(dataLinkRepository.findByVersionId(v1p2Id))
+                .thenReturn(List.of(dataLink));
+
+        int count = versionService.countProjectsWithPerfectAnalysis(user);
+
+        assertThat(count).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Should count many projects with perfect analysis correctly")
+    void testCountProjectsWithManyPerfectAnalysis() {
+        UserEntity user = mock(UserEntity.class);
+        ProjectEntity p1 = mock(ProjectEntity.class);
+        ProjectEntity p2 = mock(ProjectEntity.class);
+
+        VersionEntity v1p1 = mock(VersionEntity.class);
+        VersionEntity v1p2 = mock(VersionEntity.class);
+        UUID v1p1Id = UUID.randomUUID();
+        UUID v1p2Id = UUID.randomUUID();
+
+        when(projectRepository.findByOwner(user)).thenReturn(List.of(p1, p2));
+        when(versionRepository.findTopByProjectOrderByVersionNumberDesc(p1))
+                .thenReturn(Optional.of(v1p1));
+        when(v1p1.getId()).thenReturn(v1p1Id);
+
+        when(versionRepository.findTopByProjectOrderByVersionNumberDesc(p2))
+                .thenReturn(Optional.of(v1p2));
+        when(v1p2.getId()).thenReturn(v1p2Id);
+
+        DataLinkEntity perfectLink1 = mock(DataLinkEntity.class);
+        when(perfectLink1.getConfidenceScore()).thenReturn(100);
+        when(dataLinkRepository.findByVersionId(v1p1Id))
+                .thenReturn(List.of(perfectLink1));
+
+        DataLinkEntity perfectLink2 = mock(DataLinkEntity.class);
+        when(perfectLink2.getConfidenceScore()).thenReturn(95);
+        when(dataLinkRepository.findByVersionId(v1p2Id))
+                .thenReturn(List.of(perfectLink2));
+
+        int count = versionService.countProjectsWithPerfectAnalysis(user);
+
+        assertThat(count).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Should count perfect analysis at first version")
+    void testCountProjectsWithPerfectAnalysisAtFirst() {
+        UserEntity user = mock(UserEntity.class);
+        ProjectEntity p1 = mock(ProjectEntity.class);
+        VersionEntity v1 = mock(VersionEntity.class);
+
+        when(projectRepository.findByOwner(user)).thenReturn(List.of(p1));
+
+        when(p1.getVersions()).thenReturn(List.of(v1));
+        when(versionRepository.findTopByProjectOrderByVersionNumberDesc(p1)).thenReturn(Optional.of(v1));
+
+        // Perfect score
+        DataLinkEntity d1 = mock(DataLinkEntity.class);
+        when(d1.getConfidenceScore()).thenReturn(100);
+        when(dataLinkRepository.findByVersionId(v1.getId())).thenReturn(List.of(d1));
+
+        int count = versionService.countProjectsWithPerfectAnalysisAtFirst(user);
+
+        assertThat(count).isEqualTo(1);
     }
 }

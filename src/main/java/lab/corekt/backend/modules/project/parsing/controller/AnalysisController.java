@@ -1,5 +1,10 @@
 package lab.corekt.backend.modules.project.parsing.controller;
 
+import lab.corekt.backend.modules.achievement.service.helper.AchievementResponseHelper;
+import lab.corekt.backend.modules.achievement.trigger.AchievementCondition;
+import lab.corekt.backend.modules.achievement.trigger.AchievementTrigger;
+import lab.corekt.backend.modules.achievement.trigger.TriggerContext;
+import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.dto.DataLinkResponse;
 import lab.corekt.backend.modules.project.parsing.enums.VersionStatus;
@@ -9,6 +14,7 @@ import lab.corekt.backend.modules.project.utils.ProjectUtils;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
 import lab.corekt.backend.modules.project.versions.service.VersionService;
+import lab.corekt.backend.modules.user.entity.UserEntity;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +38,9 @@ public class AnalysisController {
     private final DataLinkService dataLinkService;
     private final VersionService versionService;
     private final AnalysisService analysisService;
+    private final AuthContext authContext;
+    private final AchievementResponseHelper achievementResponseHelper;
+
 
     /**
      * Initiates and builds analysis for a project version.
@@ -52,13 +61,27 @@ public class AnalysisController {
         versionService.setVersionStatus(version, VersionStatus.IN_PROGRESS);
 
         try {
+            UserEntity user = authContext.getCurrentUser();
             List<DataLinkResponse> dataLinksResponse = dataLinkService.saveDataLinks(version)
                     .stream()
                     .map(DataLinkResponse::new)
                     .toList();
 
             versionService.setVersionStatus(version, VersionStatus.COMPLETED);
-            return ResponseEntity.ok(dataLinksResponse);
+
+            int totalAnalysesCompleteCount = versionService.countByProjectOwnerAndStatus(user, VersionStatus.COMPLETED);
+            int totalProjectsWithPerfectAnalysis = versionService.countProjectsWithPerfectAnalysis(user);
+            int totalProjectWithPerfectAnalysisAtFirst = versionService.countProjectsWithPerfectAnalysisAtFirst(user);
+            int totalProjectWithPerfectAnalysisAtLast = versionService.countProjectsWithPerfectAnalysisAtLastVersion(user);
+
+            return achievementResponseHelper.ok(dataLinksResponse,
+                    TriggerContext.of(AchievementTrigger.ANALYSIS_COMPLETED,
+                            AchievementCondition.totalAnalysesCount(totalAnalysesCompleteCount),
+                            AchievementCondition.totalProjectsWithPerfectAnalysis(totalProjectsWithPerfectAnalysis),
+                            AchievementCondition.totalProjectWithPerfectAnalysisAtFirst(totalProjectWithPerfectAnalysisAtFirst),
+                            AchievementCondition.totalProjectWithPerfectAnalysisAtLast(totalProjectWithPerfectAnalysisAtLast)
+                    )
+            );
         } catch (Exception e) {
             versionService.setVersionStatus(version, VersionStatus.FAILED);
             throw e;
