@@ -29,6 +29,10 @@ public class AchievementSeeder implements ApplicationRunner {
             });
     }
 
+    /**
+     * Initializes the comprehensive list of application achievements.
+     * @return A List of AchievementEntity to be persisted during the database seeding process.
+     */
     private List<AchievementEntity> buildAchievements() {
         return List.of(
             new AchievementEntity(
@@ -125,6 +129,139 @@ public class AchievementSeeder implements ApplicationRunner {
                       "requirements": [["created_one_hundred_projects"]]
                     }
                     """
+            ),
+            new AchievementEntity(
+                    "first_analysis",
+                    "First Insight",
+                    "Complete your very first functional analysis.",
+                    false,
+                    """
+                        {
+                          "criteria": {
+                            "completed_first_analysis": {
+                              "trigger": "ANALYSIS_COMPLETED",
+                              "conditions": {
+                                "total_analyses_count": { "min": 1 }
+                              }
+                            }
+                          },
+                          "requirements": [["completed_first_analysis"]]
+                        }
+                        """
+            ),
+            new AchievementEntity(
+                    "first_perfect_analysis",
+                    "Surgical Precision",
+                    "Reach a score above 90%",
+                    false,
+                    """
+                        {
+                          "criteria": {
+                            "complete_first_perfect_analysis": {
+                              "trigger": "ANALYSIS_COMPLETED",
+                              "conditions": {
+                                "total_perfect_projects_count": { "min": 1 }
+                              }
+                            }
+                          },
+                          "requirements": [["complete_first_perfect_analysis"]]
+                        }
+                        """
+            ),
+            new AchievementEntity(
+                    "perfect_analysis_count_10",
+                    "Consistent Excellence",
+                    "Reach a score above 90% on 10 different projects.",
+                    false,
+                    """
+                        {
+                          "criteria": {
+                            "complete_ten_perfect_analyses": {
+                              "trigger": "ANALYSIS_COMPLETED",
+                              "conditions": {
+                                "total_perfect_projects_count": { "min": 10 }
+                              }
+                            }
+                          },
+                          "requirements": [["complete_ten_perfect_analyses"]]
+                        }
+                        """
+            ),
+            new AchievementEntity(
+                    "perfect_analysis_count_25",
+                    "Quality Champion",
+                    "Reach a score above 90% on 25 different projects.",
+                    false,
+                    """
+                        {
+                          "criteria": {
+                            "complete_twenty_five_perfect_analyses": {
+                              "trigger": "ANALYSIS_COMPLETED",
+                              "conditions": {
+                                "total_perfect_projects_count": { "min": 25 }
+                              }
+                            }
+                          },
+                          "requirements": [["complete_twenty_five_perfect_analyses"]]
+                        }
+                        """
+            ),
+            new AchievementEntity(
+                    "perfect_analysis_count_50",
+                    "Master of Compliance",
+                    "Reach a score above 90% on 50 different projects.",
+                    false,
+                    """
+                        {
+                          "criteria": {
+                            "complete_fifty_perfect_analyses": {
+                              "trigger": "ANALYSIS_COMPLETED",
+                              "conditions": {
+                                "total_perfect_projects_count": { "min": 50 }
+                              }
+                            }
+                          },
+                          "requirements": [["complete_fifty_perfect_analyses"]]
+                        }
+                        """
+            ),
+            new AchievementEntity(
+                    "perfect_on_first_version",
+                    "First Time Right",
+                    "Reach a score above 90% on the very first version of a project",
+                    false,
+                    """
+                        {
+                          "criteria": {
+                            "perfect_analysis_on_first_version": {
+                              "trigger": "ANALYSIS_COMPLETED",
+                              "conditions": {
+                                "total_perfect_projects_first": { "min": 1 }
+                              }
+                            }
+                          },
+                          "requirements": [["perfect_analysis_on_first_version"]]
+                        }
+                        """
+            ),
+            new AchievementEntity(
+                    "perfect_on_last_version",
+                    "Talk About Suspense!",
+                    "Hit the perfect score on your very last attempt.",
+                    false,
+                    """
+                        {
+                          "criteria": {
+                            "perfect_analysis_on_last_version": {
+                              "trigger": "ANALYSIS_COMPLETED",
+                              "conditions": {
+                                "total_perfect_projects_last": { "min": 1 }
+                              }
+                            }
+                          },
+                          "requirements": [["perfect_analysis_on_last_version"]]
+                        }
+                        """
             )
         );
     }
