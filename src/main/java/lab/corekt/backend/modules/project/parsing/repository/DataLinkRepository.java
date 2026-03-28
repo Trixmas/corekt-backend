@@ -11,4 +11,7 @@ public interface DataLinkRepository extends JpaRepository<DataLinkEntity, UUID> 
 
     @Query("select d from DataLinkEntity d left join d.sourceParsedData p join p.file f join f.version v where v.id = ?1")
     List<DataLinkEntity> findByVersionId(UUID versionId);
+
+    @Query("select d from DataLinkEntity d left join d.sourceParsedData p join p.file f join f.version v where d.id = ?1 and v.id = ?2")
+    DataLinkEntity findByIdAndVersionId(UUID id, UUID versionId);
 }

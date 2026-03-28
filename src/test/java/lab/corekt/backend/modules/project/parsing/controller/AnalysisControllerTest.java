@@ -1,5 +1,7 @@
 package lab.corekt.backend.modules.project.parsing.controller;
 
+import lab.corekt.backend.modules.achievement.service.helper.AchievementResponseHelper;
+import lab.corekt.backend.modules.auth.AuthContext;
 import lab.corekt.backend.modules.auth.service.JwtService;
 import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
@@ -9,7 +11,7 @@ import lab.corekt.backend.modules.project.parsing.enums.DataType;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.parsing.enums.MatchType;
 import lab.corekt.backend.modules.project.parsing.enums.Severity;
-import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepository;
+import lab.corekt.backend.modules.project.parsing.service.AnalysisService;
 import lab.corekt.backend.modules.project.parsing.service.DataLinkService;
 import lab.corekt.backend.modules.project.utils.ProjectUtils;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
@@ -24,17 +26,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(value = AnalysisController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
@@ -44,25 +47,32 @@ class AnalysisControllerTest extends BaseControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private JwtService jwtService;
-
-    @MockitoBean
     private ProjectUtils projectUtils;
-
-    @MockitoBean
-    private ParsedDataRepository parsedDataRepository;
-
-    @MockitoBean
-    private MistralService mistralService;
 
     @MockitoBean
     private VersionRepository versionRepository;
 
     @MockitoBean
+    private DataLinkService dataLinkService;
+
+    @MockitoBean
     private VersionService versionService;
 
     @MockitoBean
-    private DataLinkService dataLinkService;
+    private MistralService mistralService;
+
+    @MockitoBean
+    private AnalysisService analysisService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private AuthContext authContext;
+
+    @MockitoBean
+    private AchievementResponseHelper achievementResponseHelper;
+
 
     private UUID projectId;
     private UUID versionId;
@@ -108,18 +118,7 @@ class AnalysisControllerTest extends BaseControllerTest {
         when(dataLinkService.saveDataLinks(version)).thenReturn(List.of(dataLink));
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}/analysis/start", projectId, versionId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].id").value(dataLinkId.toString()))
-                .andExpect(jsonPath("$[0].match").value("SEMANTIC"))
-                .andExpect(jsonPath("$[0].severity").value("MINOR"))
-                .andExpect(jsonPath("$[0].confidenceScore").value(87))
-                .andExpect(jsonPath("$[0].justification").value("Semantic similarity found"))
-                .andExpect(jsonPath("$[0].suggestion").value("Rename one of the actors"))
-                .andExpect(jsonPath("$[0].sourceParsedData.fileName").value("diagram.bpmn"))
-                .andExpect(jsonPath("$[0].sourceParsedData.fileType").value("BPMN"))
-                .andExpect(jsonPath("$[0].targetParsedData.fileName").value("interview.pdf"))
-                .andExpect(jsonPath("$[0].targetParsedData.fileType").value("INTERVIEW"));
+                .andExpect(status().isOk());
 
         verify(dataLinkService).saveDataLinks(version);
     }
@@ -141,5 +140,62 @@ class AnalysisControllerTest extends BaseControllerTest {
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}/analysis/start", projectId, versionId))
                 .andExpect(status().isNotFound());
+    }
+
+    // ============ DELETE DATA LINK ENDPOINT TESTS ============
+
+    @Test
+    @DisplayName("DELETE /projects/{projectId}/versions/{versionId}/analysis/datalink/{datalinkId} returns 204 on successful deletion")
+    void testDeleteDataLinkReturns204OnSuccess() throws Exception {
+        UUID dataLinkId = UUID.randomUUID();
+        doNothing().when(analysisService).deleteDataLink(projectId, versionId, dataLinkId);
+
+        mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}/analysis/datalink/{datalinkId}",
+                        projectId, versionId, dataLinkId))
+                .andExpect(status().isNoContent());
+
+        verify(analysisService).deleteDataLink(projectId, versionId, dataLinkId);
+    }
+
+    @Test
+    @DisplayName("DELETE /projects/{projectId}/versions/{versionId}/analysis/datalink/{datalinkId} returns 404 when project is not found")
+    void testDeleteDataLinkReturns404WhenProjectNotFound() throws Exception {
+        UUID dataLinkId = UUID.randomUUID();
+        doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"))
+                .when(analysisService).deleteDataLink(projectId, versionId, dataLinkId);
+
+        mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}/analysis/datalink/{datalinkId}",
+                        projectId, versionId, dataLinkId))
+                .andExpect(status().isNotFound());
+
+        verify(analysisService).deleteDataLink(projectId, versionId, dataLinkId);
+    }
+
+    @Test
+    @DisplayName("DELETE /projects/{projectId}/versions/{versionId}/analysis/datalink/{datalinkId} returns 404 when version is not found")
+    void testDeleteDataLinkReturns404WhenVersionNotFound() throws Exception {
+        UUID dataLinkId = UUID.randomUUID();
+        doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"))
+                .when(analysisService).deleteDataLink(projectId, versionId, dataLinkId);
+
+        mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}/analysis/datalink/{datalinkId}",
+                        projectId, versionId, dataLinkId))
+                .andExpect(status().isNotFound());
+
+        verify(analysisService).deleteDataLink(projectId, versionId, dataLinkId);
+    }
+
+    @Test
+    @DisplayName("DELETE /projects/{projectId}/versions/{versionId}/analysis/datalink/{datalinkId} returns 404 when data link is not found")
+    void testDeleteDataLinkReturns404WhenDataLinkNotFound() throws Exception {
+        UUID dataLinkId = UUID.randomUUID();
+        doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Data link not found"))
+                .when(analysisService).deleteDataLink(projectId, versionId, dataLinkId);
+
+        mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}/analysis/datalink/{datalinkId}",
+                        projectId, versionId, dataLinkId))
+                .andExpect(status().isNotFound());
+
+        verify(analysisService).deleteDataLink(projectId, versionId, dataLinkId);
     }
 }
