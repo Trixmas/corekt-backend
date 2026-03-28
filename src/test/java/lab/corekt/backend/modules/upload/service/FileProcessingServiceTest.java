@@ -9,12 +9,16 @@ import lab.corekt.backend.modules.upload.enums.ProcessingStatus;
 import lab.corekt.backend.modules.upload.event.FileUploadedEvent;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -38,8 +42,17 @@ class FileProcessingServiceTest {
 	@Mock
 	private MistralService mistralService;
 
+	@Mock
+	private PlatformTransactionManager transactionManager;
+
 	@InjectMocks
 	private FileProcessingService fileProcessingService;
+
+	@BeforeEach
+	void setUpTransactionManager() {
+		when(transactionManager.getTransaction(any(TransactionDefinition.class)))
+			.thenReturn(mock(TransactionStatus.class));
+	}
 
 	@Test
 	@DisplayName("onFileUploaded processes BPMN file and marks it as PROCESSED")
