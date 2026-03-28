@@ -210,7 +210,7 @@ public class AchievementSeeder implements ApplicationRunner {
                         "perfect_analysis_count_50",
                         "Master of Compliance",
                         "Reach a score above 90% on 50 different projects.",
-                        false,
+                        true,
                         """
                             {
                               "criteria": {
