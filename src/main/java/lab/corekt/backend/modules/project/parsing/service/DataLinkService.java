@@ -17,6 +17,7 @@ import lab.corekt.backend.modules.upload.repository.FileRepository;
 import lombok.AllArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -194,6 +195,7 @@ public class DataLinkService {
         return dataLinks;
     }
 
+    @Transactional
     public List<DataLinkEntity> saveDataLinks(VersionEntity version) {
         return dataLinkRepository.saveAll(buildDataLinks(version));
     }

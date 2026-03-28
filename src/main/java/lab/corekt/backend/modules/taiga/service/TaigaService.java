@@ -12,6 +12,7 @@ import lab.corekt.backend.modules.taiga.dto.TaigaCredentials;
 import lab.corekt.backend.modules.taiga.dto.UserStory;
 import lab.corekt.backend.modules.taiga.exception.TaigaAuthException;
 import lab.corekt.backend.modules.taiga.exception.TaigaException;
+import lab.corekt.backend.modules.upload.enums.ProcessingStatus;
 import lab.corekt.backend.modules.upload.service.FileService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -37,16 +38,16 @@ public class TaigaService {
     private final ParsedDataRepository parsedDataRepository;
 
     public TaigaService(
-        RestClient.Builder restClientBuilder,
-        @Value("${taiga.api.base-url}") String taigaBaseUrl,
-        FileService fileService,
-        ParsedDataRepository parsedDataRepository
+            RestClient.Builder restClientBuilder,
+            @Value("${taiga.api.base-url}") String taigaBaseUrl,
+            FileService fileService,
+            ParsedDataRepository parsedDataRepository
     ) {
         this.restClient = restClientBuilder
-            .baseUrl(taigaBaseUrl)
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-            .build();
+                .baseUrl(taigaBaseUrl)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .build();
         this.fileService = fileService;
         this.parsedDataRepository = parsedDataRepository;
     }
@@ -57,21 +58,21 @@ public class TaigaService {
 
     public TaigaCredentials authenticate(String username, String password) {
         return executeTaigaCall(
-            () -> toCredentials(post("/auth", Map.of(
-                "username", username,
-                "password", password,
-                "type", "normal"
-            ))),
-            "Invalid Taiga credentials",
-            "Failed to reach Taiga API"
+                () -> toCredentials(post("/auth", Map.of(
+                        "username", username,
+                        "password", password,
+                        "type", "normal"
+                ))),
+                "Invalid Taiga credentials",
+                "Failed to reach Taiga API"
         );
     }
 
     public Map<String, String> fetchProjects(String token, String userId) {
         return executeTaigaCall(
-            () -> toProjects(get("/projects?member={id}", token, userId)),
-            "Taiga token is invalid or expired",
-            "Failed to fetch projects from Taiga"
+                () -> toProjects(get("/projects?member={id}", token, userId)),
+                "Taiga token is invalid or expired",
+                "Failed to fetch projects from Taiga"
         );
     }
 
@@ -112,35 +113,36 @@ public class TaigaService {
 
     private List<UserStory> fetchUserStories(String taigaProjectId, String token) {
         JsonNode root = get(
-            "/userstories?project={id}",
-            token,
-            Map.of("x-disable-pagination", "True"),
-            taigaProjectId
+                "/userstories?project={id}",
+                token,
+                Map.of("x-disable-pagination", "True"),
+                taigaProjectId
         );
 
         ArrayNode results = toArray(root);
         if (results == null || results.isEmpty()) return List.of();
 
         return StreamSupport.stream(results.spliterator(), false)
-            .map(node -> new UserStory(
-                node.get("subject").asText(),
-                fetchStoryDescription(node.get("id").asText(), token)
-            ))
-            .toList();
+                .map(node -> new UserStory(
+                        node.get("subject").asText(),
+                        fetchStoryDescription(node.get("id").asText(), token)
+                ))
+                .toList();
     }
 
     private void persistUserStories(List<UserStory> userStories, VersionEntity version) {
         var file = fileService.getOrCreate(FileType.US, "User Stories", version);
 
         List<ParsedDataEntity> batch = userStories.stream()
-            .map(us -> {
-                ParsedDataEntity parsedData = new ParsedDataEntity(DataType.US, us.toString());
-                parsedData.setFile(file);
-                return parsedData;
-            })
-            .toList();
+                .map(us -> {
+                    ParsedDataEntity parsedData = new ParsedDataEntity(DataType.US, us.toString());
+                    parsedData.setFile(file);
+                    return parsedData;
+                })
+                .toList();
 
         parsedDataRepository.saveAll(batch);
+        file.setProcessingStatus(ProcessingStatus.PROCESSED);
     }
 
     private String fetchStoryDescription(String storyId, String token) {
@@ -155,8 +157,8 @@ public class TaigaService {
     private JsonNode get(String uri, String token, Map<String, String> extraHeaders, Object... uriVars) {
         return executeRequest(() -> {
             var spec = restClient.get()
-                .uri(uri, uriVars)
-                .header(HttpHeaders.AUTHORIZATION, bearer(token));
+                    .uri(uri, uriVars)
+                    .header(HttpHeaders.AUTHORIZATION, bearer(token));
 
             extraHeaders.forEach(spec::header);
 
@@ -171,10 +173,10 @@ public class TaigaService {
     private JsonNode post(String uri, Object body) {
         return executeRequest(() -> {
             String response = restClient.post()
-                .uri(uri)
-                .body(OBJECT_MAPPER.writeValueAsString(body))
-                .retrieve()
-                .body(String.class);
+                    .uri(uri)
+                    .body(OBJECT_MAPPER.writeValueAsString(body))
+                    .retrieve()
+                    .body(String.class);
             return OBJECT_MAPPER.readTree(response);
         }, "Taiga POST request failed: " + uri);
     }
