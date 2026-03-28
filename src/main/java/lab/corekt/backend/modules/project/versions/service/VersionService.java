@@ -1,22 +1,23 @@
 package lab.corekt.backend.modules.project.versions.service;
 
-import lab.corekt.backend.modules.project.repository.ProjectRepository;
-import org.springframework.transaction.annotation.Transactional;
 import lab.corekt.backend.modules.project.entity.ProjectEntity;
 import lab.corekt.backend.modules.project.parsing.entity.DataLinkEntity;
 import lab.corekt.backend.modules.project.parsing.enums.VersionStatus;
 import lab.corekt.backend.modules.project.parsing.repository.DataLinkRepository;
+import lab.corekt.backend.modules.project.repository.ProjectRepository;
 import lab.corekt.backend.modules.project.versions.dto.VersionDetailsResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.project.versions.repository.VersionRepository;
-import lombok.AllArgsConstructor;
 import lab.corekt.backend.modules.user.entity.UserEntity;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +36,7 @@ public class VersionService {
     public List<VersionResponse> getAllByProject(ProjectEntity project) {
         return versionRepository.findByProject(project)
                 .stream()
-                .map(VersionResponse::new)
+                .map(version -> new VersionResponse(version, getDataLinks(version)))
                 .toList();
     }
 
@@ -55,18 +56,17 @@ public class VersionService {
         VersionEntity entity = new VersionEntity(project, request.getTitle());
         entity.setVersionNumber(nextVersionNumber);
 
-        return new VersionResponse(versionRepository.save(entity));
+        return new VersionResponse(versionRepository.save(entity), new ArrayList<>());
     }
 
     @Transactional
     public VersionResponse updateVersion(ProjectEntity project, UUID versionId, VersionRequest request) {
         VersionEntity entity = getVersionEntity(project, versionId);
-
         if (request.getTitle() != null) {
             entity.setTitle(request.getTitle());
         }
 
-        return new VersionResponse(versionRepository.save(entity));
+        return new VersionResponse(versionRepository.save(entity), getDataLinks(entity));
     }
 
     @Transactional
