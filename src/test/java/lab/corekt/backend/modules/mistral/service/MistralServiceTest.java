@@ -9,6 +9,7 @@ import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepositor
 import lab.corekt.backend.modules.project.report.entity.AIAnalysisEntity;
 import lab.corekt.backend.modules.project.report.repository.AIAnalysisRepository;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
+import lab.corekt.backend.modules.upload.repository.FileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,7 @@ class MistralServiceTest {
     private EmbeddingModel embeddingModel;
     private AIAnalysisRepository aiAnalysisRepository;
     private ParsedDataRepository parsedDataRepository;
+    private FileRepository fileRepository;
     private ObjectMapper objectMapper;
     private MistralService mistralService;
 
@@ -86,12 +88,14 @@ class MistralServiceTest {
         embeddingModel = mock(EmbeddingModel.class);
         aiAnalysisRepository = mock(AIAnalysisRepository.class);
         parsedDataRepository = mock(ParsedDataRepository.class);
+        fileRepository = mock(FileRepository.class);
         objectMapper = new ObjectMapper();
         mistralService = new MistralService(
             embeddingModel,
             objectMapper,
             aiAnalysisRepository,
             parsedDataRepository,
+            fileRepository,
             RestClient.builder(),
             MISTRAL_API_TOKEN,
             MISTRAL_AGENT_ID,

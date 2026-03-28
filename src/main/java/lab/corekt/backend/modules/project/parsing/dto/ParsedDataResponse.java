@@ -13,6 +13,11 @@ public record ParsedDataResponse(
 ) {
     public ParsedDataResponse(ParsedDataEntity parsedData) {
         FileEntity file = parsedData.getFile();
-        this(file.getName(), file.getType(), parsedData.getDataType(), parsedData.getContent());
+        this(
+            file.getName(),
+            file.getType(),
+            parsedData.getDataType(),
+            parsedData.getContent()
+        );
     }
 }

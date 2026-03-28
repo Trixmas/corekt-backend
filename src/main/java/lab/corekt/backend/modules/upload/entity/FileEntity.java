@@ -5,6 +5,7 @@ import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
 import lab.corekt.backend.modules.project.report.entity.AIAnalysisEntity;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
+import lab.corekt.backend.modules.upload.enums.ProcessingStatus;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
@@ -38,6 +39,10 @@ public class FileEntity {
 
     @Column(columnDefinition = "bytea")
     private byte[] file;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "processing_status", nullable = false)
+    private ProcessingStatus processingStatus = ProcessingStatus.PENDING;
 
     @ManyToOne
     @JoinColumn(name = "version_id", referencedColumnName = "version_id")

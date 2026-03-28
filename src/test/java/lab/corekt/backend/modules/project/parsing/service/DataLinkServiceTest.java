@@ -10,6 +10,7 @@ import lab.corekt.backend.modules.project.parsing.repository.DataLinkRepository;
 import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepository;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
+import lab.corekt.backend.modules.upload.enums.ProcessingStatus;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,14 +62,12 @@ class DataLinkServiceTest {
     @Test
     void testGetRequiredFilesMissingDocumentThrows() {
         VersionEntity version = new VersionEntity();
-        List<FileEntity> files = List.of(
-            new FileEntity(FileType.INTERVIEW, "interview.pdf"),
-            new FileEntity(FileType.BPMN, "process.bpmn"),
-            new FileEntity(FileType.US, "user-stories"));
-
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "interview.pdf");
         FileEntity bpmnFile = new FileEntity(FileType.BPMN, "process.bpmn");
         FileEntity usFile = new FileEntity(FileType.US, "user-stories");
+        interviewFile.setProcessingStatus(ProcessingStatus.PROCESSED);
+        bpmnFile.setProcessingStatus(ProcessingStatus.PROCESSED);
+        usFile.setProcessingStatus(ProcessingStatus.PROCESSED);
         when(fileRepository.findByVersion(version)).thenReturn(List.of(interviewFile, bpmnFile, usFile));
 
         IllegalStateException exception = assertThrows(IllegalStateException.class,
@@ -227,7 +226,9 @@ class DataLinkServiceTest {
     private Map<FileType, FileEntity> stubAllFiles(VersionEntity version) {
         Map<FileType, FileEntity> filesByType = new EnumMap<>(FileType.class);
         for (FileType fileType : FileType.values()) {
-            filesByType.put(fileType, new FileEntity(fileType, fileType.name().toLowerCase()));
+            FileEntity file = new FileEntity(fileType, fileType.name().toLowerCase());
+            file.setProcessingStatus(ProcessingStatus.PROCESSED);
+            filesByType.put(fileType, file);
         }
 
         when(fileRepository.findByVersion(version)).thenReturn(List.copyOf(filesByType.values()));
