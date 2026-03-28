@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +36,7 @@ public class VersionService {
     public List<VersionResponse> getAllByProject(ProjectEntity project) {
         return versionRepository.findByProject(project)
                 .stream()
-                .map(VersionResponse::new)
+                .map(version -> new VersionResponse(version, getDataLinks(version)))
                 .toList();
     }
 
@@ -55,7 +56,7 @@ public class VersionService {
         VersionEntity entity = new VersionEntity(project, request.getTitle());
         entity.setVersionNumber(nextVersionNumber);
 
-        return new VersionResponse(versionRepository.save(entity));
+        return new VersionResponse(versionRepository.save(entity), new ArrayList<>());
     }
 
     @Transactional
@@ -66,7 +67,7 @@ public class VersionService {
             entity.setTitle(request.getTitle());
         }
 
-        return new VersionResponse(versionRepository.save(entity));
+        return new VersionResponse(versionRepository.save(entity), getDataLinks(entity));
     }
 
     @Transactional
