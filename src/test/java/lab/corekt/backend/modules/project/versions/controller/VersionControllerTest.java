@@ -8,6 +8,7 @@ import lab.corekt.backend.modules.project.versions.dto.VersionDetailsResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionIssuesResponse;
 import lab.corekt.backend.modules.project.versions.dto.VersionRequest;
 import lab.corekt.backend.modules.project.versions.dto.VersionResponse;
+import lab.corekt.backend.modules.project.versions.service.VersionPdfExportService;
 import lab.corekt.backend.modules.project.versions.service.VersionService;
 import lab.corekt.backend.modules.user.entity.UserEntity;
 import lab.corekt.backend.utils.BaseControllerTest;
@@ -29,6 +30,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -48,6 +51,9 @@ class VersionControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private VersionService versionService;
+
+    @MockitoBean
+    private VersionPdfExportService versionPdfExportService;
 
     private UserEntity currentUser;
     private ProjectEntity project;
@@ -167,6 +173,32 @@ class VersionControllerTest extends BaseControllerTest {
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}", projectId, UUID.randomUUID()))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /projects/{projectId}/versions/{versionId}/export/pdf returns 200 with PDF payload")
+    void testExportVersionPdfReturns200() throws Exception {
+        UUID versionId = UUID.randomUUID();
+        byte[] pdf = "pdf-content".getBytes();
+
+        when(versionPdfExportService.generateVersionSummaryPdf(eq(project), eq(versionId)))
+            .thenReturn(pdf);
+
+        mockMvc.perform(get("/projects/{projectId}/versions/{versionId}/export/pdf", projectId, versionId))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+            .andExpect(header().string("Content-Disposition",
+                "attachment; filename=\"corekt-version-" + versionId + ".pdf\""))
+            .andExpect(content().bytes(pdf));
+    }
+
+    @Test
+    @DisplayName("GET /projects/{projectId}/versions/{versionId}/export/pdf returns 404 when project not found")
+    void testExportVersionPdfReturns404WhenProjectNotFound() throws Exception {
+        when(projectUtils.resolveProject(any())).thenReturn(null);
+
+        mockMvc.perform(get("/projects/{projectId}/versions/{versionId}/export/pdf", projectId, UUID.randomUUID()))
+            .andExpect(status().isNotFound());
     }
 
     @Test
