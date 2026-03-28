@@ -6,11 +6,13 @@ import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
 import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
+import lab.corekt.backend.modules.upload.enums.ProcessingStatus;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,13 +47,32 @@ public class FileService {
             FileEntity fileEntity = new FileEntity(fileType, file.getOriginalFilename());
             fileEntity.setVersion(version);
             fileEntity.setFile(file.getBytes());
-            processFileByType(fileType, fileEntity);
+            fileEntity.setProcessingStatus(ProcessingStatus.PENDING);
             FileEntity savedFile = fileRepository.save(fileEntity);
+
+            // Launch async processing
+            processFileAsync(savedFile);
+
             return savedFile;
         } catch (IOException e) {
             throw new IOException("Failed to read file content", e);
         } catch (DataIntegrityViolationException e) {
             throw new DataIntegrityViolationException("Failed to save file, a file of type " + fileType + " already exists for this version.", e);
+        }
+    }
+
+    @Async
+    @Transactional
+    public void processFileAsync(FileEntity fileEntity) {
+        try {
+            processFileByType(fileEntity.getType(), fileEntity);
+            fileEntity.setProcessingStatus(ProcessingStatus.PROCESSED);
+            fileRepository.save(fileEntity);
+        } catch (Exception e) {
+            fileEntity.setProcessingStatus(ProcessingStatus.FAILED);
+            fileRepository.save(fileEntity);
+            deleteFile(fileEntity);
+            System.err.println("Failed to process file " + fileEntity.getName() + ": " + e.getMessage());
         }
     }
 
@@ -67,6 +88,11 @@ public class FileService {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse the uploaded file: " + e.getMessage());
         }
+    }
+
+    @Transactional
+    public void deleteFile(FileEntity fileEntity) {
+        fileRepository.delete(fileEntity);
     }
 
     /**

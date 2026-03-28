@@ -33,7 +33,7 @@ public class ParsedDataEntity {
     @Column(nullable = false, length = MAX_CONTENT_LENGTH)
     private String content;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "file_id", nullable = false)
     private FileEntity file;
 

@@ -32,25 +32,27 @@ public class FileController {
 
     @PostMapping
     public ResponseEntity<FileUploadResponse> uploadFile(
-        @PathVariable UUID projectId,
-        @PathVariable UUID versionId,
-        @RequestParam MultipartFile file,
-        @RequestParam FileType fileType) throws IOException {
+            @PathVariable UUID projectId,
+            @PathVariable UUID versionId,
+            @RequestParam MultipartFile file,
+            @RequestParam FileType fileType) throws IOException {
 
         UserEntity user = authContext.getCurrentUser();
         ProjectEntity project = projectRepository.findByIdAndOwner(projectId, user)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
 
         VersionEntity version = versionRepository.findByProjectAndId(project, versionId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
 
-        FileEntity saved = fileService.uploadFile(version, file, fileType);
+        FileEntity savedFile = fileService.uploadFile(version, file, fileType);
 
         FileUploadResponse response = new FileUploadResponse();
-        response.setFileId(saved.getId());
-        response.setFileName(saved.getName());
-        response.setFileType(saved.getType());
+        response.setFileId(savedFile.getId());
+        response.setFileName(savedFile.getName());
+        response.setFileType(savedFile.getType());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
+
+
