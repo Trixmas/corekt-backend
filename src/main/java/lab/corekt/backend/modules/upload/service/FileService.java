@@ -1,18 +1,16 @@
 package lab.corekt.backend.modules.upload.service;
 
-import lab.corekt.backend.modules.mistral.service.MistralService;
 import lab.corekt.backend.modules.project.parsing.enums.FileType;
-import lab.corekt.backend.modules.project.parsing.service.BpmnParserService;
-import lab.corekt.backend.modules.project.parsing.service.McdParserService;
 import lab.corekt.backend.modules.project.versions.entity.VersionEntity;
+import lab.corekt.backend.modules.upload.event.FileUploadedEvent;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.enums.ProcessingStatus;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,9 +23,7 @@ import java.io.IOException;
 public class FileService {
 
     private final FileRepository fileRepository;
-    private final BpmnParserService bpmnParserService;
-    private final McdParserService mcdParserService;
-    private final MistralService mistralService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public FileEntity uploadFile(VersionEntity version, @NonNull MultipartFile file, @NonNull FileType fileType)
@@ -50,8 +46,8 @@ public class FileService {
             fileEntity.setProcessingStatus(ProcessingStatus.PENDING);
             FileEntity savedFile = fileRepository.save(fileEntity);
 
-            // Launch async processing
-            processFileAsync(savedFile);
+            // Processing runs in a dedicated async listener after this transaction commits.
+            eventPublisher.publishEvent(new FileUploadedEvent(savedFile.getId()));
 
             return savedFile;
         } catch (IOException e) {
@@ -61,34 +57,6 @@ public class FileService {
         }
     }
 
-    @Async
-    @Transactional
-    public void processFileAsync(FileEntity fileEntity) {
-        try {
-            processFileByType(fileEntity.getType(), fileEntity);
-            fileEntity.setProcessingStatus(ProcessingStatus.PROCESSED);
-            fileRepository.save(fileEntity);
-        } catch (Exception e) {
-            fileEntity.setProcessingStatus(ProcessingStatus.FAILED);
-            fileRepository.save(fileEntity);
-            deleteFile(fileEntity);
-            System.err.println("Failed to process file " + fileEntity.getName() + ": " + e.getMessage());
-        }
-    }
-
-    private void processFileByType(@NonNull FileType fileType, FileEntity fileEntity) {
-        try {
-            switch (fileType) {
-                case BPMN -> bpmnParserService.processFile(fileEntity);
-                case MCD -> mcdParserService.processFile(fileEntity);
-                case INTERVIEW -> mistralService.processInterview(fileEntity);
-                default ->
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported file type: " + fileType);
-            }
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to parse the uploaded file: " + e.getMessage());
-        }
-    }
 
     @Transactional
     public void deleteFile(FileEntity fileEntity) {
