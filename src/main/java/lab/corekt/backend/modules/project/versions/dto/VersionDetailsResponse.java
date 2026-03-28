@@ -21,7 +21,7 @@ public class VersionDetailsResponse extends VersionResponse {
     }
 
     public VersionDetailsResponse(VersionEntity version, List<DataLinkEntity> dataLinks) {
-        super(version);
+        super(version, dataLinks);
         this.dataLinks = dataLinks.stream().map(DataLinkResponse::new).toList();
     }
 }
