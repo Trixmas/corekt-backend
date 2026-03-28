@@ -113,8 +113,8 @@ class VersionServiceTest {
         when(versionRepository.findByProjectAndId(project, versionId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> versionService.getVersion(project, versionId))
-            .isInstanceOf(ResponseStatusException.class)
-            .hasMessageContaining("Version not found");
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Version not found");
         verify(versionRepository).findByProjectAndId(project, versionId);
     }
 
@@ -196,8 +196,8 @@ class VersionServiceTest {
         when(versionRepository.findByProjectAndId(project, versionId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> versionService.updateVersion(project, versionId, request))
-            .isInstanceOf(ResponseStatusException.class)
-            .hasMessageContaining("Version not found");
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Version not found");
         verify(versionRepository, never()).save(any());
     }
 
@@ -239,6 +239,5 @@ class VersionServiceTest {
         assertThat(response.getIssues().getMinor()).isEqualTo(0);
         assertThat(response.getIssues().getMajor()).isEqualTo(0);
         assertThat(response.getIssues().getCritical()).isEqualTo(0);
-        assertThat(response.getIssues().getResolved()).isEqualTo(0);
     }
 }

@@ -72,7 +72,7 @@ class VersionControllerTest extends BaseControllerTest {
         response.setTitle(title);
         response.setCreatedAt(Instant.now());
         response.setUpdatedAt(Instant.now());
-        response.setIssues(new VersionIssuesResponse(0, 0, 0, 0));
+        response.setIssues(new VersionIssuesResponse(0, 0, 0));
         return response;
     }
 
@@ -83,7 +83,7 @@ class VersionControllerTest extends BaseControllerTest {
         response.setTitle(title);
         response.setCreatedAt(Instant.now());
         response.setUpdatedAt(Instant.now());
-        response.setIssues(new VersionIssuesResponse(0, 0, 0, 0));
+        response.setIssues(new VersionIssuesResponse(0, 0, 0));
         return response;
     }
 
@@ -96,26 +96,26 @@ class VersionControllerTest extends BaseControllerTest {
         VersionResponse v2 = buildVersionResponse(v2Id, 2, "v2");
 
         when(versionService.getAllByProject(eq(project)))
-            .thenReturn(List.of(v1, v2));
+                .thenReturn(List.of(v1, v2));
 
         mockMvc.perform(get("/projects/{projectId}/versions", projectId))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(2))
-            .andExpect(jsonPath("$[0].version").value(1))
-            .andExpect(jsonPath("$[0].title").value("v1"))
-            .andExpect(jsonPath("$[1].version").value(2))
-            .andExpect(jsonPath("$[1].title").value("v2"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].version").value(1))
+                .andExpect(jsonPath("$[0].title").value("v1"))
+                .andExpect(jsonPath("$[1].version").value(2))
+                .andExpect(jsonPath("$[1].title").value("v2"));
     }
 
     @Test
     @DisplayName("GET /projects/{projectId}/versions returns 200 with empty list when project has no versions")
     void testGetProjectVersionsReturnsEmptyList() throws Exception {
         when(versionService.getAllByProject(eq(project)))
-            .thenReturn(List.of());
+                .thenReturn(List.of());
 
         mockMvc.perform(get("/projects/{projectId}/versions", projectId))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
@@ -124,7 +124,7 @@ class VersionControllerTest extends BaseControllerTest {
         when(projectUtils.resolveProject(any())).thenReturn(null);
 
         mockMvc.perform(get("/projects/{projectId}/versions", projectId))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -134,16 +134,16 @@ class VersionControllerTest extends BaseControllerTest {
         VersionDetailsResponse v1 = buildVersionDetailsResponse(versionId, 1, "Initial version");
 
         when(versionService.getVersion(eq(project), eq(versionId)))
-            .thenReturn(v1);
+                .thenReturn(v1);
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}", projectId, versionId))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(versionId.toString()))
-            .andExpect(jsonPath("$.version").value(1))
-            .andExpect(jsonPath("$.title").value("Initial version"))
-            .andExpect(jsonPath("$.issues").exists())
-            .andExpect(jsonPath("$.dataLinks").exists())
-            .andExpect(jsonPath("$.dataLinks.length()").value(0));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(versionId.toString()))
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.title").value("Initial version"))
+                .andExpect(jsonPath("$.issues").exists())
+                .andExpect(jsonPath("$.dataLinks").exists())
+                .andExpect(jsonPath("$.dataLinks.length()").value(0));
 
     }
 
@@ -153,11 +153,11 @@ class VersionControllerTest extends BaseControllerTest {
         UUID versionId = UUID.randomUUID();
 
         when(versionService.getVersion(eq(project), eq(versionId)))
-            .thenThrow(new org.springframework.web.server.ResponseStatusException(
-                org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"));
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"));
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}", projectId, versionId))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -166,7 +166,7 @@ class VersionControllerTest extends BaseControllerTest {
         when(projectUtils.resolveProject(any())).thenReturn(null);
 
         mockMvc.perform(get("/projects/{projectId}/versions/{versionId}", projectId, UUID.randomUUID()))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -176,19 +176,19 @@ class VersionControllerTest extends BaseControllerTest {
         VersionResponse created = buildVersionResponse(versionId, 2, "Sprint 2");
 
         when(versionService.createVersion(eq(project), any(VersionRequest.class)))
-            .thenReturn(created);
+                .thenReturn(created);
 
         VersionRequest request = new VersionRequest();
         request.setTitle("Sprint 2");
 
         mockMvc.perform(post("/projects/{projectId}/versions", projectId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(versionId.toString()))
-            .andExpect(jsonPath("$.version").value(2))
-            .andExpect(jsonPath("$.title").value("Sprint 2"))
-            .andExpect(jsonPath("$.issues").exists());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(versionId.toString()))
+                .andExpect(jsonPath("$.version").value(2))
+                .andExpect(jsonPath("$.title").value("Sprint 2"))
+                .andExpect(jsonPath("$.issues").exists());
     }
 
     @Test
@@ -200,18 +200,18 @@ class VersionControllerTest extends BaseControllerTest {
         request.setTitle("Sprint 2");
 
         mockMvc.perform(post("/projects/{projectId}/versions", projectId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isNotFound());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("POST /projects/{projectId}/versions returns 400 when title is blank")
     void testCreateVersionReturns400WhenTitleIsBlank() throws Exception {
         mockMvc.perform(post("/projects/{projectId}/versions", projectId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\": \"\"}"))
-            .andExpect(status().isBadRequest());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\": \"\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -220,18 +220,18 @@ class VersionControllerTest extends BaseControllerTest {
         String longTitle = "A".repeat(51);
 
         mockMvc.perform(post("/projects/{projectId}/versions", projectId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\": \"" + longTitle + "\"}"))
-            .andExpect(status().isBadRequest());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\": \"" + longTitle + "\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("POST /projects/{projectId}/versions returns 400 when body is missing")
     void testCreateVersionReturns400WhenBodyMissing() throws Exception {
         mockMvc.perform(post("/projects/{projectId}/versions", projectId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
-            .andExpect(status().isBadRequest());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -241,18 +241,18 @@ class VersionControllerTest extends BaseControllerTest {
         VersionResponse updated = buildVersionResponse(versionId, 1, "Updated title");
 
         when(versionService.updateVersion(eq(project), eq(versionId), any(VersionRequest.class)))
-            .thenReturn(updated);
+                .thenReturn(updated);
 
         VersionRequest request = new VersionRequest();
         request.setTitle("Updated title");
 
         mockMvc.perform(patch("/projects/{projectId}/versions/{versionId}", projectId, versionId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(versionId.toString()))
-            .andExpect(jsonPath("$.version").value(1))
-            .andExpect(jsonPath("$.title").value("Updated title"));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(versionId.toString()))
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.title").value("Updated title"));
     }
 
     @Test
@@ -264,9 +264,9 @@ class VersionControllerTest extends BaseControllerTest {
         request.setTitle("Updated title");
 
         mockMvc.perform(patch("/projects/{projectId}/versions/{versionId}", projectId, UUID.randomUUID())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isNotFound());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -275,16 +275,16 @@ class VersionControllerTest extends BaseControllerTest {
         UUID versionId = UUID.randomUUID();
 
         when(versionService.updateVersion(eq(project), eq(versionId), any(VersionRequest.class)))
-            .thenThrow(new org.springframework.web.server.ResponseStatusException(
-                org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"));
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"));
 
         VersionRequest request = new VersionRequest();
         request.setTitle("Updated title");
 
         mockMvc.perform(patch("/projects/{projectId}/versions/{versionId}", projectId, versionId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isNotFound());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -294,13 +294,13 @@ class VersionControllerTest extends BaseControllerTest {
         VersionResponse unchanged = buildVersionResponse(versionId, 1, "Original title");
 
         when(versionService.updateVersion(eq(project), eq(versionId), any(VersionRequest.class)))
-            .thenReturn(unchanged);
+                .thenReturn(unchanged);
 
         mockMvc.perform(patch("/projects/{projectId}/versions/{versionId}", projectId, versionId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\": null}"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.title").value("Original title"));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\": null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Original title"));
     }
 
     @Test
@@ -311,7 +311,7 @@ class VersionControllerTest extends BaseControllerTest {
         doNothing().when(versionService).deleteVersion(eq(project), eq(versionId));
 
         mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}", projectId, versionId))
-            .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent());
 
         verify(versionService, times(1)).deleteVersion(eq(project), eq(versionId));
     }
@@ -322,7 +322,7 @@ class VersionControllerTest extends BaseControllerTest {
         when(projectUtils.resolveProject(any())).thenReturn(null);
 
         mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}", projectId, UUID.randomUUID()))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -331,10 +331,10 @@ class VersionControllerTest extends BaseControllerTest {
         UUID versionId = UUID.randomUUID();
 
         doThrow(new org.springframework.web.server.ResponseStatusException(
-            org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"))
-            .when(versionService).deleteVersion(eq(project), eq(versionId));
+                org.springframework.http.HttpStatus.NOT_FOUND, "Version not found"))
+                .when(versionService).deleteVersion(eq(project), eq(versionId));
 
         mockMvc.perform(delete("/projects/{projectId}/versions/{versionId}", projectId, versionId))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 }
