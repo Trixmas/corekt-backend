@@ -94,6 +94,7 @@ public class VersionPdfExportService {
         VersionDetailsResponse version = versionService.getVersion(project, versionId);
         Instant generatedAt = Instant.now();
         List<DataLinkResponse> sortedDataLinks = safeDataLinks(version).stream()
+            .filter(dataLink -> dataLink.match() != MatchType.EXACT)
             .sorted(DATA_LINK_PRIORITY)
             .toList();
         List<DataLinkResponse> priorityLinks = sortedDataLinks.stream()
@@ -109,7 +110,6 @@ public class VersionPdfExportService {
             new MetricCard("Severite critique", String.valueOf(countBySeverity(sortedDataLinks, Severity.CRITICAL)), CRITICAL_COLOR),
             new MetricCard("Severite majeure", String.valueOf(countBySeverity(sortedDataLinks, Severity.MAJOR)), MAJOR_COLOR),
             new MetricCard("Correspondances semantiques", String.valueOf(countByMatch(sortedDataLinks, MatchType.SEMANTIC)), SEMANTIC_COLOR),
-            new MetricCard("Correspondances exactes", String.valueOf(countByMatch(sortedDataLinks, MatchType.EXACT)), EXACT_COLOR),
             new MetricCard("Severite mineure", String.valueOf(countBySeverity(sortedDataLinks, Severity.MINOR)), MINOR_COLOR)
         );
 

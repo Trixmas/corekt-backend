@@ -96,6 +96,7 @@ class VersionPdfExportServiceTest {
             assertThat(text).contains("Projet Corekt");
             assertThat(text).contains("Sprint paiement");
             assertThat(text).contains("Data links prioritaires");
+            assertThat(text).doesNotContain("Correspondances exactes");
             assertThat(text).contains("MISSING");
             assertThat(text).contains("CRITICAL");
             assertThat(text).contains("Confiance 32/100");
@@ -112,8 +113,12 @@ class VersionPdfExportServiceTest {
             assertThat(text).contains("Similarite semantique de 75% entre la valeur 'Le manager' du fichier 'INTERVIEW'");
             assertThat(text).contains("la valeur 'Utilisateur'");
             assertThat(text).contains("'ProcessusPrincipal.bpmn'.");
+            assertThat(text).doesNotContain("EXACT");
+            assertThat(text).doesNotContain("Confiance 95/100");
+            assertThat(text).doesNotContain("user-story.txt");
+            assertThat(text).doesNotContain("Aucune action requise.");
             assertThat(text).doesNotContain("n/a");
-            assertThat(text).contains("Autres data links");
+            assertThat(text).doesNotContain("Autres data links");
         }
     }
 }
