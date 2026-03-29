@@ -49,6 +49,9 @@ public class AnalysisController {
             @PathVariable UUID versionId
     ) {
         VersionEntity version = resolveVersion(projectId, versionId);
+        if (version.getStatus() != VersionStatus.DRAFT) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Version is not in DRAFT status");
+        }
         versionService.setVersionStatus(version, VersionStatus.IN_PROGRESS);
 
         try {

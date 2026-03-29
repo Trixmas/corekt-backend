@@ -12,7 +12,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d corekt"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d corekt" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,9 +41,9 @@ services:
       ENCRYPTION_RSA_PRIVATE_KEY: ${ENCRYPTION_RSA_PRIVATE_KEY}
       # External APIs
       MISTRAL_API_TOKEN: ${MISTRAL_API_TOKEN}
-      MISTRAL_AGENT_ID: ${MISTRAL_AGENT_ID}
-      MISTRAL_AGENT_VERSION: ${MISTRAL_AGENT_VERSION:-1}
-      SPRING_AI_MISTRALAI_API_KEY: ${SPRING_AI_MISTRALAI_API_KEY:-${MISTRAL_API_TOKEN}}
+      MISTRAL_ANALYSIS_AGENT_ID: ${MISTRAL_ANALYSIS_AGENT_ID}
+      MISTRAL_PARSED_DATA_AGENT_ID: ${MISTRAL_PARSED_DATA_AGENT_ID}
+      SPRING_AI_MISTRALAI_API_KEY: ${SPRING_AI_MISTRALAI_API_KEY}
       TAIGA_API_BASE_URL: ${TAIGA_API_BASE_URL:-https://api.taiga.io/api/v1}
       # LDAP
       JUMPCLOUD_LDAP_URL: ${JUMPCLOUD_LDAP_URL:-ldaps://ldap.jumpcloud.com:636}

@@ -1,11 +1,28 @@
 package lab.corekt.backend.modules.mistral.service;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.ReactorClientHttpRequestFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lab.corekt.backend.modules.mistral.dto.DetectedUserStory;
 import lab.corekt.backend.modules.mistral.dto.InterviewAnalysisResult;
-import lab.corekt.backend.modules.mistral.dto.QqoqcpDetails;
+import lab.corekt.backend.modules.mistral.dto.InterviewParsedDataResult;
 import lab.corekt.backend.modules.project.parsing.entity.ParsedDataEntity;
 import lab.corekt.backend.modules.project.parsing.enums.DataType;
 import lab.corekt.backend.modules.project.parsing.repository.ParsedDataRepository;
@@ -13,16 +30,7 @@ import lab.corekt.backend.modules.project.report.entity.AIAnalysisEntity;
 import lab.corekt.backend.modules.project.report.repository.AIAnalysisRepository;
 import lab.corekt.backend.modules.upload.entity.FileEntity;
 import lab.corekt.backend.modules.upload.repository.FileRepository;
-import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.client.ReactorClientHttpRequestFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 import reactor.netty.http.client.HttpClient;
-
-import java.time.Duration;
-import java.util.*;
 
 @Service
 public class MistralService {
@@ -30,8 +38,8 @@ public class MistralService {
     private final EmbeddingModel embeddingModel;
     private final ObjectMapper objectMapper;
     private final RestClient restClient;
-    private final String agentId;
-    private final Integer agentVersion;
+    private final String analysisAgentId;
+    private final String parsedDataAgentId;
     private final AIAnalysisRepository aiAnalysisRepository;
     private final ParsedDataRepository parsedDataRepository;
     private final InterviewPdfTextExtractor interviewPdfTextExtractor;
@@ -43,18 +51,16 @@ public class MistralService {
             ParsedDataRepository parsedDataRepository,
             FileRepository fileRepository, RestClient.Builder restClientBuilder,
             @Value("${mistral.api.token}") String mistralApiToken,
-            @Value("${mistral.agent.id}") String agentId,
-            @Value("${mistral.agent.version}") Integer agentVersion,
-            @Value("${mistral.api.base-url:https://api.mistral.ai}")
-            String mistralBaseUrl,
-            InterviewPdfTextExtractor interviewPdfTextExtractor
-    ) {
+            @Value("${mistral.agent.analysis.id}") String analysisAgentId,
+            @Value("${mistral.agent.parsed-data.id}") String parsedDataAgentId,
+            @Value("${mistral.api.base-url:https://api.mistral.ai}") String mistralBaseUrl,
+            InterviewPdfTextExtractor interviewPdfTextExtractor) {
         this.embeddingModel = embeddingModel;
         this.objectMapper = objectMapper;
         this.aiAnalysisRepository = aiAnalysisRepository;
         this.parsedDataRepository = parsedDataRepository;
-        this.agentId = agentId;
-        this.agentVersion = agentVersion;
+        this.analysisAgentId = analysisAgentId;
+        this.parsedDataAgentId = parsedDataAgentId;
         HttpClient httpClient = HttpClient.create().responseTimeout(Duration.ofSeconds(120));
 
         this.restClient = restClientBuilder
@@ -68,7 +74,8 @@ public class MistralService {
 
     public List<EmbeddingTuple> embedParsedData(List<ParsedDataEntity> parsedData) {
         List<EmbeddingTuple> embeddings = new ArrayList<>();
-        List<float[]> embeddingResponse = embeddingModel.embed(parsedData.stream().map(ParsedDataEntity::getContent).toList());
+        List<float[]> embeddingResponse = embeddingModel
+                .embed(parsedData.stream().map(ParsedDataEntity::getContent).toList());
         embeddingResponse.forEach(embedding -> {
             int index = embeddingResponse.indexOf(embedding);
             embeddings.add(new EmbeddingTuple(parsedData.get(index), embedding));
@@ -77,27 +84,50 @@ public class MistralService {
     }
 
     public InterviewAnalysisResult analyzeInterview(String interviewText) {
+        return analyzeInterviewWithAgent(
+                interviewText,
+                analysisAgentId,
+                InterviewAnalysisResult.class,
+                "review analysis");
+    }
+
+    public InterviewParsedDataResult analyzeInterviewParsedData(String interviewText) {
+        return analyzeInterviewWithAgent(
+                interviewText,
+                parsedDataAgentId,
+                InterviewParsedDataResult.class,
+                "parsed data extraction");
+    }
+
+    private <T> T analyzeInterviewWithAgent(
+            String interviewText,
+            String agentId,
+            Class<T> responseType,
+            String stepLabel) {
         if (interviewText == null || interviewText.isBlank()) {
             throw new IllegalArgumentException("Interview text must not be blank");
         }
 
         String output = null;
         try {
-            output = requestInterviewAnalysis(interviewText);
-            return objectMapper.readValue(output, InterviewAnalysisResult.class);
+            output = requestInterviewAnalysis(interviewText, agentId);
+            return objectMapper.readValue(output, responseType);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to analyze interview with Mistral: invalid JSON response. " +
-                    "Output tail: " + summarizeOutputTail(output), e);
+            throw new IllegalStateException(
+                    "Failed to complete " + stepLabel + " with Mistral: invalid JSON response. " +
+                            "Output tail: " + summarizeOutputTail(output),
+                    e);
         } catch (Exception e) {
-            System.err.println("Failed to analyze interview with Mistral: " + e.getMessage());
-            throw new IllegalStateException("Failed to analyze interview with Mistral", e);
+            System.err.println("Failed to complete " + stepLabel + " with Mistral: " + e.getMessage());
+            throw new IllegalStateException("Failed to complete " + stepLabel + " with Mistral", e);
         }
     }
 
-    private String requestInterviewAnalysis(String interviewText) throws JsonProcessingException {
+    private String requestInterviewAnalysis(String interviewText, String agentId)
+            throws JsonProcessingException {
         Map<String, Object> requestBody = Map.of(
                 "agent_id", agentId,
-                "agent_version", agentVersion,
+                "agent_version", "latest",
                 "inputs", List.of(
                         Map.of(
                                 "role", "user",
@@ -149,11 +179,30 @@ public class MistralService {
     }
 
     public AIAnalysisEntity analyzeAndSaveInterview(FileEntity interviewFile, String interviewText) {
-        InterviewAnalysisResult analysisResult = analyzeInterview(interviewText);
-        AIAnalysisEntity savedAnalysis = saveInterviewAnalysis(interviewFile, analysisResult);
+        CompletableFuture<InterviewAnalysisResult> reviewAnalysisFuture = CompletableFuture
+                .supplyAsync(() -> analyzeInterview(interviewText));
+        CompletableFuture<InterviewParsedDataResult> parsedDataAnalysisFuture = CompletableFuture
+                .supplyAsync(() -> analyzeInterviewParsedData(interviewText));
 
-        saveInterviewParsedData(interviewFile, analysisResult);
+        InterviewAnalysisResult reviewAnalysisResult = awaitInterviewStep(reviewAnalysisFuture, "review analysis");
+        InterviewParsedDataResult parsedDataResult = awaitInterviewStep(parsedDataAnalysisFuture,
+                "parsed data extraction");
+
+        AIAnalysisEntity savedAnalysis = saveInterviewAnalysis(interviewFile, reviewAnalysisResult);
+
+        saveInterviewParsedData(interviewFile, parsedDataResult);
         return savedAnalysis;
+    }
+
+    private <T> T awaitInterviewStep(
+            CompletableFuture<T> stepFuture,
+            String stepLabel) {
+        try {
+            return stepFuture.join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause() == null ? e : e.getCause();
+            throw new IllegalStateException("Failed to complete interview " + stepLabel + " step", cause);
+        }
     }
 
     @Transactional
@@ -164,33 +213,20 @@ public class MistralService {
 
     public List<ParsedDataEntity> saveInterviewParsedData(
             FileEntity interviewFile,
-            InterviewAnalysisResult analysisResult
-    ) {
+            InterviewParsedDataResult parsedDataResult) {
         if (interviewFile == null) {
             throw new IllegalArgumentException("Interview file must not be null");
         }
 
-        if (analysisResult == null) {
-            throw new IllegalArgumentException("Interview analysis result must not be null");
+        if (parsedDataResult == null) {
+            throw new IllegalArgumentException("Interview parsed data result must not be null");
         }
 
         List<ParsedDataEntity> batch = new ArrayList<>();
-        QqoqcpDetails qqoqcpAnalysis = analysisResult.getQqoqcpAnalysis();
-        if (qqoqcpAnalysis != null) {
-            addParsedDataBatch(batch, interviewFile, DataType.ACTOR,
-                    qqoqcpAnalysis.getQui() == null ? null : qqoqcpAnalysis.getQui().getElementsFound());
-            addParsedDataBatch(batch, interviewFile, DataType.ACTION,
-                    qqoqcpAnalysis.getQuoi() == null ? null : qqoqcpAnalysis.getQuoi().getElementsFound());
-        }
-
-        List<DetectedUserStory> detectedUserStories = analysisResult.getDetectedUserStories();
-        if (detectedUserStories != null) {
-            detectedUserStories.stream()
-                    .map(this::formatUserStory)
-                    .filter(Objects::nonNull)
-                    .map(content -> buildParsedData(interviewFile, DataType.US, content))
-                    .forEach(batch::add);
-        }
+        addParsedDataBatch(batch, interviewFile, DataType.ACTOR, parsedDataResult.getActors());
+        addParsedDataBatch(batch, interviewFile, DataType.ACTION, parsedDataResult.getActions());
+        addParsedDataBatch(batch, interviewFile, DataType.FLOW, parsedDataResult.getFlows());
+        addUserStoriesBatch(batch, interviewFile, parsedDataResult.getDetectedUserStories());
 
         if (batch.isEmpty()) {
             return List.of();
@@ -256,7 +292,7 @@ public class MistralService {
     }
 
     private void addParsedDataBatch(List<ParsedDataEntity> batch, FileEntity interviewFile, DataType dataType,
-                                    List<String> contents) {
+            List<String> contents) {
         if (contents == null) {
             return;
         }
@@ -267,6 +303,21 @@ public class MistralService {
                 .filter(content -> !content.isBlank())
                 .distinct()
                 .forEach(content -> batch.add(buildParsedData(interviewFile, dataType, content)));
+    }
+
+    private void addUserStoriesBatch(
+            List<ParsedDataEntity> batch,
+            FileEntity interviewFile,
+            List<DetectedUserStory> detectedUserStories) {
+        if (detectedUserStories == null) {
+            return;
+        }
+
+        detectedUserStories.stream()
+                .map(this::formatUserStory)
+                .filter(Objects::nonNull)
+                .distinct()
+                .forEach(content -> batch.add(buildParsedData(interviewFile, DataType.US, content)));
     }
 
     private String formatUserStory(DetectedUserStory userStory) {

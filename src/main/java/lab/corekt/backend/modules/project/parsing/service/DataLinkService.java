@@ -85,19 +85,19 @@ public class DataLinkService {
         DataLinkEntity dataLink = new DataLinkEntity(matchType, Severity.MINOR, source.parsedData(),
                 bestTarget.parsedData());
         dataLink.setConfidenceScore(bestConfidence);
-        if (matchType == MatchType.EXACT) {
-            dataLink.setSeverity(null);
-            dataLink.setJustification(String.format("Correspondance exacte entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
-                    source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
-        } else {
-            if (bestConfidence >= 75) {
-                dataLink.setSeverity(Severity.MINOR);
-            } else if (bestConfidence >= 70) {
-                dataLink.setSeverity(Severity.MAJOR);
-            }
-            dataLink.setJustification(String.format("Similarité sémantique de %d%% entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
-                    bestConfidence, source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
+//        if (matchType == MatchType.EXACT) {
+//            dataLink.setSeverity(null);
+//            dataLink.setJustification(String.format("Correspondance exacte entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
+//                    source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
+//        } else {
+        if (bestConfidence >= 75) {
+            dataLink.setSeverity(Severity.MINOR);
+        } else if (bestConfidence >= 70) {
+            dataLink.setSeverity(Severity.MAJOR);
         }
+        dataLink.setJustification(String.format("Similarité sémantique de %d%% entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
+                bestConfidence, source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
+//        }
         return dataLink;
     }
 
