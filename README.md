@@ -18,13 +18,15 @@ Corekt is a coherence tool.
 
 ### 1. Environment Variables
 
-Update the `application.properties` file with your environment variables. The create the database container witl the following command: 
+Update the `application.properties` file with your environment variables. The create the database container witl the
+following command:
 
 ```bash
 docker compose up -d postgres
 ```
 
 Once your database is up and running, you can run the application with the following command:
+
 ```bash
 mvn spring-boot:run
 ```
@@ -52,8 +54,8 @@ ENCRYPTION_RSA_PRIVATE_KEY=your_rsa_private_key
 
 # Mistral AI
 MISTRAL_API_TOKEN=your_mistral_token
-MISTRAL_AGENT_ID=your_agent_id
-MISTRAL_AGENT_VERSION=1
+MISTRAL_ANALYSIS_AGENT_ID=your_review_analysis_agent_id
+MISTRAL_PARSED_DATA_AGENT_ID=your_parsed_data_agent_id
 SPRING_AI_MISTRALAI_API_KEY=your_mistral_api_key
 
 # LDAP (JumpCloud)

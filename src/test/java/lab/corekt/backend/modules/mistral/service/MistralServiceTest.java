@@ -31,17 +31,17 @@ class MistralServiceTest {
 
     private static final Properties TEST_PROPERTIES = loadTestProperties();
     private static final String MISTRAL_API_TOKEN = resolveTestProperty("mistral.api.token");
-    private static final String MISTRAL_AGENT_ID = resolveTestProperty("mistral.agent.id");
-    private static final int MISTRAL_AGENT_VERSION = Integer.parseInt(resolveTestProperty("mistral.agent.version"));
+    private static final String MISTRAL_ANALYSIS_AGENT_ID = resolveTestProperty("mistral.agent.analysis.id");
+    private static final String MISTRAL_PARSED_DATA_AGENT_ID = resolveTestProperty("mistral.agent.parsed-data.id");
     private static final String MISTRAL_BASE_URL = "https://api.mistral.ai";
 
     private static final String SAMPLE_INTERVIEW = """
-        Je suis responsable RH.
-        Quand un employe pose une demande de conges, il remplit un formulaire sur l'intranet.
-        Le manager doit valider la demande sous 48 heures.
-        Ensuite, le service RH enregistre l'absence dans le SIRH pour eviter les conflits de planning.
-        Pour les conges exceptionnels, ca depend du contexte et on traite parfois au cas par cas.
-        """;
+            Je suis responsable RH.
+            Quand un employe pose une demande de conges, il remplit un formulaire sur l'intranet.
+            Le manager doit valider la demande sous 48 heures.
+            Ensuite, le service RH enregistre l'absence dans le SIRH pour eviter les conflits de planning.
+            Pour les conges exceptionnels, ca depend du contexte et on traite parfois au cas par cas.
+            """;
 
     private EmbeddingModel embeddingModel;
     private AIAnalysisRepository aiAnalysisRepository;
@@ -91,17 +91,17 @@ class MistralServiceTest {
         fileRepository = mock(FileRepository.class);
         objectMapper = new ObjectMapper();
         mistralService = new MistralService(
-            embeddingModel,
-            objectMapper,
-            aiAnalysisRepository,
-            parsedDataRepository,
-            fileRepository,
-            RestClient.builder(),
-            MISTRAL_API_TOKEN,
-            MISTRAL_AGENT_ID,
-            MISTRAL_AGENT_VERSION,
-            MISTRAL_BASE_URL,
-            mock(InterviewPdfTextExtractor.class));
+                embeddingModel,
+                objectMapper,
+                aiAnalysisRepository,
+                parsedDataRepository,
+                fileRepository,
+                RestClient.builder(),
+                MISTRAL_API_TOKEN,
+                MISTRAL_ANALYSIS_AGENT_ID,
+                MISTRAL_PARSED_DATA_AGENT_ID,
+                MISTRAL_BASE_URL,
+                mock(InterviewPdfTextExtractor.class));
     }
 
     @Test
@@ -109,7 +109,7 @@ class MistralServiceTest {
     @EnabledIfSystemProperty(named = "runMistralIntegrationTest", matches = "true")
     void testAnalyzeInterview() {
         when(aiAnalysisRepository.save(any(AIAnalysisEntity.class)))
-            .thenAnswer(inv -> inv.getArgument(0));
+                .thenAnswer(inv -> inv.getArgument(0));
 
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "files/interview.pdf");
         interviewFile.setId(UUID.randomUUID());
@@ -131,9 +131,9 @@ class MistralServiceTest {
     @EnabledIfSystemProperty(named = "runMistralIntegrationTest", matches = "true")
     void testAnalyzeAndSaveInterview() {
         when(aiAnalysisRepository.save(any(AIAnalysisEntity.class)))
-            .thenAnswer(inv -> inv.getArgument(0));
+                .thenAnswer(inv -> inv.getArgument(0));
         when(parsedDataRepository.saveAll(any()))
-            .thenAnswer(inv -> inv.getArgument(0));
+                .thenAnswer(inv -> inv.getArgument(0));
 
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "files/interview.pdf");
         interviewFile.setId(UUID.randomUUID());
@@ -183,7 +183,7 @@ class MistralServiceTest {
         analysisResult.setSuggestions(List.of(suggestion));
 
         when(aiAnalysisRepository.save(any(AIAnalysisEntity.class)))
-            .thenAnswer(inv -> inv.getArgument(0));
+                .thenAnswer(inv -> inv.getArgument(0));
 
         AIAnalysisEntity saved = mistralService.saveInterviewAnalysis(interviewFile, analysisResult);
 
@@ -197,47 +197,41 @@ class MistralServiceTest {
     }
 
     @Test
-    @DisplayName("Should save ACTOR ACTION and US parsed data from interview analysis")
+    @DisplayName("Should save ACTOR ACTION FLOW and US parsed data from interview parsing")
     void testSaveInterviewParsedData() {
         FileEntity interviewFile = new FileEntity(FileType.INTERVIEW, "files/interview.pdf");
 
-        QqoqcpDimensionDetailed qui = new QqoqcpDimensionDetailed();
-        qui.setElementsFound(List.of("employe", "manager"));
-
-        QqoqcpDimensionDetailed quoi = new QqoqcpDimensionDetailed();
-        quoi.setElementsFound(List.of("remplir un formulaire", "valider la demande"));
-
-        QqoqcpDetails qqoqcpAnalysis = new QqoqcpDetails();
-        qqoqcpAnalysis.setQui(qui);
-        qqoqcpAnalysis.setQuoi(quoi);
+        InterviewParsedDataResult parsedDataResult = new InterviewParsedDataResult();
+        parsedDataResult.setActors(List.of("employe", "manager"));
+        parsedDataResult.setActions(List.of("remplir un formulaire", "valider la demande"));
+        parsedDataResult.setFlows(List.of("employe -> manager", "manager -> RH"));
 
         DetectedUserStory userStory = new DetectedUserStory();
         userStory.setActor("manager");
         userStory.setAction("valider une demande de conges");
         userStory.setBenefit("approuver les absences");
-
-        InterviewAnalysisResult analysisResult = new InterviewAnalysisResult();
-        analysisResult.setQqoqcpAnalysis(qqoqcpAnalysis);
-        analysisResult.setDetectedUserStories(List.of(userStory));
+        parsedDataResult.setDetectedUserStories(List.of(userStory));
 
         when(parsedDataRepository.saveAll(any()))
-            .thenAnswer(inv -> inv.getArgument(0));
+                .thenAnswer(inv -> inv.getArgument(0));
 
-        List<ParsedDataEntity> saved = mistralService.saveInterviewParsedData(interviewFile, analysisResult);
+        List<ParsedDataEntity> saved = mistralService.saveInterviewParsedData(interviewFile, parsedDataResult);
 
-        assertThat(saved).hasSize(5); // 2 ACTORS + 2 ACTIONS + 1 US = 5 :)
+        assertThat(saved).hasSize(7); // 2 ACTORS + 2 ACTIONS + 2 FLOWS + 1 US = 7
         assertThat(saved)
-            .extracting(ParsedDataEntity::getDataType, ParsedDataEntity::getContent)
-            .containsExactlyInAnyOrder(
-                org.assertj.core.groups.Tuple.tuple(DataType.ACTOR, "employe"),
-                org.assertj.core.groups.Tuple.tuple(DataType.ACTOR, "manager"),
-                org.assertj.core.groups.Tuple.tuple(DataType.ACTION, "remplir un formulaire"),
-                org.assertj.core.groups.Tuple.tuple(DataType.ACTION, "valider la demande"),
-                org.assertj.core.groups.Tuple.tuple(
-                    DataType.US,
-                    "En tant que manager, je veux valider une demande de conges, afin de approuver les absences"
-                )
-            );
+                .extracting(ParsedDataEntity::getDataType, ParsedDataEntity::getContent)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple(DataType.ACTOR, "employe"),
+                        org.assertj.core.groups.Tuple.tuple(DataType.ACTOR, "manager"),
+                        org.assertj.core.groups.Tuple.tuple(DataType.ACTION, "remplir un formulaire"),
+                        org.assertj.core.groups.Tuple.tuple(DataType.ACTION, "valider la demande"),
+                        org.assertj.core.groups.Tuple.tuple(DataType.FLOW, "employe -> manager"),
+                        org.assertj.core.groups.Tuple.tuple(DataType.FLOW, "manager -> RH"),
+                        org.assertj.core.groups.Tuple.tuple(
+                                DataType.US,
+                                "En tant que manager, je veux valider une demande de conges, afin de approuver les absences"
+                        )
+                );
         assertThat(saved).allMatch(parsedData -> parsedData.getFile() == interviewFile);
         verify(parsedDataRepository).saveAll(any());
     }
