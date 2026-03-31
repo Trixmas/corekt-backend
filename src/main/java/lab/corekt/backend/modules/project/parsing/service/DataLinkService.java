@@ -72,11 +72,11 @@ public class DataLinkService {
         matrix.computeIfAbsent(right, ignored -> new HashSet<>()).add(left);
     }
 
-    private static @NonNull DataLinkEntity createMissingDataLink(EmbeddingTuple source, EmbeddingTuple bestTarget) {
+    private static @NonNull DataLinkEntity createMissingDataLink(EmbeddingTuple source) {
         DataLinkEntity dataLink = new DataLinkEntity(MatchType.MISSING, Severity.CRITICAL, source.parsedData(),
                 source.parsedData());
         dataLink.setConfidenceScore(0);
-        dataLink.setJustification(String.format("Aucune correspondance trouvée pour le type '%s' de valeur '%s' entre le fichier '%s' et '%s'.", source.parsedData().getDataType(), source.parsedData().getContent(), source.parsedData().getFile().getName(), bestTarget == null ? "aucun fichier" : bestTarget.parsedData().getFile().getName()));
+        dataLink.setJustification(String.format("Aucune correspondance trouvée pour le type '%s' de valeur '%s' dans le fichier '%s' et les autres fichiers.", source.parsedData().getDataType(), source.parsedData().getContent(), source.parsedData().getFile().getName()));
         return dataLink;
     }
 
@@ -90,10 +90,10 @@ public class DataLinkService {
 //            dataLink.setJustification(String.format("Correspondance exacte entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
 //                    source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
 //        } else {
-        if (bestConfidence >= 75) {
-            dataLink.setSeverity(Severity.MINOR);
-        } else if (bestConfidence >= 70) {
+        if (bestConfidence < 70) {
             dataLink.setSeverity(Severity.MAJOR);
+        } else if (bestConfidence < 75) {
+            dataLink.setSeverity(Severity.MINOR);
         }
         dataLink.setJustification(String.format("Similarité sémantique de %d%% entre la valeur '%s' du fichier '%s' et la valeur '%s' du fichier '%s'.",
                 bestConfidence, source.parsedData().getContent(), source.parsedData().getFile().getType(), bestTarget.parsedData().getContent(), bestTarget.parsedData().getFile().getName()));
@@ -187,7 +187,7 @@ public class DataLinkService {
             if (bestTarget != null && bestConfidence >= MIN_SEMANTIC_CONFIDENCE) {
                 dataLink = createDataLink(source, bestConfidence, bestTarget);
             } else {
-                dataLink = createMissingDataLink(source, bestTarget);
+                dataLink = createMissingDataLink(source);
             }
             dataLinks.add(dataLink);
         }

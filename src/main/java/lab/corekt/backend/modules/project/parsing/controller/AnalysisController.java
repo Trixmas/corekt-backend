@@ -85,6 +85,8 @@ public class AnalysisController {
                             AchievementCondition.totalProjectWithPerfectAnalysisAtLast(totalProjectWithPerfectAnalysisAtLast)
                     )
             );
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
             versionService.setVersionStatus(version, VersionStatus.FAILED);
             throw e;
