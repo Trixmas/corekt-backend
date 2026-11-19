@@ -1,5 +1,8 @@
 # Corekt Backend
 
+> [!IMPORTANT]
+> This is the backend application for https://github.com/trixmas/corekt-frontend. The visible environment variables like Mistral are slate. Swap them with your our keys to actually run this application
+
 Corekt is a coherence tool.
 
 - Swagger: http://localhost:8080/api/v1/swagger-ui/index.html (dev only)
